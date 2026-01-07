@@ -6,6 +6,8 @@ use App\Http\Controllers\GymOwnerController;
 use App\Http\Controllers\GymGoerController;
 use App\Http\Controllers\Auth\GymGoerAuthController;
 use App\Http\Controllers\UserPreferenceController;
+use App\Http\Controllers\UserPreferredEquipmentController;
+use App\Http\Controllers\UserPreferredAmenityController;
 
 Route::prefix('v1')->group(function () {
 
@@ -30,5 +32,10 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/preferences', [UserPreferenceController::class, 'show']);
     Route::post('/user/preferences', [UserPreferenceController::class, 'storeOrUpdate']);
+        Route::get('/user/preferred-equipments', [UserPreferredEquipmentController::class, 'index']);
+    Route::post('/user/preferred-equipments', [UserPreferredEquipmentController::class, 'store']);
+       Route::get('/user/preferred-amenities', [UserPreferredAmenityController::class, 'index']);
+    Route::post('/user/preferred-amenities', [UserPreferredAmenityController::class, 'store']);
     });
+
     });

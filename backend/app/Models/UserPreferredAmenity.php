@@ -14,4 +14,8 @@ class UserPreferredAmenity extends Model
         'user_id',
         'amenity_id',
     ];
+            public function amenity()
+    {
+        return $this->belongsTo(Amenity::class, 'amenity_id');
+    }
 }

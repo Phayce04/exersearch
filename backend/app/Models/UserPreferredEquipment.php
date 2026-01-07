@@ -14,4 +14,8 @@ class UserPreferredEquipment extends Model
         'user_id',
         'equipment_id',
     ];
+        public function equipment()
+    {
+        return $this->belongsTo(Equipment::class, 'equipment_id');
+    }
 }
