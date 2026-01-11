@@ -11,9 +11,8 @@ export default function Login() {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null); 
+  const [user, setUser] = useState(null);
 
-  
   const toggleMode = () => {
     setMode(mode === "login" ? "signup" : "login");
     setFormData({
@@ -24,7 +23,6 @@ export default function Login() {
     });
   };
 
- 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -33,31 +31,38 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-   
+    // Password check for signup
     if (mode === "signup" && formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       setLoading(false);
       return;
     }
 
-    const endpoint = mode === "login" ? "/api/login" : "/api/register";
+    // Correct API endpoints
+    const endpoint =
+      mode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register";
 
     try {
-      const response = await axios.post(`http://localhost:8000${endpoint}`, formData);
+      const response = await axios.post(
+        `https://exersearch.test${endpoint}`,
+        mode === "login"
+          ? { email: formData.email, password: formData.password }
+          : { name: formData.fullName, email: formData.email, password: formData.password },
+        { withCredentials: true } // very important
+      );
+
       const data = response.data;
 
       if (data.token) {
         localStorage.setItem("token", data.token);
-        alert(`${mode === "login" ? "Logged in" : "Registered"} successfully!`);
+        alert(mode === "login" ? "Logged in successfully!" : "Registered successfully!");
 
-        
         setUser(data.user);
         console.log("User info:", data.user);
       } else {
         alert("Authentication failed. Check your credentials.");
       }
     } catch (error) {
-      //lara
       if (error.response?.data?.errors) {
         const messages = Object.values(error.response.data.errors).flat().join("\n");
         alert(messages);
@@ -69,32 +74,31 @@ export default function Login() {
     }
   };
 
-  // fetch user
+  // Fetch logged-in user on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       axios
-        .get("http://localhost:8000/api/user", {
+        .get("https://exersearch.test/api/v1/user", {
           headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
         })
         .then((res) => {
-          setUser(res.data);
+          setUser(res.data.user || res.data);
           console.log("User info:", res.data);
         })
         .catch((err) => {
           console.error("Error fetching user:", err);
+          localStorage.removeItem("token"); // clear invalid token
         });
     }
   }, []);
 
   return (
     <div className="login-page">
-      {}
       <div className="bg-image"></div>
-      {}
       <div className="overlay"></div>
 
-      {}
       <div className="login-container">
         <div className="image-side">
           <img src="/gymlogo.png" alt="Fitness" />
@@ -104,7 +108,11 @@ export default function Login() {
           <div className="login-box">
             <h1>{mode === "login" ? "Welcome Back" : "Create Account"}</h1>
 
-            {user && <p style={{ marginBottom: "15px" }}>Logged in as: {user.name || user.fullName}</p>}
+            {user && (
+              <p style={{ marginBottom: "15px" }}>
+                Logged in as: {user.name || user.fullName}
+              </p>
+            )}
 
             <form onSubmit={handleSubmit}>
               {mode === "signup" && (
