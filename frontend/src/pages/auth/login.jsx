@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./login.css";
 
 export default function Login() {
@@ -13,34 +14,35 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
 
+  const navigate = useNavigate();
+
   const toggleMode = () => {
     setMode(mode === "login" ? "signup" : "login");
-    setFormData({
-      email: "",
-      password: "",
-      fullName: "",
-      confirmPassword: "",
-    });
+    setFormData({ email: "", password: "", fullName: "", confirmPassword: "" });
   };
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const redirectByRole = (role) => {
+    if (role === "user") navigate("/home");
+    else if (role === "owner") navigate("/owner/dashboard");
+    else if (role === "superadmin") navigate("/admin/dashboard");
+    else navigate("/login");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Password check for signup
     if (mode === "signup" && formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       setLoading(false);
       return;
     }
 
-    // Correct API endpoints
-    const endpoint =
-      mode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register";
+    const endpoint = mode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register";
 
     try {
       const response = await axios.post(
@@ -48,17 +50,15 @@ export default function Login() {
         mode === "login"
           ? { email: formData.email, password: formData.password }
           : { name: formData.fullName, email: formData.email, password: formData.password },
-        { withCredentials: true } // very important
+        { withCredentials: true }
       );
 
       const data = response.data;
 
       if (data.token) {
         localStorage.setItem("token", data.token);
-        alert(mode === "login" ? "Logged in successfully!" : "Registered successfully!");
-
         setUser(data.user);
-        console.log("User info:", data.user);
+        redirectByRole(data.user.role);
       } else {
         alert("Authentication failed. Check your credentials.");
       }
@@ -74,7 +74,6 @@ export default function Login() {
     }
   };
 
-  // Fetch logged-in user on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -84,13 +83,11 @@ export default function Login() {
           withCredentials: true,
         })
         .then((res) => {
-          setUser(res.data.user || res.data);
-          console.log("User info:", res.data);
+          const fetchedUser = res.data.user || res.data;
+          setUser(fetchedUser);
+          redirectByRole(fetchedUser.role);
         })
-        .catch((err) => {
-          console.error("Error fetching user:", err);
-          localStorage.removeItem("token"); // clear invalid token
-        });
+        .catch(() => localStorage.removeItem("token"));
     }
   }, []);
 
@@ -98,21 +95,15 @@ export default function Login() {
     <div className="login-page">
       <div className="bg-image"></div>
       <div className="overlay"></div>
-
       <div className="login-container">
         <div className="image-side">
           <img src="/gymlogo.png" alt="Fitness" />
         </div>
-
         <div className="form-side">
           <div className="login-box">
             <h1>{mode === "login" ? "Welcome Back" : "Create Account"}</h1>
 
-            {user && (
-              <p style={{ marginBottom: "15px" }}>
-                Logged in as: {user.name || user.fullName}
-              </p>
-            )}
+            {user && <p>Logged in as: {user.name || user.fullName}</p>}
 
             <form onSubmit={handleSubmit}>
               {mode === "signup" && (
@@ -152,20 +143,12 @@ export default function Login() {
                 />
               )}
               <button type="submit" disabled={loading}>
-                {loading
-                  ? mode === "login"
-                    ? "Logging in..."
-                    : "Signing up..."
-                  : mode === "login"
-                  ? "Login"
-                  : "Sign Up"}
+                {loading ? (mode === "login" ? "Logging in..." : "Signing up...") : mode === "login" ? "Login" : "Sign Up"}
               </button>
             </form>
 
             <p className="toggle-text">
-              {mode === "login"
-                ? "Don't have an account?"
-                : "Already have an account?"}{" "}
+              {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
               <span className="toggle-link" onClick={toggleMode}>
                 {mode === "login" ? "Sign Up" : "Login"}
               </span>
