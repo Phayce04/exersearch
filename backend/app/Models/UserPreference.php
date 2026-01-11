@@ -19,6 +19,6 @@ class UserPreference extends Model
 
     public function user()
     {
-        return $this->belongsTo(GymGoer::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

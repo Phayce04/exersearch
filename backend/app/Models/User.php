@@ -2,47 +2,112 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected $primaryKey = 'user_id';
+    public $timestamps = true;
+
+    // Mass assignable attributes
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',          // 'user', 'owner', 'superadmin'
+        'age',           // gym-goer
+        'weight',        // gym-goer
+        'height',        // gym-goer
+        'activity_level',// gym-goer
+        'address',       // gym-goer
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    // Hidden attributes
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    // Attribute casting
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    // Gym-goer preference
+    public function preference()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasOne(UserPreference::class, 'user_id', 'user_id');
+    }
+
+    // Gym-goer preferred amenities
+    public function preferredAmenities()
+    {
+        return $this->belongsToMany(
+            Amenity::class,
+            'user_preferred_amenities',
+            'user_id',
+            'amenity_id'
+        );
+    }
+
+    // Gym-goer preferred equipment
+    public function preferredEquipments()
+    {
+        return $this->belongsToMany(
+            Equipment::class,
+            'user_preferred_equipments',
+            'user_id',
+            'equipment_id'
+        );
+    }
+
+    // Owner profile
+    public function ownerProfile()
+    {
+        return $this->hasOne(OwnerProfile::class, 'user_id', 'user_id');
+    }
+
+    // Admin profile
+    public function adminProfile()
+    {
+        return $this->hasOne(AdminProfile::class, 'user_id', 'user_id');
+    }
+
+    // User profile (age, weight, height, address)
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class, 'user_id', 'user_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Role check helpers (optional)
+    |--------------------------------------------------------------------------
+    */
+    
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
+    public function isGymUser(): bool
+    {
+        return $this->role === 'user';
     }
 }

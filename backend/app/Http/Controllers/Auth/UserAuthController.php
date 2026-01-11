@@ -1,13 +1,12 @@
 <?php
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\GymGoer;
+use App\Models\User;       // <-- use new unified model
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
-class GymGoerAuthController extends Controller
+class UserAuthController extends Controller
 {
     public function login(Request $request)
     {
@@ -16,15 +15,18 @@ class GymGoerAuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = GymGoer::where('email', $request->email)->first();
+        // Find the user
+        $user = User::where('email', $request->email)->first();
 
+        // Check password
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Invalid credentials'
             ], 401);
         }
 
-        $token = $user->createToken('gym-goer-token')->plainTextToken;
+
+        $token = $user->createToken($user->role.'-token')->plainTextToken;
 
         return response()->json([
             'token' => $token,
@@ -32,6 +34,7 @@ class GymGoerAuthController extends Controller
                 'user_id' => $user->user_id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role,
             ]
         ]);
     }

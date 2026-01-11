@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Gym extends Model
 {
@@ -54,7 +55,19 @@ class Gym extends Model
 
     public function owner()
     {
-        return $this->belongsTo(GymOwner::class, 'owner_id');
+        return $this->belongsTo(User::class, 'owner_id')
+                    ->where('role', 'owner'); // ensures only owner users
+    }
+    public function ownerProfile()
+    {
+        return $this->hasOneThrough(
+            OwnerProfile::class,
+            User::class,
+            'user_id', // Foreign key on User
+            'user_id', // Foreign key on OwnerProfile
+            'owner_id', // Local key on Gym
+            'user_id'   // Local key on User
+        );
     }
 
     public function gymEquipments()

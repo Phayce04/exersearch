@@ -42,7 +42,6 @@ class GymResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 
-            // ⚡ Force relationship queries so amenities and equipments are always returned
             'equipments' => EquipmentResource::collection($this->equipments()->get()),
             'amenities' => AmenityResource::collection($this->amenities()->get()),
         ];

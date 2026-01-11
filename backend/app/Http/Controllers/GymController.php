@@ -122,12 +122,15 @@ class GymController extends Controller
 
     public function update(Request $request, $gym_id)
     {
-        $owner = auth()->guard('gym_owner')->user();
+        $owner = auth()->user(); // current logged-in user
+
+        if (!$owner || $owner->role !== 'owner') {
+            abort(403, 'Unauthorized');
+        }
 
         $gym = Gym::where('gym_id', $gym_id)
-            ->where('owner_id', $owner->owner_id)
+            ->where('owner_id', $owner->user_id) 
             ->firstOrFail();
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
