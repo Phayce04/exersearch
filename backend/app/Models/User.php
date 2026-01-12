@@ -110,4 +110,9 @@ class User extends Authenticatable
     {
         return $this->role === 'user';
     }
+    public function gymOwnerApplication()
+{
+    return $this->hasOne(GymOwnerApplication::class, 'user_id', 'user_id');
+}
+
 }

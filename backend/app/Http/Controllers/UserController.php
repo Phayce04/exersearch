@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Http\Resources\GymGoerResource; // You can rename this to UserResource if you want
+use App\Http\Resources\UserResource; 
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     public function index()
     {
-        return GymGoerResource::collection(
+        return UserResource::collection(
             User::where('role', 'user')
                 ->with(['preference', 'preferredEquipments', 'preferredAmenities'])
                 ->paginate(10)
@@ -26,7 +26,7 @@ class UserController extends Controller
             ->with(['preference', 'preferredEquipments', 'preferredAmenities'])
             ->findOrFail($user_id);
 
-        return new GymGoerResource($user);
+        return new UserResource($user);
     }
 
     /**

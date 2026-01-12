@@ -7,6 +7,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\UserPreferredEquipmentController;
 use App\Http\Controllers\UserPreferredAmenityController;
+use App\Http\Controllers\GymOwnerApplicationController;
+
 use App\Http\Resources\GymOwnerResource;
 use App\Models\User;
 
@@ -16,7 +18,13 @@ Route::prefix('v1')->group(function () {
     // AUTH
     // ---------------------------
     Route::post('/auth/login', [UserAuthController::class, 'login']);
+    Route::post('/auth/register', [UserAuthController::class, 'register']);
+    Route::post('/apply-owner', [GymOwnerApplicationController::class, 'apply'])
+        ->middleware('auth:sanctum');
 
+    // Approve a gym owner application (admin only)
+    Route::post('/approve-owner/{id}', [GymOwnerApplicationController::class, 'approve'])
+        ->middleware(['auth:sanctum', 'admin']); 
     // ---------------------------
     // Gyms
     // ---------------------------
