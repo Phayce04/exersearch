@@ -6,6 +6,7 @@ import Login from "./pages/auth/Login";
 import UserHome from "./pages/user/Home";
 import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
+import Recommendations from "./pages/Recommendations";
 
 import { getUserRole } from "./utils/auth";
 
@@ -36,6 +37,7 @@ function App() {
       <Route path="/owner/dashboard" element={<ProtectedRoutes><OwnerDashboard /></ProtectedRoutes>} />
 
       <Route path="/admin/dashboard" element={<ProtectedRoutes><AdminDashboard /></ProtectedRoutes>} />
+      <Route path="/recommendations" element={<Recommendations />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
