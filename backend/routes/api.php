@@ -8,11 +8,14 @@ use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\UserPreferredEquipmentController;
 use App\Http\Controllers\UserPreferredAmenityController;
 use App\Http\Controllers\GymOwnerApplicationController;
+use App\Http\Controllers\MeController;
 
 use App\Http\Resources\GymOwnerResource;
 use App\Models\User;
+use App\Http\Controllers\GymRecommendationController;
 
 Route::prefix('v1')->group(function () {
+    Route::middleware('auth:sanctum')->get('/gyms/recommend', [GymRecommendationController::class, 'index']);
 
     // ---------------------------
     // AUTH
@@ -22,9 +25,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/apply-owner', [GymOwnerApplicationController::class, 'apply'])
         ->middleware('auth:sanctum');
 
-    // Approve a gym owner application (admin only)
     Route::post('/approve-owner/{id}', [GymOwnerApplicationController::class, 'approve'])
-        ->middleware(['auth:sanctum', 'admin']); 
+    ->middleware(['auth:sanctum', 'admin']);
+    Route::middleware('auth:sanctum')->get('/me', MeController::class);
+
     // ---------------------------
     // Gyms
     // ---------------------------

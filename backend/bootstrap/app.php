@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureGymOwner;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'gym.owner' => \App\Http\Middleware\EnsureGymOwner::class,
+            'admin'     => AdminMiddleware::class,
+            'gym.owner' => EnsureGymOwner::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

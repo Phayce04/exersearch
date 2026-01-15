@@ -15,6 +15,7 @@ class UserPreference extends Model
         'goal',
         'activity_level',
         'budget',
+        'plan_type',
     ];
 
     public function user()

@@ -38,19 +38,12 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
 
-    // Gym-goer preference
     public function preference()
     {
         return $this->hasOne(UserPreference::class, 'user_id', 'user_id');
     }
 
-    // Gym-goer preferred amenities
     public function preferredAmenities()
     {
         return $this->belongsToMany(
@@ -61,7 +54,6 @@ class User extends Authenticatable
         );
     }
 
-    // Gym-goer preferred equipment
     public function preferredEquipments()
     {
         return $this->belongsToMany(
@@ -72,29 +64,22 @@ class User extends Authenticatable
         );
     }
 
-    // Owner profile
     public function ownerProfile()
     {
         return $this->hasOne(OwnerProfile::class, 'user_id', 'user_id');
     }
 
-    // Admin profile
     public function adminProfile()
     {
         return $this->hasOne(AdminProfile::class, 'user_id', 'user_id');
     }
 
-    // User profile (age, weight, height, address)
     public function profile()
     {
         return $this->hasOne(UserProfile::class, 'user_id', 'user_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Role check helpers (optional)
-    |--------------------------------------------------------------------------
-    */
+
     
     public function isOwner(): bool
     {

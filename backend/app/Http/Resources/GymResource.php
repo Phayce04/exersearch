@@ -34,7 +34,7 @@ class GymResource extends JsonResource
             'instagram_page' => $this->instagram_page,
             'main_image_url' => $this->main_image_url,
             'gallery_urls' => $this->gallery_urls,
-            'equipment_score' => $this->equipment_score,
+            
             'has_personal_trainers' => $this->has_personal_trainers,
             'has_classes' => $this->has_classes,
             'is_24_hours' => $this->is_24_hours,

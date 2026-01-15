@@ -21,6 +21,8 @@ class UserPreferenceController extends Controller
             'goal' => 'nullable|string|max:100',
             'activity_level' => 'nullable|string|max:50',
             'budget' => 'nullable|numeric|min:0',
+            'plan_type' => 'nullable|string|in:daily,monthly', // <-- added validation
+
         ]);
 
         $preference = UserPreference::updateOrCreate(
