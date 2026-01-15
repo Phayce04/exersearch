@@ -1,68 +1,213 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap');
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Montserrat', sans-serif;
+  
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* Hide caret everywhere by default */
+* {
+  caret-color: transparent;
 }
-a:hover {
-  color: #535bf2;
+
+/* Show caret only in inputs and textareas */
+input, textarea {
+  caret-color: #d23f0b; /* matches your theme */
+}
+
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  margin: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+
+
+.main {
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffecd1;
+  
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.main-left {
+  flex: 1;
+  max-width: 520px;
+  padding: 10px 100px;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+.hero-title {
+  font-family: 'Anton', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  letter-spacing: 4px;
+  font-size: 80px;
+  color: #d23f0b ;
+}
+
+.hero-subtext {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  font-size: 17px;
+  color: #d23f0b ;
+  line-height: 1.6;
+}
+
+.search-label {
+  margin-top: 30px;
+  display: block;
+  margin-bottom: 8px;
+  font-size: 17px;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  color: #d23f0b ;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 30px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  flex: 1;
+  margin-left: 8px;
+}
+
+.search-icon {
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.membership-btn {
+  margin-top: 25px;
+  background: #ff9756;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  font-size: 16px;
+  border-radius: 30px;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* SOCIAL */
+.social-links {
+  margin-top: 25px;
+  display: flex;
+  gap: 15px;
+}
+
+.social {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d23f0b; /* icon color */
+  text-decoration: none;
+  font-size: 25px;
+  transition: 
+    background 0.3s ease,
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.social:hover {
+  background: #d23f0b; /* same brand color */
+  color: #ffffff;     /* icon turns white */
+  transform: scale(1.12); /* slight pop */
+}
+
+
+
+.main-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.right-img {
+  width: 100%;
+  max-width: 600px; /* Adjustable maximum size */
+  height: auto;
+  object-fit: contain;
+}
+
+/* Width of scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+/* Track (background) */
+::-webkit-scrollbar-track {
+  background: #f2f2f2; /* light neutral background */
+}
+
+/* Thumb (scroll handle) */
+::-webkit-scrollbar-thumb {
+  background: #d23f0b;
+  border-radius: 0px; /* makes it a perfect rectangle */
+}
+
+/* Optional hover effect */
+::-webkit-scrollbar-thumb:hover {
+  background: #b23408;
+}
+
+
+
+
+@media (max-width: 1024px) {
+
+  .main {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
-  a:hover {
-    color: #747bff;
+
+  .main-left {
+    max-width: 100%;
+    padding: 40px 60px;
+    text-align: center;
   }
-  button {
-    background-color: #f9f9f9;
+
+  .hero-title {
+    font-size: 60px;
+  }
+
+  .hero-subtext {
+    font-size: 16px;
+  }
+
+  .search-box {
+    justify-content: center;
+  }
+
+  .membership-btn {
+    margin: 25px auto 0;
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+
+  .main-right {
+    justify-content: center;
+    margin-top: 30px;
+  }
+
+  .right-img {
+    max-width: 450px;
   }
 }
