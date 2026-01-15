@@ -13,6 +13,7 @@ use App\Http\Controllers\MeController;
 use App\Http\Resources\GymOwnerResource;
 use App\Models\User;
 use App\Http\Controllers\GymRecommendationController;
+use App\Http\Controllers\GymInteractionController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->get('/gyms/recommend', [GymRecommendationController::class, 'index']);
@@ -28,6 +29,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/approve-owner/{id}', [GymOwnerApplicationController::class, 'approve'])
     ->middleware(['auth:sanctum', 'admin']);
     Route::middleware('auth:sanctum')->get('/me', MeController::class);
+      Route::middleware('auth:sanctum')->post('/gym-interactions', [GymInteractionController::class, 'store']);
 
     // ---------------------------
     // Gyms
@@ -86,4 +88,5 @@ Route::prefix('v1')->group(function () {
         Route::get('/user/preferred-amenities', [UserPreferredAmenityController::class, 'index']);
         Route::post('/user/preferred-amenities', [UserPreferredAmenityController::class, 'store']);
     });
+
 });
