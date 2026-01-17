@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import axios from "axios";
 import AdminLoading from "./AdminLoading";
+import AdminSidebar from "./components/AdminSidebar";
 
 export default function AdminLayout() {
   const [ready, setReady] = useState(false);
@@ -18,10 +19,8 @@ export default function AdminLayout() {
           return;
         }
 
-        // keep splash visible at least 2s
         const minDelay = new Promise((r) => setTimeout(r, 2000));
 
-        // ✅ correct endpoint
         const meReq = axios.get("https://exersearch.test/api/v1/me", {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -29,7 +28,6 @@ export default function AdminLayout() {
 
         const [meRes] = await Promise.all([meReq, minDelay]);
 
-        // MeController usually returns user directly or { user: ... }
         const fetchedUser = meRes.data.user || meRes.data;
         const role = fetchedUser?.role;
 
@@ -53,5 +51,13 @@ export default function AdminLayout() {
   }, [navigate]);
 
   if (!ready) return <AdminLoading />;
-  return <Outlet />;
+
+  return (
+    <div style={{ display: "flex", height: "100vh" }}>
+      <AdminSidebar />
+      <main style={{ flex: 1, padding: "24px" }}>
+        <Outlet />
+      </main>
+    </div>
+  );
 }

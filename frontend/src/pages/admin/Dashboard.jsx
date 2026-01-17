@@ -5,9 +5,7 @@ export default function Dashboard() {
   return (
     <div>
       <h1>Admin Dashboard</h1>
-      <button onClick={logout} style={{ marginTop: '20px', padding: '10px 20px' }}>
-        Logout
-      </button>
+
     </div>
   );
 }
