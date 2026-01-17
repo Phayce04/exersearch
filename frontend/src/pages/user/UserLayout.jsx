@@ -3,6 +3,10 @@ import { Outlet, useNavigate } from "react-router-dom";
 import axios from "axios";
 import UserLoading from "./UserLoading";
 
+// Header & Footer for all user pages
+import HeaderUser from "./Header-user";
+import Footer from "./Footer";
+
 export default function UserLayout() {
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
@@ -18,7 +22,7 @@ export default function UserLayout() {
           return;
         }
 
-        const minDelay = new Promise((r) => setTimeout(r, 800)); // user doesn’t need 2s, tweak if you want
+        const minDelay = new Promise((r) => setTimeout(r, 800));
         const meReq = axios.get("https://exersearch.test/api/v1/me", {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -41,9 +45,19 @@ export default function UserLayout() {
     };
 
     run();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [navigate]);
 
   if (!ready) return <UserLoading />;
-  return <Outlet />;
+
+  // ✅ Wrap all nested routes with header & footer
+  return (
+    <>
+      <HeaderUser />
+      <Outlet />
+      <Footer />
+    </>
+  );
 }

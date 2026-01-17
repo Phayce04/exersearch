@@ -2,85 +2,87 @@ import React from "react";
 import "./Profilestyle.css";
 
 export default function Profile() {
+  // TEMP mock data (replace later with API)
+  const user = {
+    name: "John Carter",
+    email: "john@email.com",
+    role: "user",
+    created_at: "2024-09-12",
+    avatar: "https://i.pravatar.cc/150?img=12", // profile picture
+  };
+
+  const profile = {
+    age: 24,
+    height: 175,
+    weight: 72,
+    address: "Manila, Philippines",
+  };
+
   return (
-    <div className="gym-profile">
+    <div className="profile-page">
 
-      {/* HEADER */}
+      {/* Header */}
       <div className="profile-header">
-        <img
-          className="avatar"
-          src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=400"
-          alt="Profile"
-        />
-        <div className="profile-info">
-          <h1>Alex Carter</h1>
-          <p>Premium Member • Muscle Building Program</p>
-        </div>
-        <button className="edit-btn">Edit Profile</button>
-      </div>
 
-      {/* STATS */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h2>124</h2>
-          <span>Workouts</span>
-        </div>
-        <div className="stat-card">
-          <h2>32,450</h2>
-          <span>Calories Burned</span>
-        </div>
-        <div className="stat-card">
-          <h2>18 Days</h2>
-          <span>Streak</span>
-        </div>
-      </div>
-
-      {/* MAIN GRID */}
-      <div className="main-grid">
-
-        {/* MEMBERSHIP */}
-        <div className="card membership">
-          <h3>Membership</h3>
-          <p><strong>Plan:</strong> Elite Monthly</p>
-          <p><strong>Renewal:</strong> Feb 15, 2026</p>
-          <button className="primary-btn">Manage Plan</button>
-        </div>
-
-        {/* GOALS */}
-        <div className="card goals">
-          <h3>Fitness Goals</h3>
-
-          <div className="goal">
-            <span>Weight Loss</span>
-            <div className="progress-bar">
-              <div style={{ width: "70%" }} />
+        {/* Avatar */}
+        <div className="avatar-wrapper">
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt="Profile"
+              className="avatar-img"
+            />
+          ) : (
+            <div className="avatar-fallback">
+              {user.name.charAt(0)}
             </div>
-          </div>
-
-          <div className="goal">
-            <span>Muscle Gain</span>
-            <div className="progress-bar">
-              <div style={{ width: "45%" }} />
-            </div>
-          </div>
-
-          <div className="goal">
-            <span>Cardio Endurance</span>
-            <div className="progress-bar">
-              <div style={{ width: "60%" }} />
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* ACTIONS */}
-        <div className="card actions">
-          <h3>Quick Actions</h3>
-          <button>Log Workout</button>
-          <button>Track Meal</button>
-          <button>View Progress</button>
+        <div className="header-info">
+          <h1>{user.name}</h1>
+          <p>{user.email}</p>
+          <span className="role-badge">{user.role}</span>
         </div>
 
       </div>
+
+      {/* Info Grid */}
+      <div className="profile-grid">
+
+        <div className="info-card">
+          <label>Age</label>
+          <strong>{profile.age} years</strong>
+        </div>
+
+        <div className="info-card">
+          <label>Height</label>
+          <strong>{profile.height} cm</strong>
+        </div>
+
+        <div className="info-card">
+          <label>Weight</label>
+          <strong>{profile.weight} kg</strong>
+        </div>
+
+        <div className="info-card">
+          <label>Location</label>
+          <strong>{profile.address}</strong>
+        </div>
+
+        <div className="info-card">
+          <label>Member Since</label>
+          <strong>{user.created_at}</strong>
+        </div>
+
+      </div>
+
+      {/* Actions */}
+      <div className="profile-actions">
+        <button className="primary-btn">Edit Profile</button>
+        <button className="secondary-btn">Change Password</button>
+      </div>
+
     </div>
   );
 }

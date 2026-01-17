@@ -15,7 +15,6 @@ import OwnerLayout from "./pages/owner/OwnerLayout";
 
 import { getUserRole } from "./utils/auth";
 
-// Optional: protected route logic (redirect based on role)
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
   const navigate = useNavigate();
@@ -34,16 +33,14 @@ function ProtectedRoutes({ children }) {
 
 function App() {
   return (
-   <Routes>
+    <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
 
-      {/* Standalone profile page */}
-      <Route path="/profile" element={<Profile />} />
-
-      {/* Other routes */}
+      {/* User routes */}
       <Route path="/home" element={<UserLayout />}>
         <Route index element={<UserHome />} />
+        <Route path="profile" element={<Profile />} /> {/* ✅ relative path */}
       </Route>
 
       <Route path="/owner/dashboard" element={<OwnerDashboard />} />

@@ -1,149 +1,144 @@
 * {
   box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
-.gym-profile {
+.profile-page {
   min-height: 100vh;
-  padding: 30px;
-  background: linear-gradient(120deg, #0f172a, #020617);
-  color: #f8fafc;
+  background: #f6f6f6;
+  padding: 40px 60px;
 }
 
 /* HEADER */
 .profile-header {
   display: flex;
   align-items: center;
-  gap: 20px;
-  background: #020617;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  gap: 22px;
+  background: #ffffff;
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
 }
 
-.avatar {
+/* Avatar */
+.avatar-wrapper {
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #22c55e;
+  overflow: hidden;
+  border: 3px solid #d23f0b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
 }
 
-.profile-info h1 {
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: #d23f0b;
+  color: #ffffff;
+  font-size: 36px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Header Info */
+.header-info h1 {
   margin: 0;
   font-size: 28px;
+  color: #111;
 }
 
-.profile-info p {
-  margin: 4px 0 0;
-  color: #94a3b8;
-}
-
-.edit-btn {
-  margin-left: auto;
-  padding: 10px 18px;
-  border: none;
-  background: #22c55e;
-  color: #020617;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.edit-btn:hover {
-  opacity: 0.9;
-}
-
-/* STATS */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-  margin: 25px 0;
-}
-
-.stat-card {
-  background: #020617;
-  padding: 18px;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.stat-card h2 {
-  margin: 0;
-  color: #22c55e;
-  font-size: 26px;
-}
-
-.stat-card span {
-  color: #94a3b8;
+.header-info p {
+  margin: 6px 0;
+  color: #666;
   font-size: 14px;
 }
 
-/* MAIN GRID */
-.main-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
-}
-
-.card {
-  background: #020617;
-  padding: 20px;
-  border-radius: 12px;
-}
-
-.card h3 {
-  margin-bottom: 15px;
-}
-
-/* MEMBERSHIP */
-.primary-btn {
-  margin-top: 12px;
-  width: 100%;
-  padding: 10px;
-  background: #22c55e;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* GOALS */
-.goal {
-  margin-bottom: 14px;
-}
-
-.goal span {
-  font-size: 14px;
-}
-
-.progress-bar {
-  background: #1e293b;
-  border-radius: 6px;
-  height: 10px;
-  overflow: hidden;
+.role-badge {
+  display: inline-block;
   margin-top: 6px;
+  padding: 4px 12px;
+  background: #ffe4d6;
+  color: #d23f0b;
+  font-size: 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
 }
 
-.progress-bar div {
-  height: 100%;
-  background: linear-gradient(90deg, #22c55e, #4ade80);
+/* GRID */
+.profile-grid {
+  margin-top: 35px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.info-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+}
+
+.info-card label {
+  font-size: 12px;
+  color: #888;
+}
+
+.info-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 18px;
+  color: #222;
 }
 
 /* ACTIONS */
-.actions button {
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px;
-  background: transparent;
-  color: #22c55e;
-  border: 1px solid #22c55e;
-  border-radius: 6px;
+.profile-actions {
+  margin-top: 40px;
+  display: flex;
+  gap: 16px;
+}
+
+.primary-btn {
+  background: #d23f0b;
+  color: #ffffff;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
-.actions button:hover {
-  background: #22c55e;
-  color: #020617;
+.secondary-btn {
+  background: transparent;
+  border: 1px solid #d23f0b;
+  color: #d23f0b;
+  padding: 12px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 25px 20px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-actions {
+    flex-direction: column;
+  }
 }

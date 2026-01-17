@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { logout } from '../../utils/auth';
-import Header from './Header';
+import Header from './Header-user';
 import Footer from './Footer';
 
 

@@ -67,8 +67,8 @@ export default function HeaderUser() {
 
               <div className="dropdown-divider" />
 
-          <Link to="/profile" onClick={() => setProfileDropdown(false)}>My Profile</Link>
-    
+          <Link to="/home/profile" onClick={() => setProfileDropdown(false)}>My Profile</Link>
+
           <Link to="/home/settings" onClick={() => setProfileDropdown(false)}>Settings</Link>
 
                 <a href="#" onClick={logout}>Logout</a> 
@@ -88,8 +88,9 @@ export default function HeaderUser() {
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
         <a href="#" onClick={() => setMobileMenuOpen(false)}>DASHBOARD</a>
         <a href="#" onClick={() => setMobileMenuOpen(false)}>MY GYMS</a>
-        <a href="/profile" onClick={() => setMobileMenuOpen(false)}>My Profile</a>
-        <a href="/settings" onClick={() => setMobileMenuOpen(false)}>Settings</a>
+       <a href="/home/profile" onClick={() => setMobileMenuOpen(false)}>My Profile</a>
+        <a href="/home/settings" onClick={() => setMobileMenuOpen(false)}>Settings</a>
+
         <a
           href="#"
           onClick={() => {
