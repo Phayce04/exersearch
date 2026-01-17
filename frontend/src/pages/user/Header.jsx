@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './HF.css';
 import logo from '../../assets/exersearchlogo.png';
 
+
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -18,7 +19,7 @@ export default function Header() {
 
 
         <nav className="nav-links">
-          <a href="#">LOGIN</a>
+          <a href="/login">LOGIN</a>
           <a href="#">SIGN UP</a>
           
         </nav>
