@@ -1,0 +1,13 @@
+.loading-screen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-image { width: 170px; }
+
+.loading-text { margin-top: 12px; opacity: 0.85; }
+
+.owner-bg { background: #ffffff; }
