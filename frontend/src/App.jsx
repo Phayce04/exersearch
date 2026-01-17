@@ -7,7 +7,6 @@ import UserHome from "./pages/user/Home";
 import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Recommendations from "./pages/Recommendations";
-
 import { getUserRole } from "./utils/auth";
 
 function ProtectedRoutes({ children }) {

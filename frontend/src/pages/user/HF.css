@@ -178,8 +178,140 @@
 .footer-bottom p {
   font-size: 0.75rem;
   color: #E0E1E4;
-  font-weight: 900;
+  font-weight: 200;
 }
+
+/***********header-user********/
+.profile-container {
+  position: relative;
+  top: -12px;
+}
+
+/* Button */
+.profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.profile-btn:hover {
+  background: #f2f2f2;
+}
+
+/* Avatar */
+.profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Arrow */
+.dropdown-arrow {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Card */
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 260px;
+  background: #ffffff;
+  border-radius: 12px;
+
+  /* STRONG visible border */
+  border: 2px solid #dddddd;
+
+  /* Hidden by default */
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none; /* Prevent interaction when hidden */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+
+  padding: 12px;
+  z-index: 9999;
+}
+
+/* Dropdown visible when open */
+.profile-dropdown.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Arrow pointer */
+.profile-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  right: 24px;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-left: 2px solid #dddddd;
+  border-top: 2px solid #dddddd;
+  transform: rotate(45deg);
+}
+
+/* Header inside dropdown */
+.profile-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px;
+}
+
+.dropdown-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.profile-email {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Divider */
+.dropdown-divider {
+  height: 1px;
+  background: #ddd;
+  margin: 10px 0;
+}
+
+/* Links */
+.profile-dropdown a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.profile-dropdown a:hover {
+  background: #f3f3f3;
+}
+
+
 
 @media (max-width: 992px) {
   .footer-container {
