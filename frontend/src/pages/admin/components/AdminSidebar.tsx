@@ -1,15 +1,13 @@
 import React from "react";
 import { Sidebar, Menu, MenuItem, SubMenu, menuClasses } from "react-pro-sidebar";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Switch } from "./components/Switch";
 import { SidebarHeader } from "./components/SidebarHeader";
-import { Diamond } from "./icons/Diamond";
 import { BarChart } from "./icons/BarChart";
-import { Global } from "./icons/Global";
 import { Book } from "./icons/Book";
 import { Calendar } from "./icons/Calendar";
-import { ShoppingCart } from "./icons/ShoppingCart";
+import { Diamond } from "./icons/Diamond";
 import { Service } from "./icons/Service";
-import { Badge } from "./components/Badge";
 import { Typography } from "./components/Typography";
 import { logout } from "../../../utils/auth";
 
@@ -46,20 +44,32 @@ const hexToRgba = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+const isPathActive = (pathname: string, targets: string[]) => {
+  return targets.some((t) => (t === "/" ? pathname === "/" : pathname === t || pathname.startsWith(t + "/")));
+};
+
 const AdminSidebar: React.FC = () => {
   const [collapsed, setCollapsed] = React.useState(false);
   const [toggled, setToggled] = React.useState(false);
   const [broken, setBroken] = React.useState(false);
-  const [rtl, setRtl] = React.useState(false);
-  const [hasImage, setHasImage] = React.useState(false);
+  const [rtl] = React.useState(false);
+  const [hasImage] = React.useState(false);
   const [theme, setTheme] = React.useState<Theme>("light");
 
   const adminName = "Admin";
   const isDark = theme === "dark";
   const modeLabel = isDark ? "Light mode" : "Dark mode";
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const go = (path: string) => {
+    navigate(path);
+    if (broken) setToggled(false); // close sidebar on mobile after click
+  };
+
   const menuItemStyles = {
-    root: { fontSize: "13px", fontWeight: 400 },
+    root: { fontSize: "13px", fontWeight: 500 },
     icon: {
       color: themes[theme].menu.icon,
       [`&.${menuClasses.disabled}`]: { color: themes[theme].menu.disabled.color },
@@ -67,9 +77,7 @@ const AdminSidebar: React.FC = () => {
     SubMenuExpandIcon: { color: hexToRgba(MAIN, 0.65) },
     subMenuContent: ({ level }: any) => ({
       backgroundColor:
-        level === 0
-          ? hexToRgba(themes[theme].menu.menuContent, hasImage && !collapsed ? 0.4 : 1)
-          : "transparent",
+        level === 0 ? hexToRgba(themes[theme].menu.menuContent, hasImage && !collapsed ? 0.4 : 1) : "transparent",
     }),
     button: {
       [`&.${menuClasses.disabled}`]: { color: themes[theme].menu.disabled.color },
@@ -78,7 +86,16 @@ const AdminSidebar: React.FC = () => {
         color: themes[theme].menu.hover.color,
       },
     },
-    label: ({ open }: any) => ({ fontWeight: open ? 650 : undefined }),
+    label: ({ open }: any) => ({ fontWeight: open ? 700 : undefined }),
+  };
+
+  // Active route styles (makes the current page highlighted)
+  const activeButtonStyle = {
+    backgroundColor: themes[theme].menu.hover.backgroundColor,
+    color: themes[theme].menu.hover.color,
+    fontWeight: 750 as const,
+    borderRadius: 10,
+    margin: "2px 10px",
   };
 
   return (
@@ -99,6 +116,7 @@ const AdminSidebar: React.FC = () => {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+          {/* Header / Brand */}
           <div
             onClick={() => setCollapsed((v) => !v)}
             style={{ cursor: "pointer", userSelect: "none", paddingTop: 16, paddingBottom: 12 }}
@@ -107,6 +125,7 @@ const AdminSidebar: React.FC = () => {
             <SidebarHeader rtl={rtl} style={{ marginBottom: 12, marginTop: 0 }} />
           </div>
 
+          {/* Main Menu */}
           <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
             <div style={{ padding: "0 24px", marginBottom: 8 }}>
               <Typography
@@ -114,68 +133,85 @@ const AdminSidebar: React.FC = () => {
                 fontWeight={700}
                 style={{ opacity: collapsed ? 0 : 0.75, letterSpacing: "0.5px" }}
               >
-                General
+                Admin
               </Typography>
             </div>
 
             <Menu menuItemStyles={menuItemStyles}>
-              <SubMenu
-                label="Charts"
+              <MenuItem
                 icon={<BarChart />}
-                suffix={
-                  <Badge variant="danger" shape="circle">
-                    6
-                  </Badge>
+                onClick={() => go("/admin/dashboard")}
+                style={isPathActive(location.pathname, ["/admin/dashboard"]) ? activeButtonStyle : undefined}
+              >
+                Dashboard
+              </MenuItem>
+
+              <MenuItem
+                icon={<Service />}
+                onClick={() => go("/admin/owner-applications")}
+                style={
+                  isPathActive(location.pathname, ["/admin/owner-applications"]) ? activeButtonStyle : undefined
                 }
               >
-                <MenuItem>Pie charts</MenuItem>
-                <MenuItem>Line charts</MenuItem>
-                <MenuItem>Bar charts</MenuItem>
+                Owner Applications
+              </MenuItem>
+
+              <SubMenu label="Manage Data" icon={<Diamond />}>
+                <MenuItem
+                  onClick={() => go("/admin/gyms")}
+                  style={isPathActive(location.pathname, ["/admin/gyms"]) ? activeButtonStyle : undefined}
+                >
+                  Gyms
+                </MenuItem>
+                <MenuItem
+                  onClick={() => go("/admin/equipments")}
+                  style={isPathActive(location.pathname, ["/admin/equipments"]) ? activeButtonStyle : undefined}
+                >
+                  Equipments
+                </MenuItem>
+                <MenuItem
+                  onClick={() => go("/admin/amenities")}
+                  style={isPathActive(location.pathname, ["/admin/amenities"]) ? activeButtonStyle : undefined}
+                >
+                  Amenities
+                </MenuItem>
+                <MenuItem
+                  onClick={() => go("/admin/users")}
+                  style={isPathActive(location.pathname, ["/admin/users"]) ? activeButtonStyle : undefined}
+                >
+                  Users
+                </MenuItem>
               </SubMenu>
 
-              <SubMenu label="Maps" icon={<Global />}>
-                <MenuItem>Google maps</MenuItem>
-                <MenuItem>Open street maps</MenuItem>
-              </SubMenu>
+              <div style={{ padding: "0 24px", marginTop: 24, marginBottom: 8 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  style={{ opacity: collapsed ? 0 : 0.75, letterSpacing: "0.5px" }}
+                >
+                  Extra
+                </Typography>
+              </div>
 
-              <SubMenu label="Components" icon={<Diamond />}>
-                <MenuItem>Grid</MenuItem>
-                <MenuItem>Layout</MenuItem>
-                <SubMenu label="Forms">
-                  <MenuItem>Input</MenuItem>
-                  <MenuItem>Select</MenuItem>
-                  <SubMenu label="More">
-                    <MenuItem>CheckBox</MenuItem>
-                    <MenuItem>Radio</MenuItem>
-                  </SubMenu>
-                </SubMenu>
-              </SubMenu>
-
-              <SubMenu label="E-commerce" icon={<ShoppingCart />}>
-                <MenuItem>Product</MenuItem>
-                <MenuItem>Orders</MenuItem>
-                <MenuItem>Credit card</MenuItem>
-              </SubMenu>
-            </Menu>
-
-            <div style={{ padding: "0 24px", marginBottom: 8, marginTop: 32 }}>
-              <Typography
-                variant="body2"
-                fontWeight={700}
-                style={{ opacity: collapsed ? 0 : 0.75, letterSpacing: "0.5px" }}
+              <MenuItem
+                icon={<Calendar />}
+                onClick={() => go("/admin/calendar")}
+                style={isPathActive(location.pathname, ["/admin/calendar"]) ? activeButtonStyle : undefined}
               >
-                Extra
-              </Typography>
-            </div>
+                Calendar
+              </MenuItem>
 
-            <Menu menuItemStyles={menuItemStyles}>
-              {/* ✅ removed green "New" badge */}
-              <MenuItem icon={<Calendar />}>Calendar</MenuItem>
-              <MenuItem icon={<Book />}>Documentation</MenuItem>
+              <MenuItem
+                icon={<Book />}
+                onClick={() => go("/admin/docs")}
+                style={isPathActive(location.pathname, ["/admin/docs"]) ? activeButtonStyle : undefined}
+              >
+                Documentation
+              </MenuItem>
             </Menu>
           </div>
 
-          {/* FOOTER (moved upward via bottom: 60) */}
+          {/* Footer (moved up) */}
           <div
             style={{
               marginTop: "auto",
@@ -187,7 +223,7 @@ const AdminSidebar: React.FC = () => {
               overflow: "hidden",
             }}
           >
-            {/* Profile */}
+            {/* Profile / Actions */}
             <Menu
               menuItemStyles={menuItemStyles}
               rootStyles={{
@@ -250,18 +286,22 @@ const AdminSidebar: React.FC = () => {
                   ) : undefined
                 }
               >
-                <MenuItem>Settings</MenuItem>
-                <MenuItem>Help</MenuItem>
+                <MenuItem onClick={() => go("/admin/settings")}>Settings</MenuItem>
+                <MenuItem onClick={() => go("/admin/help")}>Help</MenuItem>
+
                 <MenuItem
-                  onClick={logout}
-                  style={{ color: "#d23f0b", fontWeight: 700 }}
+                  onClick={() => {
+                    logout();
+                    if (broken) setToggled(false);
+                  }}
+                  style={{ color: MAIN, fontWeight: 800 }}
                 >
                   Logout
                 </MenuItem>
               </SubMenu>
             </Menu>
 
-            {/* Dark mode toggle (NOTE: switch may still be green depending on your Switch component) */}
+            {/* Dark mode toggle */}
             {!collapsed && (
               <div
                 style={{
@@ -287,9 +327,6 @@ const AdminSidebar: React.FC = () => {
                 >
                   {modeLabel}
                 </span>
-
-                {/* ✅ If your Switch supports props, pass MAIN colors.
-                    If it doesn't, you'll need to edit Switch component CSS to remove green. */}
                 <Switch
                   id="theme-above-profile"
                   checked={isDark}
@@ -299,6 +336,7 @@ const AdminSidebar: React.FC = () => {
               </div>
             )}
 
+            {/* Mobile open/close button */}
             {broken && (
               <div style={{ marginTop: 8 }}>
                 <button
