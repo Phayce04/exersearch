@@ -33,18 +33,25 @@ function ProtectedRoutes({ children }) {
 
 function App() {
   return (
-    <Routes>
+   <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
 
-      {/* User routes */}
-      <Route path="/home" element={<UserLayout />}>
-        <Route index element={<UserHome />} />
-        <Route path="profile" element={<Profile />} /> {/* ✅ relative path */}
-      </Route>
+      {/* Standalone profile page */}
+      <Route path="/profile" element={<Profile />} />
 
-      <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      {/* Other routes */}
+      <Route path="/home" element={<UserLayout />}>
+  <Route index element={<UserHome />} />
+</Route>
+
+<Route path="/owner" element={<OwnerLayout />}>
+  <Route path="dashboard" element={<OwnerDashboard />} />
+</Route>
+
+<Route path="/admin" element={<AdminLayout />}>
+  <Route path="dashboard" element={<AdminDashboard />} />
+</Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
