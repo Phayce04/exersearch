@@ -8,6 +8,9 @@ import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Recommendations from "./pages/Recommendations";
 import { getUserRole } from "./utils/auth";
+import AdminLayout from "./pages/admin/AdminLayout";
+import UserLayout from "./pages/user/UserLayout";
+import OwnerLayout from "./pages/owner/OwnerLayout";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -30,12 +33,20 @@ function App() {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
+    
+<Route path="/home" element={<UserLayout />}>
+  <Route index element={<UserHome />} />
+</Route>
 
-      <Route path="/home" element={<ProtectedRoutes><UserHome /></ProtectedRoutes>} />
+<Route path="/owner" element={<OwnerLayout />}>
+  <Route path="dashboard" element={<OwnerDashboard />} />
+</Route>
 
-      <Route path="/owner/dashboard" element={<ProtectedRoutes><OwnerDashboard /></ProtectedRoutes>} />
+<Route path="/admin" element={<AdminLayout />}>
+  <Route path="dashboard" element={<AdminDashboard />} />
+</Route>
 
-      <Route path="/admin/dashboard" element={<ProtectedRoutes><AdminDashboard /></ProtectedRoutes>} />
+
       <Route path="/recommendations" element={<Recommendations />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
