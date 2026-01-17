@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './HF.css';
 import logo from '../../assets/exersearchlogo.png';
 import { useAuth } from '../../authcon';
+import { Link } from 'react-router-dom';
 
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,9 +67,11 @@ export default function HeaderUser() {
 
               <div className="dropdown-divider" />
 
-              <a href="/profile">My Profile</a>
-              <a href="/settings">Settings</a>
-              <a href="#" onClick={logout}>Logout</a>
+          <Link to="/profile" onClick={() => setProfileDropdown(false)}>My Profile</Link>
+    
+          <Link to="/home/settings" onClick={() => setProfileDropdown(false)}>Settings</Link>
+
+                <a href="#" onClick={logout}>Logout</a> 
             </div>
           </div>
         </nav>

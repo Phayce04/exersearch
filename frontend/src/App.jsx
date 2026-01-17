@@ -4,14 +4,18 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Index from "./pages/index";
 import Login from "./pages/auth/Login";
 import UserHome from "./pages/user/Home";
+import Profile from "./pages/user/Profile";
 import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Recommendations from "./pages/Recommendations";
-import { getUserRole } from "./utils/auth";
+
 import AdminLayout from "./pages/admin/AdminLayout";
 import UserLayout from "./pages/user/UserLayout";
 import OwnerLayout from "./pages/owner/OwnerLayout";
 
+import { getUserRole } from "./utils/auth";
+
+// Optional: protected route logic (redirect based on role)
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
   const navigate = useNavigate();
@@ -30,24 +34,20 @@ function ProtectedRoutes({ children }) {
 
 function App() {
   return (
-    <Routes>
+   <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
-    
-<Route path="/home" element={<UserLayout />}>
-  <Route index element={<UserHome />} />
-</Route>
 
-<Route path="/owner" element={<OwnerLayout />}>
-  <Route path="dashboard" element={<OwnerDashboard />} />
-</Route>
+      {/* Standalone profile page */}
+      <Route path="/profile" element={<Profile />} />
 
-<Route path="/admin" element={<AdminLayout />}>
-  <Route path="dashboard" element={<AdminDashboard />} />
-</Route>
+      {/* Other routes */}
+      <Route path="/home" element={<UserLayout />}>
+        <Route index element={<UserHome />} />
+      </Route>
 
-
-      <Route path="/recommendations" element={<Recommendations />} />
+      <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

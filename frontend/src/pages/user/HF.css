@@ -1,16 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap');
 
-
+/* HEADER - SCROLL ANIMATION */
 .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 3rem;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  position: relative;
-  z-index: 100;
   font-family: 'Montserrat', sans-serif;
+  
+  /* Hide by default */
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Show when scrolled */
+.header.header--scrolled {
+  transform: translateY(0);
 }
 
 .logo img {
@@ -91,6 +105,7 @@
     padding: 1rem 1.5rem;
   }
 }
+
 /************footer*****/
 .footer {
   font-family: 'Montserrat', sans-serif;
@@ -174,7 +189,6 @@
   margin-bottom: 1rem;
 }
 
-
 .footer-bottom p {
   font-size: 0.75rem;
   color: #E0E1E4;
@@ -187,7 +201,6 @@
   top: -12px;
 }
 
-/* Button */
 .profile-btn {
   display: flex;
   align-items: center;
@@ -203,7 +216,6 @@
   background: #f2f2f2;
 }
 
-/* Avatar */
 .profile-avatar {
   width: 36px;
   height: 36px;
@@ -211,7 +223,6 @@
   object-fit: cover;
 }
 
-/* Arrow */
 .dropdown-arrow {
   font-size: 14px;
   transition: transform 0.2s ease;
@@ -221,7 +232,6 @@
   transform: rotate(180deg);
 }
 
-/* Dropdown Card */
 .profile-dropdown {
   position: absolute;
   top: calc(100% + 12px);
@@ -229,28 +239,21 @@
   width: 260px;
   background: #ffffff;
   border-radius: 12px;
-
-  /* STRONG visible border */
   border: 2px solid #dddddd;
-
-  /* Hidden by default */
   opacity: 0;
   transform: translateY(-10px);
-  pointer-events: none; /* Prevent interaction when hidden */
+  pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s ease;
-
   padding: 12px;
   z-index: 9999;
 }
 
-/* Dropdown visible when open */
 .profile-dropdown.open {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
-/* Arrow pointer */
 .profile-dropdown::before {
   content: "";
   position: absolute;
@@ -264,7 +267,6 @@
   transform: rotate(45deg);
 }
 
-/* Header inside dropdown */
 .profile-header {
   display: flex;
   gap: 12px;
@@ -289,14 +291,12 @@
   color: #666;
 }
 
-/* Divider */
 .dropdown-divider {
   height: 1px;
   background: #ddd;
   margin: 10px 0;
 }
 
-/* Links */
 .profile-dropdown a {
   display: block;
   padding: 10px 12px;
@@ -310,8 +310,6 @@
 .profile-dropdown a:hover {
   background: #f3f3f3;
 }
-
-
 
 @media (max-width: 992px) {
   .footer-container {
