@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-
 import AdminLoading from "./AdminLoading";
 import AdminSidebar from "./components/AdminSidebar";
 import AdminHeader from "./components/AdminHeader";
@@ -34,20 +33,18 @@ export const adminThemes = {
 };
 
 export default function AdminLayout() {
-  // ---------- BASIC STATE ----------
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState("light");
 
-  // ---------- SIDEBAR STATE ----------
+  const [me, setMe] = useState(null);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarToggled, setSidebarToggled] = useState(false);
   const [sidebarBroken, setSidebarBroken] = useState(false);
 
-  // ---------- ROUTER ----------
-  const navigate = useNavigate();     // ✅ NOT destructured
-  const location = useLocation();     // ✅ NOT destructured
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // ---------- AUTH CHECK ----------
   useEffect(() => {
     let alive = true;
 
@@ -59,27 +56,24 @@ export default function AdminLayout() {
           return;
         }
 
-        const delay = new Promise((r) => setTimeout(r, 1200));
-
-        const meRequest = axios.get("https://exersearch.test/api/v1/me", {
+        const meRes = await axios.get("https://exersearch.test/api/v1/me", {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
 
-        const results = await Promise.all([meRequest, delay]);
-        const meRes = results[0];
+        const user = meRes.data?.user || meRes.data;
 
-        const user = meRes.data.user || meRes.data;
-        const role = user && user.role;
-
+        // Admin page access (admin OR superadmin)
+        const role = user?.role;
         if (role !== "admin" && role !== "superadmin") {
           navigate("/login");
           return;
         }
 
         if (!alive) return;
+        setMe(user);
         setReady(true);
-      } catch (err) {
+      } catch (e) {
         localStorage.removeItem("token");
         navigate("/login");
       }
@@ -91,20 +85,14 @@ export default function AdminLayout() {
     };
   }, [navigate]);
 
-  // ---------- CLOSE MOBILE SIDEBAR ON ROUTE CHANGE ----------
   useEffect(() => {
-    if (sidebarBroken) {
-      setSidebarToggled(false);
-    }
+    if (sidebarBroken) setSidebarToggled(false);
   }, [location.pathname, sidebarBroken]);
 
-  if (!ready) {
-    return <AdminLoading />;
-  }
+  if (!ready) return <AdminLoading />;
 
   const t = adminThemes[theme].app;
 
-  // ---------- HEADER TITLE ----------
   const headerTitle = (() => {
     const p = location.pathname;
     if (p.startsWith("/admin/owner-applications")) return "Owner Applications";
@@ -117,19 +105,13 @@ export default function AdminLayout() {
     return "Dashboard";
   })();
 
-  // ---------- BURGER HANDLER ----------
   const handleBurgerClick = () => {
-    if (sidebarBroken) {
-      setSidebarToggled((v) => !v);
-    } else {
-      setSidebarCollapsed((v) => !v);
-    }
+    if (sidebarBroken) setSidebarToggled((v) => !v);
+    else setSidebarCollapsed((v) => !v);
   };
 
-  // ---------- RENDER ----------
   return (
     <div style={{ display: "flex", height: "100vh", background: t.bg, color: t.text }}>
-      {/* SIDEBAR */}
       <AdminSidebar
         theme={theme}
         setTheme={setTheme}
@@ -141,7 +123,6 @@ export default function AdminLayout() {
         setBroken={setSidebarBroken}
       />
 
-      {/* MAIN */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <AdminHeader
           title={headerTitle}
@@ -149,10 +130,11 @@ export default function AdminLayout() {
           setTheme={setTheme}
           collapsed={sidebarCollapsed}
           onBurgerClick={handleBurgerClick}
+          me={me}
         />
 
         <main style={{ flex: 1, padding: 24, overflow: "auto" }}>
-          <Outlet context={{ theme, setTheme }} />
+          <Outlet context={{ theme, setTheme, me }} />
         </main>
       </div>
     </div>

@@ -4,7 +4,22 @@ import { Switch } from "./components/Switch";
 import { MAIN, adminThemes } from "../AdminLayout";
 import { useNavigate } from "react-router-dom";
 
-const AVATAR_SRC = "/arellano.png";
+const FALLBACK_AVATAR = "/arellano.png";
+
+type Me = {
+  user_id: number;
+  name: string;
+  email: string;
+  role: string; // "admin" or "superadmin"
+  admin_profile?: {
+    admin_profile_id: number;
+    permission_level: string;
+    notes: string | null;
+    avatar_url: string | null;
+    created_at?: string;
+    updated_at?: string;
+  } | null;
+};
 
 type Props = {
   title: string;
@@ -14,7 +29,8 @@ type Props = {
   collapsed: boolean;
   onBurgerClick: () => void;
 
-  // optional: if you want to handle logout outside
+  me?: Me | null;
+
   onLogout?: () => void;
 };
 
@@ -24,6 +40,7 @@ export default function AdminHeader({
   setTheme,
   collapsed,
   onBurgerClick,
+  me,
   onLogout,
 }: Props) {
   const isDark = theme === "dark";
@@ -33,7 +50,6 @@ export default function AdminHeader({
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
-  // close on outside click
   React.useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (!menuRef.current) return;
@@ -55,7 +71,6 @@ export default function AdminHeader({
     setMenuOpen(false);
     if (onLogout) return onLogout();
 
-    // default logout behavior
     localStorage.removeItem("token");
     navigate("/login");
   };
@@ -92,6 +107,14 @@ export default function AdminHeader({
     flex: "0 0 auto",
   };
 
+  // ✅ Display data from /me
+  const roleLabel = "ADMIN";
+  const displayName = me?.name || "Admin";
+  const displayEmail = me?.email || "";
+
+  // ✅ Avatar from admin_profile.avatar_url (fallback if null)
+  const avatarSrc = me?.admin_profile?.avatar_url || FALLBACK_AVATAR;
+
   return (
     <div
       style={{
@@ -107,7 +130,7 @@ export default function AdminHeader({
         borderBottom: `1px solid ${t.border}`,
       }}
     >
-      {/* Left: burger + title */}
+      {/* Left: burger + page title */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 220 }}>
         <button
           onClick={onBurgerClick}
@@ -211,15 +234,15 @@ export default function AdminHeader({
             onClick={() => setMenuOpen((v) => !v)}
             style={{
               height: 42,
-              borderRadius: 999,
+              borderRadius: 14,
               border: `1px solid ${t.border}`,
               background: t.soft,
               color: t.text,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              padding: "0 10px 0 6px",
+              gap: 10,
+              padding: "0 12px 0 6px",
             }}
             title="Profile menu"
           >
@@ -228,13 +251,18 @@ export default function AdminHeader({
                 width: 30,
                 height: 30,
                 borderRadius: 999,
-                backgroundImage: `url(${AVATAR_SRC})`,
+                backgroundImage: `url(${avatarSrc})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 border: `1px solid ${t.border}`,
               }}
             />
-            {/* chevron */}
+
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.05 }}>
+              <div style={{ fontSize: 12, fontWeight: 950 }}>{displayName}</div>
+              <div style={{ fontSize: 11, fontWeight: 850, color: t.mutedText }}>{roleLabel}</div>
+            </div>
+
             <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ opacity: 0.9 }}>
               <path
                 d="M6 8l4 4 4-4"
@@ -252,7 +280,7 @@ export default function AdminHeader({
                 position: "absolute",
                 right: 0,
                 top: 50,
-                width: 220,
+                width: 260,
                 borderRadius: 14,
                 border: `1px solid ${t.border}`,
                 background: t.bg,
@@ -262,10 +290,10 @@ export default function AdminHeader({
               }}
             >
               <div style={{ padding: "6px 8px 10px 8px" }}>
-                <div style={{ fontWeight: 950, fontSize: 13, color: t.text }}>Admin</div>
-                <div style={{ fontWeight: 800, fontSize: 12, color: t.mutedText, marginTop: 2 }}>
-                  Account
-                </div>
+                <div style={{ fontWeight: 950, fontSize: 13, color: t.text }}>{displayName}</div>
+                {displayEmail ? (
+                  <div style={{ fontWeight: 800, fontSize: 12, color: t.mutedText, marginTop: 2 }}>{displayEmail}</div>
+                ) : null}
               </div>
 
               <button
@@ -276,11 +304,7 @@ export default function AdminHeader({
               >
                 <span style={iconWrap}>
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path
-                      d="M10 10a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    />
+                    <path d="M10 10a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.6" />
                     <path
                       d="M3.5 18a6.5 6.5 0 0 1 13 0"
                       stroke="currentColor"
@@ -320,27 +344,14 @@ export default function AdminHeader({
 
               <button
                 onClick={handleLogout}
-                style={{
-                  ...itemStyle,
-                  color: MAIN,
-                }}
+                style={{ ...itemStyle, color: MAIN }}
                 onMouseEnter={(e) => ((e.currentTarget.style.background = t.soft) as any)}
                 onMouseLeave={(e) => ((e.currentTarget.style.background = "transparent") as any)}
               >
                 <span style={iconWrap}>
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path
-                      d="M8 3h7v14H8"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M9 10H3"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
+                    <path d="M8 3h7v14H8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    <path d="M9 10H3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     <path
                       d="M6 7l-3 3 3 3"
                       stroke="currentColor"
