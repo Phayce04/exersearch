@@ -14,6 +14,7 @@ use App\Http\Resources\GymOwnerResource;
 use App\Models\User;
 use App\Http\Controllers\GymRecommendationController;
 use App\Http\Controllers\GymInteractionController;
+use App\Http\Controllers\ProfilePhotoController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->get('/gyms/recommend', [GymRecommendationController::class, 'index']);
@@ -30,6 +31,10 @@ Route::prefix('v1')->group(function () {
     ->middleware(['auth:sanctum', 'admin']);
     Route::middleware('auth:sanctum')->get('/me', MeController::class);
       Route::middleware('auth:sanctum')->post('/gym-interactions', [GymInteractionController::class, 'store']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/me/avatar', [ProfilePhotoController::class, 'upload']);
+        Route::delete('/me/avatar', [ProfilePhotoController::class, 'remove']);
+    });
 
     // ---------------------------
     // Gyms

@@ -107,13 +107,18 @@ export default function AdminHeader({
     flex: "0 0 auto",
   };
 
-  // ✅ Display data from /me
   const roleLabel = "ADMIN";
   const displayName = me?.name || "Admin";
   const displayEmail = me?.email || "";
 
-  // ✅ Avatar from admin_profile.avatar_url (fallback if null)
-  const avatarSrc = me?.admin_profile?.avatar_url || FALLBACK_AVATAR;
+const API_BASE = "https://exersearch.test";
+
+const avatarSrc =
+  me?.admin_profile?.avatar_url
+    ? (me.admin_profile.avatar_url.startsWith("http")
+        ? me.admin_profile.avatar_url
+        : `${API_BASE}${me.admin_profile.avatar_url}`)
+    : FALLBACK_AVATAR;
 
   return (
     <div
