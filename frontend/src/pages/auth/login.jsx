@@ -106,7 +106,7 @@ export default function Login() {
     if (!token) return;
 
     axios
-      .get("https://exersearch.test/api/v1/user", {
+      .get("https://exersearch.test/api/v1/me", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
