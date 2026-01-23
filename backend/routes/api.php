@@ -18,22 +18,18 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\UserPreferredAmenityController;
 use App\Http\Controllers\UserPreferredEquipmentController;
+use App\Http\Controllers\EquipmentImportController;
 
 use App\Http\Resources\GymOwnerResource;
 use App\Models\User;
 
 Route::prefix('v1')->group(function () {
 
-    /* ---------------------------
-     | AUTH (public)
-     * --------------------------- */
+    // Auth
     Route::post('/auth/login', [UserAuthController::class, 'login']);
     Route::post('/auth/register', [UserAuthController::class, 'register']);
 
-    /* ---------------------------
-     | PUBLIC DATA
-     * --------------------------- */
-    // Gyms + nested resources
+    // Public data
     Route::get('/gyms', [GymController::class, 'index']);
     Route::get('/gyms/{gym}', [GymController::class, 'show']);
     Route::get('/gyms/{gym}/equipments', [GymController::class, 'equipments']);
@@ -41,68 +37,68 @@ Route::prefix('v1')->group(function () {
     Route::get('/gyms/{gym}/amenities', [GymController::class, 'amenities']);
     Route::get('/gyms/{gym}/amenities/{amenity}', [GymController::class, 'amenityDetail']);
 
-    // Master lists
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{id}', [EquipmentController::class, 'show']);
 
     Route::get('/amenities', [AmenityController::class, 'index']);
     Route::get('/amenities/{id}', [AmenityController::class, 'show']);
-    Route::get('/equipments', [EquipmentController::class, 'index']);
-    Route::get('/equipments/{id}', [EquipmentController::class, 'show']);
 
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::put('/equipments/{id}', [EquipmentController::class, 'update']);
-        Route::patch('/equipments/{id}', [EquipmentController::class, 'update']);
-    });
-    // Pivot/listing endpoints
     Route::get('/gym-equipments', [GymEquipmentController::class, 'index']);
     Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
     Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show']);
 
-    /* ---------------------------
-     | AUTHENTICATED
-     * --------------------------- */
+    // Admin
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+
+        Route::post('/equipments', [EquipmentController::class, 'store']);
+        Route::put('/equipments/{id}', [EquipmentController::class, 'update']);
+        Route::patch('/equipments/{id}', [EquipmentController::class, 'update']);
+        Route::delete('/equipments/{id}', [EquipmentController::class, 'destroy']);
+        Route::post('/equipments/import-csv', [EquipmentImportController::class, 'import']);
+
+        Route::post('/amenities', [AmenityController::class, 'store']);
+        Route::put('/amenities/{id}', [AmenityController::class, 'update']);
+        Route::patch('/amenities/{id}', [AmenityController::class, 'update']);
+        Route::delete('/amenities/{id}', [AmenityController::class, 'destroy']);
+
+        Route::post('/gyms', [GymController::class, 'store']);
+        Route::put('/gyms/{gym}', [GymController::class, 'update']);
+        Route::patch('/gyms/{gym}', [GymController::class, 'update']);
+        Route::delete('/gyms/{gym}', [GymController::class, 'destroy']);
+    });
+
+    // Authenticated
     Route::middleware('auth:sanctum')->group(function () {
 
-        // Recommendation + interactions
         Route::get('/gyms/recommend', [GymRecommendationController::class, 'index']);
         Route::post('/gym-interactions', [GymInteractionController::class, 'store']);
 
-        // Owner application + approval
         Route::post('/apply-owner', [GymOwnerApplicationController::class, 'apply']);
         Route::post('/approve-owner/{id}', [GymOwnerApplicationController::class, 'approve'])
             ->middleware('admin');
 
-        // Me
         Route::get('/me', MeController::class);
 
-        // Avatar
         Route::post('/me/avatar', [ProfilePhotoController::class, 'upload']);
         Route::delete('/me/avatar', [ProfilePhotoController::class, 'remove']);
 
-        // Media uploads (equipments/amenities/gyms images)
         Route::post('/media/upload', [MediaUploadController::class, 'upload']);
         Route::delete('/media/delete', [MediaUploadController::class, 'delete']);
 
-        // Gym-goers / Users
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/{user}', [UserController::class, 'show']);
         Route::get('/users/{user}/preferences', [UserController::class, 'preferences']);
         Route::put('/users/{user}/preferences', [UserController::class, 'updatePreferences']);
 
-        // Logged-in user preferences
         Route::get('/user/preferences', [UserPreferenceController::class, 'show']);
         Route::post('/user/preferences', [UserPreferenceController::class, 'storeOrUpdate']);
 
-        // Preferred equipments
         Route::get('/user/preferred-equipments', [UserPreferredEquipmentController::class, 'index']);
         Route::post('/user/preferred-equipments', [UserPreferredEquipmentController::class, 'store']);
 
-        // Preferred amenities
         Route::get('/user/preferred-amenities', [UserPreferredAmenityController::class, 'index']);
         Route::post('/user/preferred-amenities', [UserPreferredAmenityController::class, 'store']);
 
-        // Owners
         Route::get('/owners', function () {
             return GymOwnerResource::collection(
                 User::where('role', 'owner')->paginate(10)

@@ -1,6 +1,7 @@
+// src/pages/admin/AdminEquipments.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { MAIN, adminThemes } from "./AdminLayout";
+import { adminThemes } from "./AdminLayout";
 
 import { useAuthMe } from "../../utils/useAuthMe";
 import { useApiList } from "../../utils/useApiList";
@@ -13,25 +14,42 @@ import {
   tableValue,
 } from "../../utils/tableUtils";
 
+import {
+  createEquipment,
+  uploadEquipmentImage,
+  updateEquipment,
+  deleteEquipment,
+  importEquipmentsCsv,
+  absoluteUrl,
+} from "../../utils/equipmentApi";
+
+import "./AdminEquipments.css";
+
 function formatDateTimeFallback(value) {
   if (!value) return "-";
   const d = new Date(String(value).replace(" ", "T"));
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
 }
 
+// ✅ Postgres enum values (match your CREATE TYPE)
+const CATEGORY_OPTIONS = [
+  "Cardio",
+  "Strength",
+  "Machine",
+  "Free Weight",
+  "Flexibility",
+  "Functional",
+];
+
+const DIFFICULTY_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
+
 export default function AdminEquipments() {
   const { theme } = useOutletContext();
   const t = adminThemes[theme]?.app || adminThemes.light.app;
   const isDark = theme === "dark";
-  const styles = makeStyles(t, isDark);
 
-  const { me, isAdmin } = useAuthMe();
-  const {
-    rows,
-    loading: loadingRows,
-    error,
-    reload,
-  } = useApiList("/api/v1/equipments", {
+  const { isAdmin } = useAuthMe();
+  const { rows, loading: loadingRows, error, reload } = useApiList("/api/v1/equipments", {
     authed: true,
   });
 
@@ -43,19 +61,41 @@ export default function AdminEquipments() {
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
-  // IMAGE PREVIEW MODAL
   const [previewImg, setPreviewImg] = useState(null);
 
-  // Close preview on ESC
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [importError, setImportError] = useState("");
+
+  const [equipOpen, setEquipOpen] = useState(false);
+  const [equipMode, setEquipMode] = useState("view"); // view | edit | add
+  const [activeEquip, setActiveEquip] = useState(null);
+  const [equipForm, setEquipForm] = useState(null);
+  const [equipBusy, setEquipBusy] = useState(false);
+  const [equipErr, setEquipErr] = useState("");
+
+  const [delOpen, setDelOpen] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
+
+  const [saveOpen, setSaveOpen] = useState(false);
+
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Escape") setPreviewImg(null);
+      if (e.key === "Escape") {
+        setPreviewImg(null);
+        setImportOpen(false);
+        setEquipOpen(false);
+        setDelOpen(false);
+        setSaveOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // dropdown values
+  // Filters dropdowns (based on existing rows)
   const categories = useMemo(() => {
     const set = new Set(rows.map((r) => r.category).filter(Boolean));
     return ["All", ...Array.from(set).sort()];
@@ -66,7 +106,6 @@ export default function AdminEquipments() {
     return ["All", ...Array.from(set).sort()];
   }, [rows]);
 
-  // search
   const searched = useMemo(() => {
     return globalSearch(rows, q, [
       (r) => r.equipment_id,
@@ -77,19 +116,16 @@ export default function AdminEquipments() {
     ]);
   }, [rows, q]);
 
-  // filter
   const filtered = useMemo(() => {
     return searched
       .filter((r) => (category === "All" ? true : r.category === category))
       .filter((r) => (difficulty === "All" ? true : r.difficulty === difficulty));
   }, [searched, category, difficulty]);
 
-  // reset page on filter change
   useEffect(() => {
     setPage(1);
   }, [q, category, difficulty]);
 
-  // sort mapping per-table
   const getValue = (r, key) => {
     switch (key) {
       case "equipment":
@@ -110,7 +146,6 @@ export default function AdminEquipments() {
   };
 
   const sorted = useMemo(() => sortRows(filtered, sort, getValue), [filtered, sort]);
-
   const { totalPages, safePage, pageRows, left, right } = useMemo(
     () => paginate(sorted, page, pageSize),
     [sorted, page]
@@ -124,67 +159,239 @@ export default function AdminEquipments() {
     return pills;
   }, [loadingRows, sorted.length, category, difficulty]);
 
-  const secondaryBtn = useMemo(
-    () => ({
-      ...styles.secondaryAction,
-      color: t.text,
-    }),
-    [styles.secondaryAction, t.text]
-  );
+  const openAdd = () => {
+    setEquipErr("");
+    setEquipMode("add");
+    setActiveEquip(null);
+    setEquipForm({
+      name: "",
+      category: "",
+      difficulty: "",
+      target_muscle_group: "",
+      image_url: "",
+      imageFile: null,
+    });
+    setEquipOpen(true);
+  };
+
+  const openView = (r) => {
+    setEquipErr("");
+    setEquipMode("view");
+    setActiveEquip(r);
+    setEquipForm({
+      name: r.name || "",
+      category: r.category || "",
+      difficulty: r.difficulty || "",
+      target_muscle_group: r.target_muscle_group || "",
+      image_url: r.image_url || "",
+      imageFile: null,
+    });
+    setEquipOpen(true);
+  };
+
+  const openEdit = (r) => {
+    setEquipErr("");
+    setEquipMode("edit");
+    setActiveEquip(r);
+    setEquipForm({
+      name: r.name || "",
+      category: r.category || "",
+      difficulty: r.difficulty || "",
+      target_muscle_group: r.target_muscle_group || "",
+      image_url: r.image_url || "",
+      imageFile: null,
+    });
+    setEquipOpen(true);
+  };
+
+  const askDelete = (r) => {
+    setEquipErr("");
+    setActiveEquip(r);
+    setDelOpen(true);
+  };
+
+  const doDelete = async () => {
+    if (!activeEquip) return;
+    setDelBusy(true);
+    setEquipErr("");
+    try {
+      await deleteEquipment(activeEquip.equipment_id);
+      setDelOpen(false);
+      setEquipOpen(false);
+      reload();
+    } catch (e) {
+      setEquipErr(e.message || "Delete failed.");
+    } finally {
+      setDelBusy(false);
+    }
+  };
+
+  const saveEquip = async () => {
+    if (!equipForm) return;
+
+    const name = String(equipForm.name || "").trim();
+    if (!name) {
+      setEquipErr("Name is required.");
+      return;
+    }
+
+    // Optional: enforce enum values on client too
+    const cat = String(equipForm.category || "").trim();
+    const diff = String(equipForm.difficulty || "").trim();
+    if (cat && !CATEGORY_OPTIONS.includes(cat)) {
+      setEquipErr("Invalid category.");
+      return;
+    }
+    if (diff && !DIFFICULTY_OPTIONS.includes(diff)) {
+      setEquipErr("Invalid difficulty.");
+      return;
+    }
+
+    setEquipBusy(true);
+    setEquipErr("");
+
+    try {
+      let image_url = String(equipForm.image_url || "").trim();
+
+      if (equipForm.imageFile) {
+        const up = await uploadEquipmentImage(equipForm.imageFile, "covers");
+        image_url = up.url;
+      }
+
+      const payload = {
+        name,
+        category: cat || null,
+        difficulty: diff || null,
+        target_muscle_group: String(equipForm.target_muscle_group || "").trim() || null,
+        image_url: image_url || null,
+      };
+
+      if (equipMode === "add") {
+        await createEquipment(payload);
+      } else if (equipMode === "edit") {
+        if (!activeEquip) throw new Error("No equipment selected.");
+        await updateEquipment(activeEquip.equipment_id, payload);
+      } else {
+        return;
+      }
+
+      setEquipOpen(false);
+      setSaveOpen(false);
+      reload();
+    } catch (e) {
+      setEquipErr(e.message || "Save failed.");
+    } finally {
+      setEquipBusy(false);
+    }
+  };
+
+  const openImport = () => {
+    setImportOpen(true);
+    setImportFile(null);
+    setImportResult(null);
+    setImportError("");
+  };
+
+  const doImport = async () => {
+    setImportError("");
+    setImportResult(null);
+
+    if (!importFile) {
+      setImportError("Please choose a CSV file.");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const data = await importEquipmentsCsv(importFile);
+      setImportResult(data);
+      setImportFile(null);
+      reload();
+    } catch (e) {
+      setImportError(e.message || "Import failed.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const cssVars = {
+    "--bg": t.bg,
+    "--text": t.text,
+    "--mutedText": t.mutedText,
+    "--border": t.border,
+    "--soft": t.soft,
+    "--soft2": t.soft2,
+    "--shadow": t.shadow,
+    "--main": "#d23f0b",
+    "--isDark": isDark ? 1 : 0,
+  };
+
+  const modalTitle =
+    equipMode === "add"
+      ? "Add Equipment"
+      : equipMode === "edit"
+      ? "Edit Equipment"
+      : "View Equipment";
+
+  const canEdit = isAdmin && (equipMode === "edit" || equipMode === "add");
+
+  const currentImagePreviewUrl = equipForm?.imageFile
+    ? URL.createObjectURL(equipForm.imageFile)
+    : absoluteUrl(equipForm?.image_url);
+
+  const canShowInlineTools = Boolean(equipForm?.image_url) || Boolean(equipForm?.imageFile);
 
   return (
-    <div style={styles.page}>
-      {/* HEADER ROW */}
-      <div style={styles.topRow}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <div style={styles.pageTitle}>Equipments</div>
+    <div className="ae-page" data-theme={theme} style={cssVars}>
+      <div className="ae-topRow">
+        <div className="ae-titleWrap">
+          <div className="ae-pageTitle">Equipments</div>
 
-          <div style={styles.headerPills}>
+          <div className="ae-headerPills">
             {headerPills.map((p, idx) => (
-              <span key={idx} style={idx === 0 ? styles.pill : styles.pillMuted}>
+              <span key={idx} className={idx === 0 ? "ae-pill" : "ae-pillMuted"}>
                 {p}
               </span>
             ))}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <button style={secondaryBtn} onClick={reload}>
+        <div className="ae-topActions">
+          <button className="ae-btn ae-btnSecondary" onClick={reload}>
             Reload
           </button>
         </div>
       </div>
 
-      {/* PANEL */}
-      <div style={{ padding: "0 16px", marginTop: 10 }}>
-        <div style={styles.panel}>
-          {/* TOP BAR */}
-          <div style={styles.panelTop}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      <div className="ae-panelOuter">
+        <div className="ae-panel">
+          <div className="ae-panelTop">
+            <div className="ae-leftActions">
               {isAdmin ? (
                 <>
-                  <button style={styles.primaryAction} onClick={() => alert("Wire Add modal")}>
+                  <button className="ae-btn ae-btnPrimary" onClick={openAdd}>
                     + Add Equipment
                   </button>
-                  <button style={secondaryBtn} onClick={() => alert("Wire CSV import")}>
+
+                  <button className="ae-btn ae-btnSecondary" onClick={openImport}>
                     Import CSV
                   </button>
                 </>
               ) : null}
             </div>
 
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <div style={styles.searchBox}>
+            <div className="ae-rightActions">
+              <div className="ae-searchBox">
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search equipments…"
-                  style={styles.searchInput}
+                  className="ae-searchInput"
                 />
-                <span style={styles.searchIcon}>⌕</span>
+                <span className="ae-searchIcon">⌕</span>
               </div>
 
-              <select value={category} onChange={(e) => setCategory(e.target.value)} style={styles.select}>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="ae-select">
                 {categories.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -192,7 +399,7 @@ export default function AdminEquipments() {
                 ))}
               </select>
 
-              <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} style={styles.select}>
+              <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="ae-select">
                 {difficulties.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -202,115 +409,92 @@ export default function AdminEquipments() {
             </div>
           </div>
 
-          {/* TABLE */}
-          <div style={styles.tableWrap}>
+          <div className="ae-tableWrap">
             {error ? (
-              <div style={styles.errorBox}>{error}</div>
+              <div className="ae-errorBox">{error}</div>
             ) : (
-              <table style={styles.table}>
+              <table className="ae-table">
                 <thead>
                   <tr>
-                    <th style={styles.thClickable} onClick={() => setSort((p) => toggleSort(p, "equipment"))}>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "equipment"))}>
                       Equipment{sortIndicator(sort, "equipment")}
                     </th>
-                    <th style={styles.thClickable} onClick={() => setSort((p) => toggleSort(p, "category"))}>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "category"))}>
                       Category{sortIndicator(sort, "category")}
                     </th>
-                    <th style={styles.thClickable} onClick={() => setSort((p) => toggleSort(p, "difficulty"))}>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "difficulty"))}>
                       Difficulty{sortIndicator(sort, "difficulty")}
                     </th>
-                    <th style={styles.thClickable} onClick={() => setSort((p) => toggleSort(p, "target"))}>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "target"))}>
                       Target{sortIndicator(sort, "target")}
                     </th>
-                    <th style={styles.thClickable} onClick={() => setSort((p) => toggleSort(p, "updated"))}>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "updated"))}>
                       Updated{sortIndicator(sort, "updated")}
                     </th>
-                    <th style={{ ...styles.th, textAlign: "right" }} />
+                    <th className="ae-th ae-thRight" />
                   </tr>
                 </thead>
 
                 <tbody>
                   {loadingRows ? (
                     <tr>
-                      <td style={styles.td} colSpan={6}>
+                      <td className="ae-td" colSpan={6}>
                         Loading…
                       </td>
                     </tr>
                   ) : pageRows.length === 0 ? (
                     <tr>
-                      <td style={styles.td} colSpan={6}>
+                      <td className="ae-td" colSpan={6}>
                         No results.
                       </td>
                     </tr>
                   ) : (
                     pageRows.map((r) => (
-                      <tr
-                        key={r.equipment_id}
-                        style={styles.tr}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = styles.trHover.background;
-                          e.currentTarget.style.boxShadow = styles.trHover.boxShadow || "none";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = styles.tr.background;
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
-                      >
-                        <td style={styles.td}>
-                          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                            <div style={styles.imgBox}>
+                      <tr className="ae-tr" key={r.equipment_id}>
+                        <td className="ae-td">
+                          <div className="ae-equipCell">
+                            <div className="ae-imgBox">
                               {r.image_url ? (
                                 <img
-                                  src={r.image_url}
+                                  src={absoluteUrl(r.image_url)}
                                   alt={r.name}
-                                  style={{ ...styles.img, cursor: "zoom-in" }}
+                                  className="ae-img"
                                   onClick={() =>
-                                    setPreviewImg({
-                                      src: r.image_url,
-                                      name: r.name || "equipment",
-                                    })
+                                    setPreviewImg({ src: absoluteUrl(r.image_url), name: r.name || "equipment" })
                                   }
                                   onError={(e) => {
                                     e.currentTarget.style.display = "none";
                                   }}
                                 />
                               ) : (
-                                <span style={styles.mutedTiny}>N/A</span>
+                                <span className="ae-mutedTiny">N/A</span>
                               )}
                             </div>
 
-                            <div>
-                              <div style={{ fontWeight: 950, letterSpacing: -0.2 }}>{r.name || "-"}</div>
-                              <div style={styles.mutedTiny}>ID: {r.equipment_id}</div>
+                            <div className="ae-equipMeta">
+                              <div className="ae-equipName">{r.name || "-"}</div>
+                              <div className="ae-mutedTiny">ID: {r.equipment_id}</div>
                             </div>
                           </div>
                         </td>
 
-                        <td style={styles.td}>{r.category || "-"}</td>
-                        <td style={styles.td}>{r.difficulty || "-"}</td>
-                        <td style={styles.td}>{r.target_muscle_group || "-"}</td>
-                        <td style={{ ...styles.td, ...styles.mutedCell }}>{formatDateTimeFallback(r.updated_at)}</td>
+                        <td className="ae-td">{r.category || "-"}</td>
+                        <td className="ae-td">{r.difficulty || "-"}</td>
+                        <td className="ae-td">{r.target_muscle_group || "-"}</td>
+                        <td className="ae-td ae-mutedCell">{formatDateTimeFallback(r.updated_at)}</td>
 
-                        <td style={{ ...styles.td, textAlign: "right" }}>
-                          <div style={{ display: "inline-flex", gap: 8 }}>
-                            <IconBtn title="View" style={styles.iconBtn} onClick={() => alert(`View ${r.equipment_id}`)}>
+                        <td className="ae-td ae-tdRight">
+                          <div className="ae-actionsInline">
+                            <IconBtn title="View" className="ae-iconBtn" onClick={() => openView(r)}>
                               👁
                             </IconBtn>
 
                             {isAdmin ? (
                               <>
-                                <IconBtn
-                                  title="Edit"
-                                  style={styles.iconBtn}
-                                  onClick={() => alert(`Edit ${r.equipment_id}`)}
-                                >
+                                <IconBtn title="Edit" className="ae-iconBtn" onClick={() => openEdit(r)}>
                                   ✎
                                 </IconBtn>
-                                <IconBtn
-                                  title="Delete"
-                                  style={styles.iconBtnDanger}
-                                  onClick={() => alert(`Delete ${r.equipment_id}`)}
-                                >
+                                <IconBtn title="Delete" className="ae-iconBtnDanger" onClick={() => askDelete(r)}>
                                   🗑
                                 </IconBtn>
                               </>
@@ -325,363 +509,343 @@ export default function AdminEquipments() {
             )}
           </div>
 
-          {/* PAGINATION */}
-          <div style={styles.pagerRow}>
+          <div className="ae-pagerRow">
             <button
-              style={secondaryBtn}
+              className="ae-btn ae-btnSecondary"
               disabled={safePage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               Prev
             </button>
 
-            <div style={styles.mutedSmall}>
-              Page <b style={{ color: t.text }}>{safePage}</b> of <b style={{ color: t.text }}>{totalPages}</b>
+            <div className="ae-mutedSmall">
+              Page <b className="ae-strongText">{safePage}</b> of{" "}
+              <b className="ae-strongText">{totalPages}</b>
             </div>
 
             <button
-              style={secondaryBtn}
+              className="ae-btn ae-btnSecondary"
               disabled={safePage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
               Next
             </button>
 
-            <div style={{ marginLeft: "auto" }}>
-              <span style={styles.mutedSmall}>
-                Showing <b style={{ color: t.text }}>{left}-{right}</b> of <b style={{ color: t.text }}>{sorted.length}</b>
+            <div className="ae-pagerRight">
+              <span className="ae-mutedSmall">
+                Showing <b className="ae-strongText">{left}-{right}</b> of{" "}
+                <b className="ae-strongText">{sorted.length}</b>
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* IMAGE PREVIEW MODAL */}
       {previewImg && (
-        <div style={styles.modalBackdrop} onClick={() => setPreviewImg(null)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <img src={previewImg.src} alt={previewImg.name} style={styles.modalImg} />
-
-            <div style={styles.modalActions}>
-              <a href={previewImg.src} download style={{ textDecoration: "none" }}>
-                <span style={styles.primaryAction}>Download</span>
+        <div className="ae-backdrop ae-backdropTop" onClick={() => setPreviewImg(null)}>
+          <div className="ae-modalContent" onClick={(e) => e.stopPropagation()}>
+            <img src={previewImg.src} alt={previewImg.name} className="ae-modalImg" />
+            <div className="ae-modalActions">
+              <a href={previewImg.src} download className="ae-linkReset">
+                <span className="ae-btn ae-btnPrimary">Download</span>
               </a>
-
-              <button style={styles.secondaryAction} onClick={() => setPreviewImg(null)}>
+              <button className="ae-btn ae-btnSecondary" onClick={() => setPreviewImg(null)}>
                 Close
               </button>
             </div>
-
-            <button style={styles.modalClose} onClick={() => setPreviewImg(null)}>
-              ✕
-            </button>
           </div>
         </div>
       )}
 
-      <div style={{ height: 24 }} />
+      {importOpen && (
+        <div className="ae-backdrop" onClick={() => setImportOpen(false)}>
+          <div className="ae-importModal" onClick={(e) => e.stopPropagation()}>
+            <div className="ae-modalTopRow">
+              <div className="ae-modalTitle">Import CSV</div>
+            </div>
+
+            <div className="ae-importHint">
+              Required header: <b>name</b> • Optional: category, difficulty, image_url, target_muscle_group
+            </div>
+
+            <label className="ae-fileBox">
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="ae-fileInput"
+                onChange={(e) => {
+                  setImportResult(null);
+                  setImportError("");
+                  setImportFile(e.target.files?.[0] || null);
+                }}
+              />
+              <div className="ae-fileName">{importFile ? importFile.name : "Choose CSV file"}</div>
+              <div className="ae-mutedTiny">
+                {importFile ? `${Math.round(importFile.size / 1024)} KB` : "Click to browse"}
+              </div>
+            </label>
+
+            {importError ? <div className="ae-alert ae-alertError">{importError}</div> : null}
+
+            {importResult ? (
+              <div className="ae-alert ae-alertNeutral">
+                <div className="ae-alertTitle">{importResult.message || "Import complete."}</div>
+              </div>
+            ) : null}
+
+            <div className="ae-modalFooter">
+              <button className="ae-btn ae-btnSecondary" onClick={() => setImportOpen(false)} disabled={importing}>
+                Close
+              </button>
+
+              <button className="ae-btn ae-btnPrimary" onClick={doImport} disabled={importing || !importFile}>
+                {importing ? "Importing…" : "Import"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {equipOpen && equipForm && (
+        <div className="ae-backdrop" onClick={() => setEquipOpen(false)}>
+          <div className="ae-formModal" onClick={(e) => e.stopPropagation()}>
+            <div className="ae-modalTopRow">
+              <div className="ae-modalTitle">{modalTitle}</div>
+            </div>
+
+            {equipErr ? <div className="ae-alert ae-alertError">{equipErr}</div> : null}
+
+            <div className="ae-formGrid">
+              <Field
+                label="Name"
+                value={equipForm.name}
+                disabled={!canEdit}
+                onChange={(v) => setEquipForm((p) => ({ ...p, name: v }))}
+              />
+
+              {/* ✅ ENUM: Category dropdown */}
+              <label className="ae-field">
+                <div className="ae-fieldLabel">Category</div>
+                <select
+                  value={equipForm.category || ""}
+                  disabled={!canEdit}
+                  className={`ae-select ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
+                  onChange={(e) => setEquipForm((p) => ({ ...p, category: e.target.value }))}
+                  style={{ height: 42 }}
+                >
+                  <option value="">—</option>
+                  {CATEGORY_OPTIONS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {/* ✅ ENUM: Difficulty dropdown */}
+              <label className="ae-field">
+                <div className="ae-fieldLabel">Difficulty</div>
+                <select
+                  value={equipForm.difficulty || ""}
+                  disabled={!canEdit}
+                  className={`ae-select ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
+                  onChange={(e) => setEquipForm((p) => ({ ...p, difficulty: e.target.value }))}
+                  style={{ height: 42 }}
+                >
+                  <option value="">—</option>
+                  {DIFFICULTY_OPTIONS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <Field
+                label="Target muscle group"
+                value={equipForm.target_muscle_group}
+                disabled={!canEdit}
+                onChange={(v) => setEquipForm((p) => ({ ...p, target_muscle_group: v }))}
+              />
+
+              <label className="ae-field ae-fieldFull">
+                <div className="ae-fieldLabel">Image File</div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={!canEdit}
+                  className={`ae-fieldInput ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
+                  style={{ paddingTop: 9 }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    setEquipForm((p) => ({ ...p, imageFile: f }));
+                  }}
+                />
+              </label>
+
+              <Field
+                label="Image URL (optional)"
+                value={equipForm.image_url}
+                disabled={!canEdit}
+                onChange={(v) => setEquipForm((p) => ({ ...p, image_url: v }))}
+                full
+              />
+            </div>
+
+            {canShowInlineTools ? (
+              <div className="ae-inlineTools">
+                <button
+                  className="ae-btn ae-btnSecondary"
+                  onClick={() =>
+                    setPreviewImg({ src: currentImagePreviewUrl, name: equipForm.name || "equipment" })
+                  }
+                >
+                  Preview image
+                </button>
+
+                {equipForm.image_url ? (
+                  <a href={absoluteUrl(equipForm.image_url)} download className="ae-linkReset">
+                    <span className="ae-btn ae-btnPrimary">Download image</span>
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="ae-modalFooter">
+              {equipMode === "view" ? (
+                isAdmin ? (
+                  <>
+                    <button className="ae-btn ae-btnSecondary" onClick={() => askDelete(activeEquip)}>
+                      Delete
+                    </button>
+                    <button className="ae-btn ae-btnPrimary" onClick={() => setEquipMode("edit")}>
+                      Edit
+                    </button>
+                  </>
+                ) : (
+                  <button className="ae-btn ae-btnSecondary" onClick={() => setEquipOpen(false)}>
+                    Close
+                  </button>
+                )
+              ) : (
+                <>
+                  <button
+                    className="ae-btn ae-btnSecondary"
+                    onClick={() => {
+                      setEquipErr("");
+                      setSaveOpen(false);
+                      if (equipMode === "add") setEquipOpen(false);
+                      else setEquipMode("view");
+                    }}
+                    disabled={equipBusy}
+                  >
+                    Cancel
+                  </button>
+
+                  <button className="ae-btn ae-btnPrimary" onClick={() => setSaveOpen(true)} disabled={equipBusy}>
+                    {equipBusy ? "Saving…" : "Save"}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {saveOpen && equipOpen && equipForm && (
+        <div className="ae-backdrop ae-backdropTop" onClick={() => setSaveOpen(false)}>
+          <div className="ae-confirmModalFancy" onClick={(e) => e.stopPropagation()}>
+            <div className="ae-confirmHeader">
+              <div className="ae-confirmIconWrap" aria-hidden="true">
+                ✅
+              </div>
+              <div className="ae-confirmHeaderText">
+                <div className="ae-confirmTitle">
+                  {equipMode === "add" ? "Create equipment?" : "Confirm changes?"}
+                </div>
+              </div>
+
+              <button className="ae-modalClose" onClick={() => setSaveOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            {equipErr ? <div className="ae-alert ae-alertError">{equipErr}</div> : null}
+
+            <div className="ae-confirmActions">
+              <button className="ae-btn ae-btnSecondary" onClick={() => setSaveOpen(false)} disabled={equipBusy}>
+                Cancel
+              </button>
+
+              <button className="ae-btn ae-btnPrimary" onClick={saveEquip} disabled={equipBusy}>
+                {equipBusy ? "Saving…" : equipMode === "add" ? "Yes, create" : "Yes, save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {delOpen && activeEquip && (
+        <div className="ae-backdrop ae-backdropTop" onClick={() => setDelOpen(false)}>
+          <div className="ae-confirmModalFancy" onClick={(e) => e.stopPropagation()}>
+            <div className="ae-confirmHeader">
+              <div className="ae-confirmIconWrap" aria-hidden="true">
+                ⚠️
+              </div>
+
+              <div className="ae-confirmHeaderText">
+                <div className="ae-confirmTitle">Delete equipment?</div>
+                <div className="ae-mutedTiny">
+                  This will permanently remove <b className="ae-strongText">{activeEquip.name}</b>. This can’t be undone.
+                </div>
+              </div>
+
+              <button className="ae-modalClose" onClick={() => setDelOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            {equipErr ? <div className="ae-alert ae-alertError">{equipErr}</div> : null}
+
+            <div className="ae-confirmActions">
+              <button className="ae-btn ae-btnSecondary" onClick={() => setDelOpen(false)} disabled={delBusy}>
+                Keep it
+              </button>
+
+              <button className="ae-btn ae-btnDanger" onClick={doDelete} disabled={delBusy}>
+                <span className="ae-btnIcon" aria-hidden="true">
+                  🗑
+                </span>
+                {delBusy ? "Deleting…" : "Yes, delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="ae-spacer" />
     </div>
   );
 }
 
-function IconBtn({ children, title, style, onClick }) {
+function IconBtn({ children, title, className, onClick }) {
   return (
-    <button type="button" title={title} onClick={onClick} style={style}>
+    <button type="button" title={title} onClick={onClick} className={className}>
       {children}
     </button>
   );
 }
 
-function makeStyles(t, isDark) {
-  return {
-    page: { width: "100%", background: t.bg, color: t.text },
-
-    topRow: {
-      padding: "16px 16px 0",
-      display: "flex",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      gap: 16,
-      flexWrap: "wrap",
-    },
-
-    pageTitle: { fontSize: 26, fontWeight: 950, letterSpacing: -0.2 },
-
-    headerPills: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
-
-    pill: {
-      padding: "8px 10px",
-      borderRadius: 999,
-      border: `1px solid ${t.border}`,
-      background: t.soft,
-      color: t.text,
-      fontWeight: 950,
-      fontSize: 12,
-    },
-
-    pillMuted: {
-      padding: "8px 10px",
-      borderRadius: 999,
-      border: `1px solid ${t.border}`,
-      background: t.soft2,
-      color: t.mutedText,
-      fontWeight: 900,
-      fontSize: 12,
-    },
-
-    mutedSmall: { color: t.mutedText, fontWeight: 700, fontSize: 13 },
-    mutedTiny: { color: t.mutedText, fontWeight: 800, fontSize: 12, marginTop: 3 },
-
-    panel: {
-      border: `1px solid ${t.border}`,
-      borderRadius: 14,
-      background: t.soft2,
-      boxShadow: t.shadow,
-      overflow: "hidden",
-    },
-
-    panelTop: {
-      padding: 14,
-      borderBottom: `1px solid ${t.border}`,
-      background: t.soft,
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 12,
-      flexWrap: "wrap",
-    },
-
-    searchBox: { position: "relative", minWidth: 240, maxWidth: 420, flex: 1 },
-
-    searchInput: {
-      width: "100%",
-      height: 42,
-      borderRadius: 12,
-      border: `1px solid ${t.border}`,
-      background: t.soft2,
-      color: t.text,
-      padding: "0 44px 0 12px",
-      outline: "none",
-      fontWeight: 800,
-    },
-
-    searchIcon: {
-      position: "absolute",
-      right: 12,
-      top: 0,
-      bottom: 0,
-      display: "grid",
-      placeItems: "center",
-      opacity: 0.85,
-      color: t.mutedText,
-    },
-
-    select: {
-      height: 42,
-      padding: "0 12px",
-      borderRadius: 12,
-      border: `1px solid ${t.border}`,
-      background: t.soft2,
-      color: t.text,
-      fontWeight: 900,
-      outline: "none",
-      cursor: "pointer",
-      minWidth: 160,
-    },
-
-    tableWrap: { width: "100%", overflowX: "auto" },
-
-    table: {
-      width: "100%",
-      borderCollapse: "separate",
-      borderSpacing: 0,
-      minWidth: 980,
-    },
-
-    th: {
-      textAlign: "left",
-      padding: "14px 14px",
-      fontSize: 12,
-      fontWeight: 950,
-      letterSpacing: 0.6,
-      textTransform: "uppercase",
-      color: t.mutedText,
-      borderBottom: `1px solid ${t.border}`,
-      background: t.soft2,
-      position: "sticky",
-      top: 0,
-      zIndex: 1,
-    },
-
-    thClickable: {
-      textAlign: "left",
-      padding: "14px 14px",
-      fontSize: 12,
-      fontWeight: 950,
-      letterSpacing: 0.6,
-      textTransform: "uppercase",
-      color: t.mutedText,
-      borderBottom: `1px solid ${t.border}`,
-      background: t.soft2,
-      position: "sticky",
-      top: 0,
-      zIndex: 1,
-      cursor: "pointer",
-      userSelect: "none",
-      transition: "background 140ms ease, color 140ms ease",
-    },
-
-    tr: { background: t.soft2, transition: "background 160ms ease, box-shadow 160ms ease" },
-
-    // orangey hover + left bar
-    trHover: {
-      background: isDark ? "rgba(210,63,11,0.10)" : "rgba(210,63,11,0.06)",
-      boxShadow: "inset 4px 0 0 rgba(210,63,11,0.95)",
-    },
-
-    td: {
-      padding: "14px 14px",
-      borderBottom: `1px solid ${t.border}`,
-      verticalAlign: "middle",
-      color: t.text,
-      fontWeight: 800,
-      fontSize: 14,
-      whiteSpace: "nowrap",
-    },
-
-    mutedCell: { color: t.mutedText, fontWeight: 900, fontSize: 13, whiteSpace: "nowrap" },
-
-    imgBox: {
-      width: 46,
-      height: 46,
-      borderRadius: 12,
-      overflow: "hidden",
-      background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-      display: "grid",
-      placeItems: "center",
-      border: `1px solid ${t.border}`,
-      flex: "0 0 auto",
-    },
-
-    img: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
-
-    errorBox: { padding: 14, color: t.text, fontWeight: 900 },
-
-    pagerRow: {
-      padding: 14,
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      flexWrap: "wrap",
-      background: t.soft,
-      borderTop: `1px solid ${t.border}`,
-    },
-
-    primaryAction: {
-      height: 42,
-      padding: "0 16px",
-      borderRadius: 12,
-      border: `1px solid ${t.border}`,
-      background: `linear-gradient(135deg, ${MAIN}, #ff7a45)`,
-      color: "#fff",
-      fontWeight: 900,
-      cursor: "pointer",
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    secondaryAction: {
-      height: 42,
-      padding: "0 14px",
-      borderRadius: 12,
-      border: `1px solid ${t.border}`,
-      background: t.soft2,
-      color: t.text,
-      fontWeight: 900,
-      cursor: "pointer",
-    },
-
-    iconBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      border: `1px solid ${t.border}`,
-      background: t.soft,
-      color: t.text,
-      fontWeight: 950,
-      cursor: "pointer",
-      display: "grid",
-      placeItems: "center",
-    },
-
-    iconBtnDanger: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      border: `1px solid ${isDark ? "rgba(255,80,80,0.35)" : "rgba(220,0,0,0.25)"}`,
-      background: t.soft,
-      color: t.text,
-      fontWeight: 950,
-      cursor: "pointer",
-      display: "grid",
-      placeItems: "center",
-    },
-
-    // MODAL
-    modalBackdrop: {
-      position: "fixed",
-      inset: 0,
-      background: "rgba(0,0,0,0.65)",
-      display: "grid",
-      placeItems: "center",
-      zIndex: 9999,
-      padding: 16,
-    },
-
-    modalContent: {
-      position: "relative",
-      maxWidth: "92vw",
-      maxHeight: "92vh",
-      background: t.soft,
-      borderRadius: 16,
-      padding: 16,
-      boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-      border: `1px solid ${t.border}`,
-    },
-
-    modalImg: {
-      maxWidth: "86vw",
-      maxHeight: "70vh",
-      objectFit: "contain",
-      display: "block",
-      borderRadius: 12,
-      background: t.soft2,
-      border: `1px solid ${t.border}`,
-    },
-
-    modalActions: {
-      marginTop: 14,
-      display: "flex",
-      gap: 10,
-      justifyContent: "flex-end",
-      flexWrap: "wrap",
-    },
-
-    modalClose: {
-      position: "absolute",
-      top: 10,
-      right: 10,
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      border: `1px solid ${t.border}`,
-      background: t.soft2,
-      color: t.text,
-      fontWeight: 900,
-      cursor: "pointer",
-      display: "grid",
-      placeItems: "center",
-    },
-  };
+function Field({ label, value, onChange, disabled, full }) {
+  return (
+    <label className={`ae-field ${full ? "ae-fieldFull" : ""}`}>
+      <div className="ae-fieldLabel">{label}</div>
+      <input
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={`ae-fieldInput ${disabled ? "ae-fieldInputDisabled" : ""}`}
+      />
+    </label>
+  );
 }
