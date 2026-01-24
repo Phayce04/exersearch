@@ -16,6 +16,8 @@ import OwnerLayout from "./pages/owner/OwnerLayout";
 import { getUserRole } from "./utils/auth";
 import AdminEquipments from "./pages/admin/AdminEquipments";
 import AdminAmenities from "./pages/admin/AdminAmenities"; 
+import AdminGyms from "./pages/admin/AdminGyms"; 
+import "leaflet/dist/leaflet.css";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -57,6 +59,7 @@ function App() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="equipments" element={<AdminEquipments />} /> {/* ✅ relative */}
                 <Route path="amenities" element={<AdminAmenities />} />
+                <Route path="gyms" element={<AdminGyms />} />
 
       </Route>
 

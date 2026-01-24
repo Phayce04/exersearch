@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Http\Resources\GymResource;
 use App\Http\Resources\EquipmentResource;
 use App\Http\Resources\AmenityResource;
-use Illuminate\Support\Facades\Auth;
 
 class GymController extends Controller
 {
@@ -15,7 +14,6 @@ class GymController extends Controller
     public function index(Request $request)
     {
         $query = Gym::with(['owner', 'equipments', 'amenities']);
-
 
         // === Gym-level filters ===
         if ($request->has('gym_type')) {
@@ -60,7 +58,6 @@ class GymController extends Controller
             $query->whereHas('equipments', fn($q) => $q->where('difficulty', $request->equipment_difficulty));
         }
 
-        // === Return paginated collection using GymResource ===
         return GymResource::collection($query->paginate(10));
     }
 
@@ -92,8 +89,9 @@ class GymController extends Controller
     {
         $gym = Gym::findOrFail($gym_id);
         $equipment = $gym->equipments()
-                         ->where('equipments.equipment_id', $equipment_id)
-                         ->firstOrFail();
+            ->where('equipments.equipment_id', $equipment_id)
+            ->firstOrFail();
+
         return new EquipmentResource($equipment);
     }
 
@@ -115,36 +113,131 @@ class GymController extends Controller
     {
         $gym = Gym::findOrFail($gym_id);
         $amenity = $gym->amenities()
-                       ->where('amenities.amenity_id', $amenity_id)
-                       ->firstOrFail();
+            ->where('amenities.amenity_id', $amenity_id)
+            ->firstOrFail();
+
         return new AmenityResource($amenity);
     }
 
-    public function update(Request $request, $gym_id)
+    // ✅ OPTIONAL: GET /api/my-gyms
+    public function myGyms(Request $request)
     {
-        $owner = auth()->user(); // current logged-in user
+        $user = auth()->user();
 
-        if (!$owner || $owner->role !== 'owner') {
+        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) {
             abort(403, 'Unauthorized');
         }
 
-        $gym = Gym::where('gym_id', $gym_id)
-            ->where('owner_id', $owner->user_id) 
-            ->firstOrFail();
+        $query = Gym::with(['owner', 'equipments', 'amenities']);
+
+        // owners see their own
+        if ($user->role !== 'superadmin') {
+            $query->where('owner_id', $user->user_id);
+        }
+
+        // superadmin sees all gyms
+        return GymResource::collection($query->paginate(10));
+    }
+
+    // ✅ POST /api/gyms
+    public function store(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) {
+            abort(403, 'Unauthorized');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+
             'address' => 'required|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+
+            'daily_price' => 'nullable|numeric|min:0',
+            'monthly_price' => 'required|numeric|min:0',
+            'annual_price' => 'nullable|numeric|min:0',
+
+            'opening_time' => 'nullable',
+            'closing_time' => 'nullable',
+
+            'gym_type' => 'nullable|string|max:50',
+
             'contact_number' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'website' => 'nullable|url|max:255',
             'facebook_page' => 'nullable|url|max:255',
             'instagram_page' => 'nullable|url|max:255',
+
+            'main_image_url' => 'nullable|string',
+            'gallery_urls' => 'nullable|array',
+            'gallery_urls.*' => 'nullable|string',
+
+            'has_personal_trainers' => 'boolean',
+            'has_classes' => 'boolean',
+            'is_24_hours' => 'boolean',
+            'is_airconditioned' => 'boolean',
+        ]);
+
+        // ✅ keep: creator becomes owner_id
+        $validated['owner_id'] = $user->user_id;
+
+        $gym = Gym::create($validated);
+
+        return response()->json([
+            'message' => 'Gym created.',
+            'data' => new GymResource($gym->load(['owner', 'equipments', 'amenities'])),
+        ], 201);
+    }
+
+    // ✅ PATCH/PUT /api/gyms/{gym}
+    public function update(Request $request, $gym_id)
+    {
+        $user = auth()->user();
+
+        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) {
+            abort(403, 'Unauthorized');
+        }
+
+        // ✅ superadmin can edit any gym
+        $query = Gym::where('gym_id', $gym_id);
+
+        // ✅ owner can only edit their own gyms
+        if ($user->role !== 'superadmin') {
+            $query->where('owner_id', $user->user_id);
+        }
+
+        $gym = $query->firstOrFail();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+
+            'address' => 'required|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+
+            'contact_number' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'website' => 'nullable|url|max:255',
+            'facebook_page' => 'nullable|url|max:255',
+            'instagram_page' => 'nullable|url|max:255',
+
             'daily_price' => 'nullable|numeric|min:0',
             'monthly_price' => 'required|numeric|min:0',
             'annual_price' => 'nullable|numeric|min:0',
+
             'opening_time' => 'nullable',
             'closing_time' => 'nullable',
+
+            'gym_type' => 'nullable|string|max:50',
+
+            'main_image_url' => 'nullable|string',
+            'gallery_urls' => 'nullable|array',
+            'gallery_urls.*' => 'nullable|string',
+
             'has_personal_trainers' => 'boolean',
             'has_classes' => 'boolean',
             'is_24_hours' => 'boolean',
@@ -153,8 +246,32 @@ class GymController extends Controller
 
         $gym->update($validated);
 
-        return back()->with('success', 'Gym updated successfully');
+        return response()->json([
+            'message' => 'Gym updated.',
+            'data' => new GymResource($gym->load(['owner', 'equipments', 'amenities'])),
+        ]);
     }
 
+    // ✅ DELETE /api/gyms/{gym}
+    public function destroy($gym_id)
+    {
+        $user = auth()->user();
 
+        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) {
+            abort(403, 'Unauthorized');
+        }
+
+        $query = Gym::where('gym_id', $gym_id);
+
+        if ($user->role !== 'superadmin') {
+            $query->where('owner_id', $user->user_id);
+        }
+
+        $gym = $query->firstOrFail();
+        $gym->delete();
+
+        return response()->json([
+            'message' => 'Gym deleted.',
+        ]);
+    }
 }
