@@ -7,14 +7,19 @@ import { MAIN, adminThemes } from "../AdminLayout";
 import { SidebarHeader } from "./components/SidebarHeader";
 import { BarChart } from "./icons/BarChart";
 import { Book } from "./icons/Book";
-import { Calendar } from "./icons/Calendar";
 import { Diamond } from "./icons/Diamond";
 import { Service } from "./icons/Service";
 import { Typography } from "./components/Typography";
 
+// Icons
+import { MapPin } from "./icons/MapPin";
+import { Dumbbell } from "./icons/Dumbbell";
+import { Users } from "./icons/Users";
+import { Sparkles } from "./icons/Sparkles";
+
 type Props = {
   theme: Theme;
-  setTheme: React.Dispatch<React.SetStateAction<Theme>>; // kept for compatibility
+  setTheme: React.Dispatch<React.SetStateAction<Theme>>;
 
   collapsed: boolean;
   setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,8 +39,11 @@ const hexToRgba = (hex: string, alpha: number) => {
 };
 
 const isPathActive = (pathname: string, targets: string[]) => {
-  return targets.some((t) => (t === "/" ? pathname === "/" : pathname === t || pathname.startsWith(t + "/")));
+  return targets.some((t) =>
+    t === "/" ? pathname === "/" : pathname === t || pathname.startsWith(t + "/")
+  );
 };
+const rtl = false;
 
 const AdminSidebar: React.FC<Props> = ({
   theme,
@@ -46,14 +54,11 @@ const AdminSidebar: React.FC<Props> = ({
   broken,
   setBroken,
 }) => {
-  const rtl = false;
-
   const navigate = useNavigate();
   const location = useLocation();
 
   const isDark = theme === "dark";
   const t = adminThemes[theme].app;
-
   const hoverBg = isDark ? hexToRgba(MAIN, 0.22) : hexToRgba(MAIN, 0.12);
 
   const go = (path: string) => {
@@ -90,13 +95,12 @@ const AdminSidebar: React.FC<Props> = ({
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", direction: rtl ? "rtl" : "ltr", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       <Sidebar
         collapsed={collapsed}
         toggled={toggled}
         onBackdropClick={() => setToggled(false)}
         onBreakPoint={setBroken}
-        rtl={rtl}
         breakPoint="md"
         backgroundColor={t.bg}
         rootStyles={{
@@ -106,14 +110,19 @@ const AdminSidebar: React.FC<Props> = ({
           borderRight: `1px solid ${t.border}`,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-          {/* Brand (still clickable if you want) */}
+        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          {/* Brand */}
           <div
             onClick={() => setCollapsed((v) => !v)}
-            style={{ cursor: "pointer", userSelect: "none", paddingTop: 16, paddingBottom: 12 }}
+            style={{
+              cursor: "pointer",
+              userSelect: "none",
+              paddingTop: 16,
+              paddingBottom: 12,
+            }}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <SidebarHeader rtl={rtl} style={{ marginBottom: 12, marginTop: 0 }} />
+        <SidebarHeader rtl={rtl} style={{ marginBottom: 12, marginTop: 0 }} />
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
@@ -121,7 +130,11 @@ const AdminSidebar: React.FC<Props> = ({
               <Typography
                 variant="body2"
                 fontWeight={700}
-                style={{ opacity: collapsed ? 0 : 0.75, letterSpacing: "0.5px", color: t.mutedText }}
+                style={{
+                  opacity: collapsed ? 0 : 0.75,
+                  letterSpacing: "0.5px",
+                  color: t.mutedText,
+                }}
               >
                 Admin
               </Typography>
@@ -131,7 +144,11 @@ const AdminSidebar: React.FC<Props> = ({
               <MenuItem
                 icon={<BarChart />}
                 onClick={() => go("/admin/dashboard")}
-                style={isPathActive(location.pathname, ["/admin/dashboard"]) ? activeButtonStyle : undefined}
+                style={
+                  isPathActive(location.pathname, ["/admin/dashboard"])
+                    ? activeButtonStyle
+                    : undefined
+                }
               >
                 Dashboard
               </MenuItem>
@@ -139,69 +156,114 @@ const AdminSidebar: React.FC<Props> = ({
               <MenuItem
                 icon={<Service />}
                 onClick={() => go("/admin/owner-applications")}
-                style={isPathActive(location.pathname, ["/admin/owner-applications"]) ? activeButtonStyle : undefined}
+                style={
+                  isPathActive(location.pathname, ["/admin/owner-applications"])
+                    ? activeButtonStyle
+                    : undefined
+                }
               >
                 Owner Applications
               </MenuItem>
 
               <SubMenu label="Manage Data" icon={<Diamond />}>
                 <MenuItem
+                  icon={<Dumbbell />}
                   onClick={() => go("/admin/gyms")}
-                  style={isPathActive(location.pathname, ["/admin/gyms"]) ? activeButtonStyle : undefined}
+                  style={
+                    isPathActive(location.pathname, ["/admin/gyms"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
                 >
                   Gyms
                 </MenuItem>
+
                 <MenuItem
+                  icon={<Sparkles />}
                   onClick={() => go("/admin/equipments")}
-                  style={isPathActive(location.pathname, ["/admin/equipments"]) ? activeButtonStyle : undefined}
+                  style={
+                    isPathActive(location.pathname, ["/admin/equipments"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
                 >
                   Equipments
                 </MenuItem>
+
                 <MenuItem
+                  icon={<Sparkles />}
                   onClick={() => go("/admin/amenities")}
-                  style={isPathActive(location.pathname, ["/admin/amenities"]) ? activeButtonStyle : undefined}
+                  style={
+                    isPathActive(location.pathname, ["/admin/amenities"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
                 >
                   Amenities
                 </MenuItem>
+
                 <MenuItem
+                  icon={<Users />}
                   onClick={() => go("/admin/users")}
-                  style={isPathActive(location.pathname, ["/admin/users"]) ? activeButtonStyle : undefined}
+                  style={
+                    isPathActive(location.pathname, ["/admin/users"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
                 >
                   Users
                 </MenuItem>
               </SubMenu>
 
+              {/* Extra */}
               <div style={{ padding: "0 24px", marginTop: 24, marginBottom: 8 }}>
                 <Typography
                   variant="body2"
                   fontWeight={700}
-                  style={{ opacity: collapsed ? 0 : 0.75, letterSpacing: "0.5px", color: t.mutedText }}
+                  style={{
+                    opacity: collapsed ? 0 : 0.75,
+                    letterSpacing: "0.5px",
+                    color: t.mutedText,
+                  }}
                 >
                   Extra
                 </Typography>
               </div>
 
               <MenuItem
-                icon={<Calendar />}
-                onClick={() => go("/admin/calendar")}
-                style={isPathActive(location.pathname, ["/admin/calendar"]) ? activeButtonStyle : undefined}
+                icon={<MapPin />}
+                onClick={() => go("/admin/map")}
+                style={
+                  isPathActive(location.pathname, ["/admin/map"])
+                    ? activeButtonStyle
+                    : undefined
+                }
               >
-                Calendar
+                Gyms Map
               </MenuItem>
 
               <MenuItem
                 icon={<Book />}
                 onClick={() => go("/admin/docs")}
-                style={isPathActive(location.pathname, ["/admin/docs"]) ? activeButtonStyle : undefined}
+                style={
+                  isPathActive(location.pathname, ["/admin/docs"])
+                    ? activeButtonStyle
+                    : undefined
+                }
               >
                 Documentation
               </MenuItem>
             </Menu>
           </div>
 
-          {/* Optional mobile button (you can delete; burger already controls mobile overlay) */}
           {broken && (
-            <div style={{ padding: collapsed ? "10px 10px" : "12px 14px", borderTop: `1px solid ${t.border}`, background: t.soft2 }}>
+            <div
+              style={{
+                padding: collapsed ? "10px" : "12px 14px",
+                borderTop: `1px solid ${t.border}`,
+                background: t.soft2,
+              }}
+            >
               <button
                 onClick={() => setToggled((v) => !v)}
                 style={{

@@ -12,7 +12,7 @@ class MeController extends Controller
 
         // Load role-specific profile
         switch ($user->role) {
-            case 'admin':
+            case 'superadmin':
                 $user->load('adminProfile');
                 break;
 

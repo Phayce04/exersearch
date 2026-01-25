@@ -10,34 +10,72 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
+    protected $table = 'users';
     protected $primaryKey = 'user_id';
     public $timestamps = true;
 
-    // Mass assignable attributes
+    /*
+    |--------------------------------------------------------------------------
+    | Mass Assignment
+    |--------------------------------------------------------------------------
+    | Only columns that actually exist in `users` table
+    */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',          // 'user', 'owner', 'superadmin'
-        'age',           // gym-goer
-        'weight',        // gym-goer
-        'height',        // gym-goer
-        'activity_level',// gym-goer
-        'address',       // gym-goer
+        'role', // user | owner | admin | superadmin (admin handled via middleware)
     ];
 
-    // Hidden attributes
+    /*
+    |--------------------------------------------------------------------------
+    | Hidden Attributes
+    |--------------------------------------------------------------------------
+    */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    // Attribute casting
+    /*
+    |--------------------------------------------------------------------------
+    | Casts
+    |--------------------------------------------------------------------------
+    */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Profiles (role-specific)
+    |--------------------------------------------------------------------------
+    */
+
+    // Regular gym user profile
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class, 'user_id', 'user_id');
+    }
+
+    // Owner profile
+    public function ownerProfile()
+    {
+        return $this->hasOne(OwnerProfile::class, 'user_id', 'user_id');
+    }
+
+    // Admin profile
+    public function adminProfile()
+    {
+        return $this->hasOne(AdminProfile::class, 'user_id', 'user_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Preferences
+    |--------------------------------------------------------------------------
+    */
 
     public function preference()
     {
@@ -64,23 +102,33 @@ class User extends Authenticatable
         );
     }
 
-    public function ownerProfile()
+    /*
+    |--------------------------------------------------------------------------
+    | Owner Relations
+    |--------------------------------------------------------------------------
+    */
+
+    public function gyms()
     {
-        return $this->hasOne(OwnerProfile::class, 'user_id', 'user_id');
+        return $this->hasMany(Gym::class, 'owner_id', 'user_id');
     }
 
-    public function adminProfile()
+    public function gymOwnerApplication()
     {
-        return $this->hasOne(AdminProfile::class, 'user_id', 'user_id');
+        return $this->hasOne(GymOwnerApplication::class, 'user_id', 'user_id');
     }
 
-    public function profile()
+    /*
+    |--------------------------------------------------------------------------
+    | Role Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    public function isGymUser(): bool
     {
-        return $this->hasOne(UserProfile::class, 'user_id', 'user_id');
+        return $this->role === 'user';
     }
 
-
-    
     public function isOwner(): bool
     {
         return $this->role === 'owner';
@@ -88,16 +136,11 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
+        return in_array($this->role, ['admin', 'superadmin']);
+    }
+
+    public function isSuperAdmin(): bool
+    {
         return $this->role === 'superadmin';
     }
-
-    public function isGymUser(): bool
-    {
-        return $this->role === 'user';
-    }
-    public function gymOwnerApplication()
-{
-    return $this->hasOne(GymOwnerApplication::class, 'user_id', 'user_id');
-}
-
 }

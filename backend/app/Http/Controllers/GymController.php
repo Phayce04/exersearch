@@ -274,4 +274,34 @@ class GymController extends Controller
             'message' => 'Gym deleted.',
         ]);
     }
+public function mapGyms(Request $request)
+{
+    $validated = $request->validate([
+        'south' => 'required|numeric',
+        'west'  => 'required|numeric',
+        'north' => 'required|numeric',
+        'east'  => 'required|numeric',
+    ]);
+
+    // Keep it LIGHT for the map (no relations)
+    $q = Gym::query()
+        ->select(['gym_id', 'name', 'address', 'latitude', 'longitude', 'owner_id'])
+        ->whereNotNull('latitude')
+        ->whereNotNull('longitude')
+        ->whereBetween('latitude', [$validated['south'], $validated['north']])
+        ->whereBetween('longitude', [$validated['west'], $validated['east']])
+        ->orderBy('name');
+
+
+
+    $rows = $q->get();
+
+    return response()->json([
+        'meta' => [
+            'count' => $rows->count(),
+            'bbox' => $validated,
+        ],
+        'data' => $rows,
+    ]);
+}
 }

@@ -18,6 +18,8 @@ import AdminEquipments from "./pages/admin/AdminEquipments";
 import AdminAmenities from "./pages/admin/AdminAmenities"; 
 import AdminGyms from "./pages/admin/AdminGyms"; 
 import "leaflet/dist/leaflet.css";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -60,7 +62,8 @@ function App() {
         <Route path="equipments" element={<AdminEquipments />} /> {/* ✅ relative */}
                 <Route path="amenities" element={<AdminAmenities />} />
                 <Route path="gyms" element={<AdminGyms />} />
-
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="map" element={<AdminPasigGymsMap />}/>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

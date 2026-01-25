@@ -20,62 +20,37 @@ use App\Http\Controllers\UserPreferredAmenityController;
 use App\Http\Controllers\UserPreferredEquipmentController;
 use App\Http\Controllers\EquipmentImportController;
 
-use App\Http\Resources\GymOwnerResource;
-use App\Models\User;
+use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminOwnerController;
 
 Route::prefix('v1')->group(function () {
 
-    // Auth
+    // auth
     Route::post('/auth/login', [UserAuthController::class, 'login']);
     Route::post('/auth/register', [UserAuthController::class, 'register']);
 
-    // Public data
+    // public
     Route::get('/gyms', [GymController::class, 'index']);
-    Route::get('/gyms/{gym}', [GymController::class, 'show']);
-    Route::get('/gyms/{gym}/equipments', [GymController::class, 'equipments']);
-    Route::get('/gyms/{gym}/equipments/{equipment}', [GymController::class, 'equipmentDetail']);
-    Route::get('/gyms/{gym}/amenities', [GymController::class, 'amenities']);
-    Route::get('/gyms/{gym}/amenities/{amenity}', [GymController::class, 'amenityDetail']);
+
+    // ✅ IMPORTANT: constrain {gym} so /gyms/map won't match this
+    Route::get('/gyms/{gym}', [GymController::class, 'show'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/equipments', [GymController::class, 'equipments'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/equipments/{equipment}', [GymController::class, 'equipmentDetail'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/amenities', [GymController::class, 'amenities'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/amenities/{amenity}', [GymController::class, 'amenityDetail'])->whereNumber('gym');
 
     Route::get('/equipments', [EquipmentController::class, 'index']);
-    Route::get('/equipments/{id}', [EquipmentController::class, 'show']);
+    Route::get('/equipments/{id}', [EquipmentController::class, 'show'])->whereNumber('id');
 
     Route::get('/amenities', [AmenityController::class, 'index']);
-    Route::get('/amenities/{id}', [AmenityController::class, 'show']);
+    Route::get('/amenities/{id}', [AmenityController::class, 'show'])->whereNumber('id');
 
     Route::get('/gym-equipments', [GymEquipmentController::class, 'index']);
     Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
-    Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show']);
+    Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show'])->whereNumber('id');
 
-    // Admin
-    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-
-        Route::post('/equipments', [EquipmentController::class, 'store']);
-        Route::put('/equipments/{id}', [EquipmentController::class, 'update']);
-        Route::patch('/equipments/{id}', [EquipmentController::class, 'update']);
-        Route::delete('/equipments/{id}', [EquipmentController::class, 'destroy']);
-        Route::post('/equipments/import-csv', [EquipmentImportController::class, 'import']);
-
-        Route::post('/amenities', [AmenityController::class, 'store']);
-        Route::put('/amenities/{id}', [AmenityController::class, 'update']);
-        Route::patch('/amenities/{id}', [AmenityController::class, 'update']);
-        Route::delete('/amenities/{id}', [AmenityController::class, 'destroy']);
-
-        Route::post('/gyms', [GymController::class, 'store']);
-        Route::put('/gyms/{gym}', [GymController::class, 'update']);
-        Route::patch('/gyms/{gym}', [GymController::class, 'update']);
-        Route::delete('/gyms/{gym}', [GymController::class, 'destroy']);
-    });
-
-    // Authenticated
+    // authenticated
     Route::middleware('auth:sanctum')->group(function () {
-
-        Route::get('/gyms/recommend', [GymRecommendationController::class, 'index']);
-        Route::post('/gym-interactions', [GymInteractionController::class, 'store']);
-
-        Route::post('/apply-owner', [GymOwnerApplicationController::class, 'apply']);
-        Route::post('/approve-owner/{id}', [GymOwnerApplicationController::class, 'approve'])
-            ->middleware('admin');
 
         Route::get('/me', MeController::class);
 
@@ -85,11 +60,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/media/upload', [MediaUploadController::class, 'upload']);
         Route::delete('/media/delete', [MediaUploadController::class, 'delete']);
 
-        Route::get('/users', [UserController::class, 'index']);
-        Route::get('/users/{user}', [UserController::class, 'show']);
-        Route::get('/users/{user}/preferences', [UserController::class, 'preferences']);
-        Route::put('/users/{user}/preferences', [UserController::class, 'updatePreferences']);
+        Route::get('/gyms/recommend', [GymRecommendationController::class, 'index']);
+        Route::post('/gym-interactions', [GymInteractionController::class, 'store']);
 
+        Route::post('/apply-owner', [GymOwnerApplicationController::class, 'apply']);
+
+        // self preferences
         Route::get('/user/preferences', [UserPreferenceController::class, 'show']);
         Route::post('/user/preferences', [UserPreferenceController::class, 'storeOrUpdate']);
 
@@ -99,22 +75,42 @@ Route::prefix('v1')->group(function () {
         Route::get('/user/preferred-amenities', [UserPreferredAmenityController::class, 'index']);
         Route::post('/user/preferred-amenities', [UserPreferredAmenityController::class, 'store']);
 
-        Route::get('/owners', function () {
-            return GymOwnerResource::collection(
-                User::where('role', 'owner')->paginate(10)
-            );
-        });
+        // admin
+        Route::middleware('admin')->group(function () {
 
-        Route::get('/owners/{owner}', function ($owner_id) {
-            $owner = User::where('role', 'owner')->findOrFail($owner_id);
-            return new GymOwnerResource($owner);
-        });
+            // equipments
+            Route::post('/equipments', [EquipmentController::class, 'store']);
+            Route::match(['put', 'patch'], '/equipments/{id}', [EquipmentController::class, 'update'])->whereNumber('id');
+            Route::delete('/equipments/{id}', [EquipmentController::class, 'destroy'])->whereNumber('id');
+            Route::post('/equipments/import-csv', [EquipmentImportController::class, 'import']);
 
-        Route::get('/owners/{owner}/gyms', function ($owner_id) {
-            $owner = User::where('role', 'owner')->findOrFail($owner_id);
-            return \App\Http\Resources\GymResource::collection(
-                $owner->gyms()->with(['equipments', 'amenities'])->paginate(10)
-            );
+            // amenities
+            Route::post('/amenities', [AmenityController::class, 'store']);
+            Route::match(['put', 'patch'], '/amenities/{id}', [AmenityController::class, 'update'])->whereNumber('id');
+            Route::delete('/amenities/{id}', [AmenityController::class, 'destroy'])->whereNumber('id');
+
+            // ✅ gyms map points (must NOT conflict with /gyms/{gym})
+            // Call like: /api/v1/gyms/map?south=...&west=...&north=...&east=...
+            Route::get('/gyms/map', [GymController::class, 'mapGyms']);
+
+            // gyms CRUD
+            Route::post('/gyms', [GymController::class, 'store']);
+            Route::match(['put', 'patch'], '/gyms/{gym}', [GymController::class, 'update'])->whereNumber('gym');
+            Route::delete('/gyms/{gym}', [GymController::class, 'destroy'])->whereNumber('gym');
+
+            // owner approvals
+            Route::post('/approve-owner/{id}', [GymOwnerApplicationController::class, 'approve'])->whereNumber('id');
+
+            // users (admin view)
+            Route::get('/admin/users', [AdminUserController::class, 'index']);
+            Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);
+            Route::get('/admin/users/{user}/preferences', [AdminUserController::class, 'preferences']);
+            Route::put('/admin/users/{user}/preferences', [AdminUserController::class, 'updatePreferences']);
+
+            // owners (admin view)
+            Route::get('/admin/owners', [AdminOwnerController::class, 'index']);
+            Route::get('/admin/owners/{owner}', [AdminOwnerController::class, 'show']);
+            Route::get('/admin/owners/{owner}/gyms', [AdminOwnerController::class, 'gyms']);
         });
     });
 });
