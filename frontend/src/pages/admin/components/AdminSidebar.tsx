@@ -155,9 +155,9 @@ const AdminSidebar: React.FC<Props> = ({
 
               <MenuItem
                 icon={<Service />}
-                onClick={() => go("/admin/owner-applications")}
+                onClick={() => go("/admin/applications")}
                 style={
-                  isPathActive(location.pathname, ["/admin/owner-applications"])
+                  isPathActive(location.pathname, ["/admin/applications"])
                     ? activeButtonStyle
                     : undefined
                 }

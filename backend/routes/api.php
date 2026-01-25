@@ -14,7 +14,6 @@ use App\Http\Controllers\GymRecommendationController;
 use App\Http\Controllers\MediaUploadController;
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\ProfilePhotoController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\UserPreferredAmenityController;
 use App\Http\Controllers\UserPreferredEquipmentController;
@@ -25,11 +24,15 @@ use App\Http\Controllers\AdminOwnerController;
 
 Route::prefix('v1')->group(function () {
 
-    // auth
+    // ---------------------------
+    // AUTH
+    // ---------------------------
     Route::post('/auth/login', [UserAuthController::class, 'login']);
     Route::post('/auth/register', [UserAuthController::class, 'register']);
 
-    // public
+    // ---------------------------
+    // PUBLIC
+    // ---------------------------
     Route::get('/gyms', [GymController::class, 'index']);
 
     // ✅ IMPORTANT: constrain {gym} so /gyms/map won't match this
@@ -49,7 +52,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
     Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show'])->whereNumber('id');
 
-    // authenticated
+    // ---------------------------
+    // AUTHENTICATED
+    // ---------------------------
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/me', MeController::class);
@@ -63,9 +68,16 @@ Route::prefix('v1')->group(function () {
         Route::get('/gyms/recommend', [GymRecommendationController::class, 'index']);
         Route::post('/gym-interactions', [GymInteractionController::class, 'store']);
 
-        Route::post('/apply-owner', [GymOwnerApplicationController::class, 'apply']);
+        /**
+         * OWNER APPLICATION FLOW (USER)
 
-        // self preferences
+         */
+        Route::post('/owner-applications', [GymOwnerApplicationController::class, 'applyOrUpdate']);
+        Route::get('/owner-applications/me', [GymOwnerApplicationController::class, 'myApplication']);
+
+        // ---------------------------
+        // SELF PREFERENCES
+        // ---------------------------
         Route::get('/user/preferences', [UserPreferenceController::class, 'show']);
         Route::post('/user/preferences', [UserPreferenceController::class, 'storeOrUpdate']);
 
@@ -75,7 +87,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/user/preferred-amenities', [UserPreferredAmenityController::class, 'index']);
         Route::post('/user/preferred-amenities', [UserPreferredAmenityController::class, 'store']);
 
-        // admin
+        // ---------------------------
+        // ADMIN
+        // ---------------------------
         Route::middleware('admin')->group(function () {
 
             // equipments
@@ -89,17 +103,24 @@ Route::prefix('v1')->group(function () {
             Route::match(['put', 'patch'], '/amenities/{id}', [AmenityController::class, 'update'])->whereNumber('id');
             Route::delete('/amenities/{id}', [AmenityController::class, 'destroy'])->whereNumber('id');
 
-            // ✅ gyms map points (must NOT conflict with /gyms/{gym})
-            // Call like: /api/v1/gyms/map?south=...&west=...&north=...&east=...
             Route::get('/gyms/map', [GymController::class, 'mapGyms']);
+            Route::get('/owner-applications/map', [GymOwnerApplicationController::class, 'mapPoints']);
 
             // gyms CRUD
             Route::post('/gyms', [GymController::class, 'store']);
             Route::match(['put', 'patch'], '/gyms/{gym}', [GymController::class, 'update'])->whereNumber('gym');
             Route::delete('/gyms/{gym}', [GymController::class, 'destroy'])->whereNumber('gym');
 
-            // owner approvals
-            Route::post('/approve-owner/{id}', [GymOwnerApplicationController::class, 'approve'])->whereNumber('id');
+            /**
+             * OWNER APPLICATION APPROVALS (ADMIN)
+             * - list + show applications
+             * - approve: user role -> owner AND create gym row in gyms table
+             * - reject: mark rejected
+             */
+            Route::get('/admin/owner-applications', [GymOwnerApplicationController::class, 'index']);
+            Route::get('/admin/owner-applications/{id}', [GymOwnerApplicationController::class, 'show'])->whereNumber('id');
+            Route::patch('/admin/owner-applications/{id}/approve', [GymOwnerApplicationController::class, 'approve'])->whereNumber('id');
+            Route::patch('/admin/owner-applications/{id}/reject', [GymOwnerApplicationController::class, 'reject'])->whereNumber('id');
 
             // users (admin view)
             Route::get('/admin/users', [AdminUserController::class, 'index']);

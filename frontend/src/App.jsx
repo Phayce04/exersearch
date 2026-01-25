@@ -15,11 +15,12 @@ import OwnerLayout from "./pages/owner/OwnerLayout";
 
 import { getUserRole } from "./utils/auth";
 import AdminEquipments from "./pages/admin/AdminEquipments";
-import AdminAmenities from "./pages/admin/AdminAmenities"; 
-import AdminGyms from "./pages/admin/AdminGyms"; 
+import AdminAmenities from "./pages/admin/AdminAmenities";
+import AdminGyms from "./pages/admin/AdminGyms";
 import "leaflet/dist/leaflet.css";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
+import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -59,11 +60,12 @@ function App() {
       {/* Admin */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="equipments" element={<AdminEquipments />} /> {/* ✅ relative */}
-                <Route path="amenities" element={<AdminAmenities />} />
-                <Route path="gyms" element={<AdminGyms />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="map" element={<AdminPasigGymsMap />}/>
+        <Route path="equipments" element={<AdminEquipments />} />
+        <Route path="amenities" element={<AdminAmenities />} />
+        <Route path="gyms" element={<AdminGyms />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="map" element={<AdminPasigGymsMap />} />
+        <Route path="applications" element={<AdminOwnerApplications />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
