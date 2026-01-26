@@ -8,19 +8,21 @@
   right: 0;
   width: 100%;
   z-index: 1000;
-  
+
+  height: 70px;                 /* ✅ fixed height */
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 3rem;
+  justify-content: space-between;
+
+  padding: 0 24px;             /* ✅ NO vertical padding */
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   font-family: 'Montserrat', sans-serif;
-  
-  /* Hide by default */
+
   transform: translateY(-100%);
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.25s ease-out;
 }
+
 
 /* Show when scrolled */
 .header.header--scrolled {
@@ -34,6 +36,7 @@
 
 .nav-links {
   display: flex;
+  align-items: center;
   gap: 2rem;
 }
 
@@ -48,6 +51,81 @@
 .nav-links a:hover {
   color: #f18585;
 }
+
+
+/* Secondary Navigation */
+.secondary-nav {
+  position: fixed;
+  top: -100px; /* Hidden by default */
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 70px;
+  /* ✅ Transparent light orange */
+  background: rgba(242, 206, 193, 0.85); /* #ffecd1 at 85% opacity */
+  
+  z-index: 999;
+  transition: top 0.3s ease-in-out;
+  padding: 0.5rem 0;        /* tighter height */
+}
+
+.secondary-nav.secondary-nav--scrolled {
+  top: 64px; /* match header height */
+}
+
+.secondary-nav-container {
+  max-width: 1400px;
+  margin: 0;                    /* Remove auto-centering */
+  display: flex;
+  justify-content: flex-start;  /* Align items to the left */
+  gap: 0.75rem;
+  
+  padding: 0 2rem 0 2.4rem;     /* top/right/bottom/left padding */
+}
+
+
+.secondary-nav-link {
+  padding: 0.4rem 1.2rem;
+  background: white;
+  border: 1px solid rgba(18, 16, 16, 0.35);
+  border-radius: 999px;
+  margin-top: 13px;
+  color: #d23f0b; /* main orange for text */
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.secondary-nav-link:hover {
+  background: #d23f0b; /* main orange */
+  color: #ffffff;      /* white text */
+}
+
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .secondary-nav-container {
+    display: flex;
+    justify-content: flex-start;
+    overflow-x: auto;       /* allows horizontal scroll */
+    gap: 0.5rem;            /* slightly tighter gap on mobile */
+    padding: 0 1rem;
+  }
+
+  .secondary-nav-container::-webkit-scrollbar {
+    display: none;          /* hide scrollbar for cleaner look */
+  }
+
+  .secondary-nav-link {
+    font-size: 0.8rem;
+    padding: 0.35rem 1rem;  /* smaller buttons for mobile */
+    flex-shrink: 0;         /* prevents buttons from shrinking */
+  }
+}
+
 
 .hamburger {
   display: none;
@@ -198,7 +276,8 @@
 /***********header-user********/
 .profile-container {
   position: relative;
-  top: -12px;
+  display: flex;
+  align-items: center;
 }
 
 .profile-btn {

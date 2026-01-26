@@ -39,7 +39,16 @@ export default function Header() {
           <span></span>
         </div>
       </header>
-
+    {/* NEW: Secondary Navigation */}
+    <div className={`secondary-nav ${isScrolled ? 'secondary-nav--scrolled' : ''}`}>
+      <div className="secondary-nav-container">
+        <Link to="/reviews" className="secondary-nav-link">Reviews</Link>
+        <Link to="/how-it-works" className="secondary-nav-link">How It Works</Link>
+        <Link to="/apps" className="secondary-nav-link">About Us</Link>
+        <Link to="/philosophy" className="secondary-nav-link">Our Philosophy</Link>
+        <Link to="/advertise" className="secondary-nav-link">FAQs</Link>
+      </div>
+    </div>
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
         <Link to="/gym" onClick={() => setMobileMenuOpen(false)}>GYM</Link>
         <Link to="/nearby" onClick={() => setMobileMenuOpen(false)}>NEARBY</Link>

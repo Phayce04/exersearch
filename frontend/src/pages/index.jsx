@@ -49,10 +49,7 @@ export default function Landing() {
         </div>
       </main>
 
-      {/* Extra content to ensure scrolling works */}
-      <div style={{ height: '100vh', background: 'linear-gradient(to bottom, #f0f0f0, #ffffff)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h2 style={{ color: '#d23f0b' }}>Scroll to see more content</h2>
-      </div>
+      
 
       <Footer />
     </div>

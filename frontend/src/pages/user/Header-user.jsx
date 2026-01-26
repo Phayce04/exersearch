@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom';
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
   const { user, logout } = useAuth();
 
   const containerRef = useRef(null);
@@ -27,9 +29,19 @@ export default function HeaderUser() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [profileDropdown]);
 
+      useEffect(() => {
+      const handleScroll = () => {
+        setIsScrolled(window.pageYOffset > 50);
+      };
+
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
   return (
     <>
-      <header className="header">
+      <header className={`header ${isScrolled ? "header--scrolled" : ""}`}>
+
         <div className="logo">
           <img src={logo} alt="Logo" />
         </div>
@@ -83,7 +95,7 @@ export default function HeaderUser() {
           <span></span>
         </div>
       </header>
-
+    
       {/* Mobile Menu */}
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
         <a href="#" onClick={() => setMobileMenuOpen(false)}>DASHBOARD</a>

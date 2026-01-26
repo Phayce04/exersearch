@@ -15,8 +15,14 @@ export default function Home() {
           Logout
         </button>
       </div>
+
+      <div style={{ height: "1000px", padding: "10px" }}>
+  <h2>Scroll Test Area</h2>
+  <p>Scroll down to trigger the header animation.</p>
+</div>
+
       
-      <Footer />
+    
     </>
   );
 }
