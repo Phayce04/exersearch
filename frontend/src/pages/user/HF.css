@@ -56,18 +56,23 @@
 /* Secondary Navigation */
 .secondary-nav {
   position: fixed;
-  top: -100px; /* Hidden by default */
+  top: -100px;
   left: 0;
   right: 0;
   width: 100%;
   height: 70px;
-  /* ✅ Transparent light orange */
-  background: rgba(242, 206, 193, 0.85); /* #ffecd1 at 85% opacity */
+
+  /* Slightly transparent for blur to show */
+  background: rgba(242, 206, 193, 0.4); /* 40% opacity */
   
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* Safari support */
+
   z-index: 999;
   transition: top 0.3s ease-in-out;
-  padding: 0.5rem 0;        /* tighter height */
+  padding: 0.5rem 0;
 }
+
 
 .secondary-nav.secondary-nav--scrolled {
   top: 64px; /* match header height */
@@ -251,7 +256,7 @@
 }
 
 .footer-col button:hover {
-  color: #ff6b6b;
+  color: #d5c4c4;
 }
 
 .footer-bottom {
