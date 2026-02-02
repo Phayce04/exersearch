@@ -54,7 +54,7 @@ class User extends Authenticatable
     */
 
     // Regular gym user profile
-    public function profile()
+    public function userProfile()
     {
         return $this->hasOne(UserProfile::class, 'user_id', 'user_id');
     }

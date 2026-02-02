@@ -1,0 +1,159 @@
+.profile-page {
+  min-height: 100vh;
+  background: #fff;
+  font-family: 'Montserrat', sans-serif;
+  color: #1f2937;
+  padding: 3rem 1rem;
+}
+
+.profile-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Left column */
+.profile-left {
+  flex: 1 1 300px;
+  text-align: center;
+}
+
+.avatar-wrapper {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid #f5d0c5;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #d23f0b;
+}
+
+.profile-email {
+  font-size: 0.95rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.profile-bio {
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+/* Buttons */
+.primary-btn {
+  padding: 0.5rem 1.5rem;
+  background: #d23f0b;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin: 0.25rem;
+}
+
+.primary-btn:hover {
+  background: #f18585;
+}
+
+.secondary-btn {
+  padding: 0.5rem 1.5rem;
+  background: #f5f5f5;
+  color: #333;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  margin: 0.25rem;
+}
+
+.secondary-btn:hover {
+  background: #e5e5e5;
+}
+
+/* Right column */
+.profile-right {
+  flex: 2 1 600px;
+}
+
+/* Section Titles */
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #d23f0b;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #f5d0c5;
+  display: inline-block;
+  padding-bottom: 0.25rem;
+}
+
+/* Info Grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Info Card */
+.info-card {
+  background: #fff5f2;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid #f5d0c5;
+  text-align: center;
+}
+
+.info-card label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #d23f0b;
+  margin-bottom: 0.25rem;
+}
+
+.info-card strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Edit Form */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edit-form input,
+.edit-form textarea {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.edit-form textarea {
+  resize: none;
+  min-height: 80px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}

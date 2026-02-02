@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Index from "./pages/index";
 import Login from "./pages/auth/Login";
 import UserHome from "./pages/user/Home";
-import Profile from "./pages/user/Profile";
+import Profile from "./pages/user/Profile"; // ✅ untouched
 import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Recommendations from "./pages/Recommendations";
@@ -21,6 +21,7 @@ import "leaflet/dist/leaflet.css";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
 import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
+import AdminProfile from "./pages/admin/Profile"; // ✅ only change
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -66,6 +67,7 @@ function App() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="map" element={<AdminPasigGymsMap />} />
         <Route path="applications" element={<AdminOwnerApplications />} />
+        <Route path="profile" element={<AdminProfile />} /> {/* ✅ */}
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

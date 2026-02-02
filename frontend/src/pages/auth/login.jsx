@@ -70,12 +70,26 @@ export default function Login() {
             password_confirmation: formData.password_confirmation,
           };
 
+    // ✅ DEBUG LOGS (no behavior change)
+    console.groupCollapsed("[AUTH] Submit");
+    console.log("mode:", mode);
+    console.log("endpoint:", endpoint);
+    // ⚠️ Passwords are sensitive; log only for debugging locally
+    console.log("payload:", payload);
+    console.groupEnd();
+
     try {
       const response = await axios.post(
         `https://exersearch.test${endpoint}`,
         payload,
         { withCredentials: true }
       );
+
+      // ✅ DEBUG LOGS
+      console.groupCollapsed("[AUTH] Success");
+      console.log("status:", response.status);
+      console.log("data:", response.data);
+      console.groupEnd();
 
       const data = response.data;
 
@@ -87,6 +101,16 @@ export default function Login() {
         alert("Authentication failed");
       }
     } catch (error) {
+      // ✅ DEBUG LOGS (very helpful for 500s)
+      console.groupCollapsed("[AUTH] Error");
+      console.log("message:", error?.message);
+      console.log("status:", error?.response?.status);
+      console.log("response data:", error?.response?.data);
+      console.log("response headers:", error?.response?.headers);
+      console.log("request:", error?.request);
+      console.groupEnd();
+
+      // Keep your existing UX but include fallback to show raw server response if needed
       if (error.response?.data?.errors) {
         alert(
           Object.values(error.response.data.errors)
@@ -94,7 +118,13 @@ export default function Login() {
             .join("\n")
         );
       } else {
-        alert(error.response?.data?.message || "Server error");
+        const msg =
+          error.response?.data?.message ||
+          (error.response?.data
+            ? JSON.stringify(error.response.data, null, 2)
+            : null) ||
+          "Server error";
+        alert(msg);
       }
     } finally {
       setLoading(false);
@@ -105,17 +135,34 @@ export default function Login() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    // ✅ DEBUG LOGS
+    console.groupCollapsed("[AUTH] Restore session (/me)");
+    console.log("token exists:", !!token);
+    console.groupEnd();
+
     axios
       .get("https://exersearch.test/api/v1/me", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
       .then((res) => {
+        // ✅ DEBUG LOGS
+        console.groupCollapsed("[AUTH] /me success");
+        console.log("status:", res.status);
+        console.log("data:", res.data);
+        console.groupEnd();
+
         const fetchedUser = res.data.user || res.data;
         setUser(fetchedUser);
         redirectByRole(fetchedUser.role);
       })
-      .catch(() => {
+      .catch((err) => {
+        // ✅ DEBUG LOGS
+        console.groupCollapsed("[AUTH] /me error");
+        console.log("status:", err?.response?.status);
+        console.log("data:", err?.response?.data);
+        console.groupEnd();
+
         localStorage.removeItem("token");
       });
   }, []);
