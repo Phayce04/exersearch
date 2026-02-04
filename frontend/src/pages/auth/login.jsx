@@ -132,40 +132,39 @@ export default function Login() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const token = localStorage.getItem("token");
+  if (!token) return;
 
-    // ✅ DEBUG LOGS
-    console.groupCollapsed("[AUTH] Restore session (/me)");
-    console.log("token exists:", !!token);
-    console.groupEnd();
+  console.groupCollapsed("[AUTH] Restore session (/me)");
+  console.log("token exists:", !!token);
+  console.groupEnd();
 
-    axios
-      .get("https://exersearch.test/api/v1/me", {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      })
-      .then((res) => {
-        // ✅ DEBUG LOGS
-        console.groupCollapsed("[AUTH] /me success");
-        console.log("status:", res.status);
-        console.log("data:", res.data);
-        console.groupEnd();
+  axios
+    .get("https://exersearch.test/api/v1/me", {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
+    })
+    .then((res) => {
+      console.groupCollapsed("[AUTH] /me success");
+      console.log("status:", res.status);
+      console.log("data:", res.data);
+      console.groupEnd();
 
-        const fetchedUser = res.data.user || res.data;
-        setUser(fetchedUser);
-        redirectByRole(fetchedUser.role);
-      })
-      .catch((err) => {
-        // ✅ DEBUG LOGS
-        console.groupCollapsed("[AUTH] /me error");
-        console.log("status:", err?.response?.status);
-        console.log("data:", err?.response?.data);
-        console.groupEnd();
+      const fetchedUser = res.data.user || res.data;
+      setUser(fetchedUser);
+      redirectByRole(fetchedUser.role);
+    })
+    .catch((err) => {
+      console.groupCollapsed("[AUTH] /me error");
+      console.log("status:", err?.response?.status);
+      console.log("data:", err?.response?.data);
+      console.groupEnd();
 
-        localStorage.removeItem("token");
-      });
-  }, []);
+      
+      localStorage.removeItem("token");
+     
+    });
+}, []); 
 
   return (
     <div className="login-page">

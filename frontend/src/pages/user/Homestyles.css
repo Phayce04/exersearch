@@ -402,3 +402,510 @@
     height: 45px;
   }
 }
+
+/*homepage*/
+
+/* General */
+.home-page {
+  font-family: 'Montserrat', sans-serif;
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 1.5rem;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #d35400 0%, #ff8c00 100%);
+  padding: 4rem 2rem;
+  color: white;
+  text-align: center;
+}
+
+.hero-content h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.hero-content p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+.search-bar-container {
+  max-width: 650px;
+  margin: 0 auto;
+  display: flex;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  outline: none;
+  color: #333;
+}
+
+.search-btn {
+  background: #ff8c00;
+  color: white;
+  border: none;
+  padding: 1rem 2.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-btn:hover {
+  background: #e67e00;
+}
+
+/* Stats Section */
+.stats-section {
+  padding: 3rem 0;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ff8c00;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Recent Activity Section */
+.activity-section {
+  padding: 3rem 0;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.activity-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.activity-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activity-details strong {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.activity-details span {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.activity-link {
+  color: #ff8c00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.activity-link:hover {
+  color: #e67e00;
+}
+
+/* Categories Section */
+.categories-section {
+  padding: 3rem 0;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.category-card {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover {
+  border-color: #ff8c00;
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
+}
+
+.category-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.category-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.category-card p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Featured Gyms Section */
+.featured-section {
+  padding: 3rem 0;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.view-all-link {
+  color: #ff8c00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.view-all-link:hover {
+  color: #e67e00;
+}
+
+.gyms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.gym-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gym-card:hover {
+  border-color: #ff8c00;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.gym-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.gym-info {
+  padding: 1.25rem;
+}
+
+.gym-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.gym-location {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.gym-amenities {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.amenity-tag {
+  background: #fff5e6;
+  color: #ff8c00;
+  padding: 0.25rem 0.75rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #ffe6cc;
+}
+
+.gym-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gym-price-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.gym-price {
+  color: #ff8c00;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.gym-rating {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.gym-view-btn {
+  padding: 0.625rem 1.25rem;
+  background: #ff8c00;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.gym-view-btn:hover {
+  background: #e67e00;
+}
+
+/* Top Rated Section */
+.top-rated-section {
+  padding: 3rem 0;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.top-rated-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.top-rated-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.rating-rank {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ff8c00;
+  min-width: 50px;
+  text-align: center;
+}
+
+.rating-info {
+  flex: 1;
+}
+
+.rating-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.rating-details {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.rating-stars {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.rating-reviews {
+  color: #6b7280;
+}
+
+.rating-link {
+  color: #ff8c00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.rating-link:hover {
+  color: #e67e00;
+}
+
+/* CTA Section */
+.cta-section {
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c00 100%);
+  margin-top: 3rem;
+}
+
+.cta-content {
+  text-align: center;
+  color: white;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.cta-content h2 {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.cta-content p {
+  font-size: 1.05rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+  line-height: 1.6;
+}
+
+.cta-btn {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  background: white;
+  color: #ff8c00;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.cta-btn:hover {
+  background: #f5f5f5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 3rem 1.5rem;
+  }
+
+  .search-bar-container {
+    flex-direction: column;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .activity-date {
+    min-width: auto;
+  }
+
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gyms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .gym-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gym-view-btn {
+    width: 100%;
+  }
+
+  .top-rated-item {
+    flex-wrap: wrap;
+  }
+}
