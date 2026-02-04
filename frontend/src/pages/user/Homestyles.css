@@ -408,7 +408,7 @@
 /* General */
 .home-page {
   font-family: 'Montserrat', sans-serif;
-  background: #f9fafb;
+    background: #f4f6f8; 
   min-height: 100vh;
 }
 
@@ -481,15 +481,17 @@
 
 /* Stats Section */
 .stats-section {
+  background: transparent;
   padding: 3rem 0;
-  background: white;
+  
   border-bottom: 1px solid #e5e7eb;
 }
 
 .stats-grid {
-  display: grid;
+  display:grid;
+  padding: 20px 0 50px 0;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .stat-card {
@@ -515,10 +517,23 @@
 
 /* Recent Activity Section */
 .activity-section {
+  background: transparent;
   padding: 3rem 0;
-  background: #fff;
+
   border-bottom: 1px solid #e5e7eb;
 }
+
+.activity-gym-link {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.activity-gym-link:hover {
+  color: #ff8c00;
+  text-decoration: underline;
+}
+
 
 .activity-list {
   display: flex;
@@ -574,8 +589,9 @@
 
 /* Categories Section */
 .categories-section {
+  background: transparent;
   padding: 3rem 0;
-  background: #fff;
+
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -621,8 +637,9 @@
 
 /* Featured Gyms Section */
 .featured-section {
+  background: transparent;
   padding: 3rem 0;
-  background: white;
+
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -749,7 +766,7 @@
 /* Top Rated Section */
 .top-rated-section {
   padding: 3rem 0;
-  background: #f9fafb;
+  background: #eef2f5;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -815,48 +832,55 @@
   color: #e67e00;
 }
 
+.stat-icon {
+  color: #d23f0b;
+  margin-bottom: 0.4rem;
+}
+
 /* CTA Section */
+/* Preferences Section */
 .cta-section {
-  padding: 4rem 2rem;
-  background: linear-gradient(135deg, #ff6b35 0%, #ff8c00 100%);
-  margin-top: 3rem;
+  padding: 3rem 2rem;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
 }
 
 .cta-content {
-  text-align: center;
-  color: white;
-  max-width: 700px;
+  max-width: 720px;
   margin: 0 auto;
+  text-align: center;
 }
 
 .cta-content h2 {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-size: 1.6rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  color: #1a1a1a;
+  margin-bottom: 0.75rem;
 }
 
 .cta-content p {
-  font-size: 1.05rem;
-  margin-bottom: 2rem;
-  opacity: 0.95;
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
   line-height: 1.6;
 }
 
 .cta-btn {
   display: inline-block;
-  padding: 1rem 2.5rem;
-  background: white;
-  color: #ff8c00;
+  padding: 0.75rem 2rem;
+  background: #ff8c00;
+  color: white;
   text-decoration: none;
   border-radius: 4px;
-  font-weight: 700;
-  font-size: 1rem;
-  transition: background 0.2s;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
 }
 
 .cta-btn:hover {
-  background: #f5f5f5;
+  background: #e67e00;
 }
+
 
 /* Responsive */
 @media (max-width: 768px) {

@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Homestyles.css';
+import { Dumbbell, Heart, Calendar, Flame } from "lucide-react";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,10 +23,11 @@ export default function Home() {
   ];
 
   const recentActivity = [
-    { date: "Today", gym: "FitZone Ortigas", workout: "Upper Body" },
-    { date: "Yesterday", gym: "PowerHouse Gym", workout: "Cardio" },
-    { date: "2 days ago", gym: "Local Fitness Hub", workout: "Leg Day" }
-  ];
+  { id: 1, date: "Today", gymId: 1, gym: "FitZone Ortigas", workout: "Upper Body" },
+  { id: 2, date: "Yesterday", gymId: 2, gym: "PowerHouse Gym", workout: "Cardio" },
+  { id: 3, date: "2 days ago", gymId: 3, gym: "Local Fitness Hub", workout: "Leg Day" }
+];
+
 
   const equipmentCategories = [
     { name: "Cardio Equipment", icon: "🏃", count: 45 },
@@ -62,29 +64,33 @@ export default function Home() {
       </section>
 
       {/* Stats Dashboard */}
-      <section className="stats-section">
-        <div className="container">
-          <h2 className="section-title">Your Progress</h2>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-number">{stats.gymsVisited}</div>
-              <div className="stat-label">Gyms Visited</div>
+
+            <div className="stats-grid">
+              <div className="stat-card">
+                <Dumbbell className="stat-icon" />
+                <div className="stat-number">{stats.gymsVisited}</div>
+                <div className="stat-label">Gyms Visited</div>
+              </div>
+
+              <div className="stat-card">
+                <Heart className="stat-icon" />
+                <div className="stat-number">{stats.favorites}</div>
+                <div className="stat-label">Saved Gyms</div>
+              </div>
+
+              <div className="stat-card">
+                <Calendar className="stat-icon" />
+                <div className="stat-number">{stats.workouts}</div>
+                <div className="stat-label">Workouts</div>
+              </div>
+
+              <div className="stat-card">
+                <Flame className="stat-icon" />
+                <div className="stat-number">{stats.calories}</div>
+                <div className="stat-label">Calories Burned</div>
+              </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-number">{stats.favorites}</div>
-              <div className="stat-label">Saved Gyms</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">{stats.workouts}</div>
-              <div className="stat-label">Workouts Logged</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">{stats.calories}</div>
-              <div className="stat-label">Calories Burned</div>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Recent Activity */}
       <section className="activity-section">
@@ -95,7 +101,15 @@ export default function Home() {
               <div key={index} className="activity-item">
                 <div className="activity-date">{activity.date}</div>
                 <div className="activity-details">
-                  <strong>{activity.gym}</strong>
+                        <strong>
+                          <Link
+                            to={`/home/gyms/${activity.gymId}`}
+                            className="activity-gym-link"
+                          >
+                            {activity.gym}
+                          </Link>
+                       </strong>
+
                   <span>{activity.workout}</span>
                 </div>
                 <Link to="#" className="activity-link">View Details →</Link>
@@ -178,15 +192,22 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="cta-section">
-        <div className="container">
-          <div className="cta-content">
-            <h2>Find Your Perfect Gym Match</h2>
-            <p>Use our advanced filters to discover gyms based on your preferences, budget, and equipment needs</p>
-            <Link to="/home/find-gyms" className="cta-btn">Start Searching</Link>
-          </div>
-        </div>
-      </section>
+      {/* Preferences Section */}
+          <section className="cta-section">
+            <div className="container">
+              <div className="cta-content">
+                <h2>Your Gym Preferences</h2>
+                <p>
+                  Manage your location, budget, and equipment preferences to keep
+                  gym results relevant to your training needs.
+                </p>
+                <Link to="/home/find-gyms" className="cta-btn">
+                  Edit Preferences
+                </Link>
+              </div>
+            </div>
+          </section>
+
     </div>
   );
 }
