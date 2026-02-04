@@ -12,7 +12,7 @@ import Recommendations from "./pages/Recommendations";
 import AdminLayout from "./pages/admin/AdminLayout";
 import UserLayout from "./pages/user/UserLayout";
 import OwnerLayout from "./pages/owner/OwnerLayout";
-
+import FindGyms from './pages/user/FindGyms';
 import { getUserRole } from "./utils/auth";
 import AdminEquipments from "./pages/admin/AdminEquipments";
 import AdminAmenities from "./pages/admin/AdminAmenities";
@@ -42,8 +42,9 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-
+     <Route path="/login" element={<Login />} /> 
+      {/* testroute for design*/}
+    <Route path="/test-find-gyms" element={<FindGyms />} />
       {/* Standalone profile page */}
       <Route path="/profile" element={<Profile />} />
 
