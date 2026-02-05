@@ -1,8 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
-import './HF.css';
-import logo from '../../assets/exersearchlogo.png';
-import { useAuth } from '../../authcon';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import axios from "axios";
+import "./HF.css";
+import logo from "../../assets/exersearchlogo.png";
+import { useAuth } from "../../authcon";
+import { Link, useNavigate } from "react-router-dom";
+
+const API_BASE = "https://exersearch.test";
+const FALLBACK_AVATAR = "https://i.pravatar.cc/60?img=12";
 
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,108 +14,198 @@ export default function HeaderUser() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // local fallback user if context user is null
+  const [me, setMe] = useState(null);
+  const [meLoading, setMeLoading] = useState(false);
 
   const containerRef = useRef(null);
+  const token = localStorage.getItem("token");
 
-  // Toggle profile dropdown
-  const toggleProfileDropdown = () => setProfileDropdown(prev => !prev);
+  const effectiveUser = user || me;
+
+  // Fetch /me when context user is null
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadMe() {
+      if (!token) return;
+      setMeLoading(true);
+      try {
+        const res = await axios.get(`${API_BASE}/api/v1/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        if (!mounted) return;
+        setMe(res.data || null);
+      } catch (err) {
+        console.log("[HeaderUser] /me failed:", err?.response?.status, err?.response?.data);
+      } finally {
+        if (mounted) setMeLoading(false);
+      }
+    }
+
+    if (!user && !me && token) loadMe();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, me, token]);
+
+  // Avatar resolver (covers admin/owner/user shapes)
+  const avatarSrc = useMemo(() => {
+    const u = effectiveUser;
+    if (!u) return FALLBACK_AVATAR;
+
+    const raw =
+      u?.admin_profile?.avatar_url ||
+      u?.owner_profile?.profile_photo_url ||
+      u?.user_profile?.profile_photo_url ||
+      u?.adminProfile?.avatar_url ||
+      u?.ownerProfile?.profile_photo_url ||
+      u?.userProfile?.profile_photo_url ||
+      u?.avatar_url ||
+      u?.profile_photo_url ||
+      u?.photoURL ||
+      u?.avatar ||
+      "";
+
+    if (!raw) return FALLBACK_AVATAR;
+    if (raw.startsWith("http")) return raw;
+    return `${API_BASE}${raw}`;
+  }, [effectiveUser]);
+
+  const displayName = effectiveUser?.name || (meLoading ? "Loading..." : "User");
+  const displayEmail = effectiveUser?.email || "";
+
+  // ✅ One reliable logout handler
+  const handleLogout = useCallback(
+    (e) => {
+      if (e?.preventDefault) e.preventDefault();
+
+      // close menus first
+      setProfileDropdown(false);
+      setMobileMenuOpen(false);
+
+      // run logout (clear token/state)
+      logout();
+
+      // force route to login (so UI updates even if context is slow)
+      navigate("/login", { replace: true });
+    },
+    [logout, navigate]
+  );
 
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // If dropdown is open and click is outside the container
       if (profileDropdown && containerRef.current && !containerRef.current.contains(event.target)) {
         setProfileDropdown(false);
       }
     };
 
-    document.addEventListener('click', handleClickOutside); // listen on click, not mousedown
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [profileDropdown]);
 
-      useEffect(() => {
-      const handleScroll = () => {
-        setIsScrolled(window.pageYOffset > 50);
-      };
-
-      window.addEventListener("scroll", handleScroll);
-      return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.pageYOffset > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <>
       <header className={`header ${isScrolled ? "header--scrolled" : ""}`}>
-
         <div className="logo">
-          <img src={logo} alt="Logo" />
+          <img src={logo} alt="ExerSearch" />
         </div>
 
         <nav className="nav-links">
-          <a href="#">DASHBOARD</a>
-          <a href="#">MY GYMS</a>
+          <Link to="/home">DASHBOARD</Link>
+          <Link to="/home/gyms">MY GYMS</Link>
 
           {/* Profile */}
           <div className="profile-container" ref={containerRef}>
-            <button className="profile-btn" onClick={toggleProfileDropdown}>
+            <button
+              className="profile-btn"
+              onClick={() => setProfileDropdown((p) => !p)}
+              type="button"
+            >
               <img
                 className="profile-avatar"
-                src={user?.photoURL || user?.avatar || 'https://i.pravatar.cc/40?img=12'}
+                src={avatarSrc}
                 alt="profile"
-                onError={(e) => { e.target.src = 'https://i.pravatar.cc/40?img=12'; }}
+                onError={(e) => {
+                  e.currentTarget.src = FALLBACK_AVATAR;
+                }}
               />
-              <span className={`dropdown-arrow ${profileDropdown ? 'open' : ''}`}>▾</span>
+              <span className={`dropdown-arrow ${profileDropdown ? "open" : ""}`}>▾</span>
             </button>
 
             {/* Dropdown */}
-            <div className={`profile-dropdown ${profileDropdown ? 'open' : ''}`}>
+            <div className={`profile-dropdown ${profileDropdown ? "open" : ""}`}>
               <div className="profile-header">
                 <img
                   className="dropdown-avatar"
-                  src={user?.photoURL || user?.avatar || 'https://i.pravatar.cc/60?img=12'}
+                  src={avatarSrc}
                   alt="profile"
-                  onError={(e) => { e.target.src = 'https://i.pravatar.cc/60?img=12'; }}
+                  onError={(e) => {
+                    e.currentTarget.src = FALLBACK_AVATAR;
+                  }}
                 />
                 <div>
-                  <div className="profile-name">{user?.name || 'User'}</div>
-                  <div className="profile-email">{user?.email || 'user@email.com'}</div>
+                  <div className="profile-name">{displayName}</div>
+                  <div className="profile-email">{displayEmail || " "}</div>
                 </div>
               </div>
 
               <div className="dropdown-divider" />
 
-          <Link to="/home/profile" onClick={() => setProfileDropdown(false)}>My Profile</Link>
+              <Link to="/home/profile" onClick={() => setProfileDropdown(false)}>
+                My Profile
+              </Link>
 
-          <Link to="/home/settings" onClick={() => setProfileDropdown(false)}>Settings</Link>
+              <Link to="/home/settings" onClick={() => setProfileDropdown(false)}>
+                Settings
+              </Link>
 
-                <a href="#" onClick={logout}>Logout</a> 
+              {/* ✅ Logout looks like your other links (no # hash) */}
+              <Link to="/login" onClick={handleLogout}>
+                Logout
+              </Link>
             </div>
           </div>
         </nav>
 
         {/* Mobile Hamburger */}
-        <div className="hamburger" onClick={() => setMobileMenuOpen(prev => !prev)}>
+        <div className="hamburger" onClick={() => setMobileMenuOpen((prev) => !prev)}>
           <span></span>
           <span></span>
           <span></span>
         </div>
       </header>
-    
-      {/* Mobile Menu */}
-      <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
-        <a href="#" onClick={() => setMobileMenuOpen(false)}>DASHBOARD</a>
-        <a href="#" onClick={() => setMobileMenuOpen(false)}>MY GYMS</a>
-       <a href="/home/profile" onClick={() => setMobileMenuOpen(false)}>My Profile</a>
-        <a href="/home/settings" onClick={() => setMobileMenuOpen(false)}>Settings</a>
 
-        <a
-          href="#"
-          onClick={() => {
-            logout();
-            setMobileMenuOpen(false);
-          }}
-        >
+      {/* Mobile Menu */}
+      <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
+        <Link to="/home" onClick={() => setMobileMenuOpen(false)}>
+          DASHBOARD
+        </Link>
+        <Link to="/home/gyms" onClick={() => setMobileMenuOpen(false)}>
+          MY GYMS
+        </Link>
+        <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
+          My Profile
+        </Link>
+        <Link to="/home/settings" onClick={() => setMobileMenuOpen(false)}>
+          Settings
+        </Link>
+
+        {/* ✅ Mobile logout same behavior */}
+        <Link to="/login" onClick={handleLogout}>
           Logout
-        </a>
+        </Link>
       </div>
     </>
   );

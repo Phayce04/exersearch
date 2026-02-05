@@ -4,7 +4,6 @@ import "./ProfileStyle.css";
 import { useOutletContext } from "react-router-dom";
 import { MAIN, adminThemes } from "./AdminLayout";
 
-// ✅ SweetAlert helpers (create this file: src/utils/adminAlert.js)
 import { alertSuccess, alertError, alertInfo } from "../../utils/adminAlert";
 
 const API_BASE = "https://exersearch.test";

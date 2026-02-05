@@ -11,9 +11,7 @@ export default function Home() {
       
       <div>
         <h1>User Home Page</h1>
-        <button onClick={logout} style={{ marginTop: '20px', padding: '10px 20px' }}>
-          Logout
-        </button>
+
       </div>
 
       <div style={{ height: "1000px", padding: "10px" }}>

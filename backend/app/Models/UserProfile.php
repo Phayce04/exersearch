@@ -18,9 +18,9 @@ class UserProfile extends Model
         'address',
         'latitude',
         'longitude',
+        'profile_photo_url',
     ];
 
-    // Relation back to User
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
