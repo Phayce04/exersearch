@@ -23,6 +23,7 @@ import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
 import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
 import AdminProfile from "./pages/admin/Profile"; // ✅ only change
 import GymResults from "./pages/user/GymResults";
+import GymDetails from "./pages/user/GymDetails";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -48,6 +49,7 @@ function App() {
       {/* testroute for design*/}
     <Route path="/test-find-gyms" element={<FindGyms />} />
     <Route path="/test-gym-results" element={<GymResults />} />
+    <Route path="/test-gym-details" element={<GymDetails />} />
 
       {/* Standalone profile page */}
       <Route path="/profile" element={<Profile />} />
