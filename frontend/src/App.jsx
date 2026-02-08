@@ -53,6 +53,7 @@ function App() {
       <Route path="/home" element={<UserLayout />}>
         <Route index element={<UserHome />} />
        <Route path="profile" element={<Profile />} />
+          <Route path="find-gyms" element={<FindGyms />} />
 
       </Route>
 

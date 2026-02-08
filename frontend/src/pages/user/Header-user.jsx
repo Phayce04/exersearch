@@ -16,7 +16,7 @@ export default function HeaderUser() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // local fallback user if context user is null
+  // fallback user if context is slow
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(false);
 
@@ -25,7 +25,7 @@ export default function HeaderUser() {
 
   const effectiveUser = user || me;
 
-  // Fetch /me when context user is null
+  // fetch /me if needed
   useEffect(() => {
     let mounted = true;
 
@@ -40,20 +40,17 @@ export default function HeaderUser() {
         if (!mounted) return;
         setMe(res.data || null);
       } catch (err) {
-        console.log("[HeaderUser] /me failed:", err?.response?.status, err?.response?.data);
+        console.log("[HeaderUser] /me failed:", err?.response?.status);
       } finally {
         if (mounted) setMeLoading(false);
       }
     }
 
     if (!user && !me && token) loadMe();
-
-    return () => {
-      mounted = false;
-    };
+    return () => (mounted = false);
   }, [user, me, token]);
 
-  // Avatar resolver (covers admin/owner/user shapes)
+  // avatar resolver
   const avatarSrc = useMemo(() => {
     const u = effectiveUser;
     if (!u) return FALLBACK_AVATAR;
@@ -79,36 +76,30 @@ export default function HeaderUser() {
   const displayName = effectiveUser?.name || (meLoading ? "Loading..." : "User");
   const displayEmail = effectiveUser?.email || "";
 
-  // ✅ One reliable logout handler
+  // logout handler
   const handleLogout = useCallback(
     (e) => {
       if (e?.preventDefault) e.preventDefault();
-
-      // close menus first
       setProfileDropdown(false);
       setMobileMenuOpen(false);
-
-      // run logout (clear token/state)
       logout();
-
-      // force route to login (so UI updates even if context is slow)
       navigate("/login", { replace: true });
     },
     [logout, navigate]
   );
 
-  // Click outside handler
+  // click outside dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileDropdown && containerRef.current && !containerRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (profileDropdown && containerRef.current && !containerRef.current.contains(e.target)) {
         setProfileDropdown(false);
       }
     };
-
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [profileDropdown]);
 
+  // scroll effect
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.pageYOffset > 50);
     window.addEventListener("scroll", handleScroll);
@@ -122,38 +113,35 @@ export default function HeaderUser() {
           <img src={logo} alt="ExerSearch" />
         </div>
 
+        {/* DESKTOP NAV */}
         <nav className="nav-links">
           <Link to="/home">DASHBOARD</Link>
           <Link to="/home/gyms">MY GYMS</Link>
+          <Link to="/home/find-gyms">FIND GYMS</Link>
 
-          {/* Profile */}
+          {/* PROFILE */}
           <div className="profile-container" ref={containerRef}>
             <button
               className="profile-btn"
-              onClick={() => setProfileDropdown((p) => !p)}
               type="button"
+              onClick={() => setProfileDropdown((p) => !p)}
             >
               <img
                 className="profile-avatar"
                 src={avatarSrc}
                 alt="profile"
-                onError={(e) => {
-                  e.currentTarget.src = FALLBACK_AVATAR;
-                }}
+                onError={(e) => (e.currentTarget.src = FALLBACK_AVATAR)}
               />
               <span className={`dropdown-arrow ${profileDropdown ? "open" : ""}`}>▾</span>
             </button>
 
-            {/* Dropdown */}
             <div className={`profile-dropdown ${profileDropdown ? "open" : ""}`}>
               <div className="profile-header">
                 <img
                   className="dropdown-avatar"
                   src={avatarSrc}
                   alt="profile"
-                  onError={(e) => {
-                    e.currentTarget.src = FALLBACK_AVATAR;
-                  }}
+                  onError={(e) => (e.currentTarget.src = FALLBACK_AVATAR)}
                 />
                 <div>
                   <div className="profile-name">{displayName}</div>
@@ -171,7 +159,6 @@ export default function HeaderUser() {
                 Settings
               </Link>
 
-              {/* ✅ Logout looks like your other links (no # hash) */}
               <Link to="/login" onClick={handleLogout}>
                 Logout
               </Link>
@@ -179,30 +166,36 @@ export default function HeaderUser() {
           </div>
         </nav>
 
-        {/* Mobile Hamburger */}
-        <div className="hamburger" onClick={() => setMobileMenuOpen((prev) => !prev)}>
-          <span></span>
-          <span></span>
-          <span></span>
+        {/* HAMBURGER */}
+        <div className="hamburger" onClick={() => setMobileMenuOpen((p) => !p)}>
+          <span />
+          <span />
+          <span />
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* MOBILE MENU */}
       <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
         <Link to="/home" onClick={() => setMobileMenuOpen(false)}>
           DASHBOARD
         </Link>
+
         <Link to="/home/gyms" onClick={() => setMobileMenuOpen(false)}>
           MY GYMS
         </Link>
-        <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
+
+        <Link to="/home/find-gyms" onClick={() => setMobileMenuOpen(false)}>
+          FIND GYMS
+        </Link>
+
+        <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>
           My Profile
         </Link>
+
         <Link to="/home/settings" onClick={() => setMobileMenuOpen(false)}>
           Settings
         </Link>
 
-        {/* ✅ Mobile logout same behavior */}
         <Link to="/login" onClick={handleLogout}>
           Logout
         </Link>
