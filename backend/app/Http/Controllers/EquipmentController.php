@@ -27,8 +27,9 @@ class EquipmentController extends Controller
 
             'description' => 'nullable|string',
 
-            // ✅ enum-safe (match your Postgres enums)
-            'category' => 'nullable|in:Cardio,Strength,Machine,Free Weight,Flexibility,Functional',
+// EquipmentController.php (store + update)
+
+'category' => 'nullable|in:machine,free_weight,cardio,accessory',
             'difficulty' => 'nullable|in:Beginner,Intermediate,Advanced',
 
             'image_url' => 'nullable|string',
@@ -52,8 +53,9 @@ class EquipmentController extends Controller
             'name' => 'sometimes|required|string|max:100',
             'description' => 'sometimes|nullable|string',
 
-            // ✅ enum-safe (match your Postgres enums)
-            'category' => 'sometimes|nullable|in:Cardio,Strength,Machine,Free Weight,Flexibility,Functional',
+// EquipmentController.php (store + update)
+
+'category' => 'nullable|in:machine,free_weight,cardio,accessory',
             'difficulty' => 'sometimes|nullable|in:Beginner,Intermediate,Advanced',
 
             'image_url' => 'sometimes|nullable|string',

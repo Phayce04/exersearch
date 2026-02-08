@@ -15,18 +15,29 @@ class UserPreferenceController extends Controller
         ]);
     }
 
-    public function storeOrUpdate(Request $request)
-    {
+public function storeOrUpdate(Request $request)
+{
+    try {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
         $validated = $request->validate([
             'goal' => 'nullable|string|max:100',
             'activity_level' => 'nullable|string|max:50',
             'budget' => 'nullable|numeric|min:0',
-            'plan_type' => 'nullable|string|in:daily,monthly', // <-- added validation
-
+            'plan_type' => 'nullable|string|in:daily,monthly',
         ]);
 
-        $preference = UserPreference::updateOrCreate(
-            ['user_id' => $request->user()->user_id],
+        // DEBUG logs
+        \Log::info('storeOrUpdate user/preferences', [
+            'user_id' => $user->user_id,
+            'validated' => $validated,
+        ]);
+
+        $preference = \App\Models\UserPreference::updateOrCreate(
+            ['user_id' => $user->user_id],
             $validated
         );
 
@@ -34,5 +45,21 @@ class UserPreferenceController extends Controller
             'message' => 'Preferences saved successfully',
             'data' => $preference
         ]);
+    } catch (\Throwable $e) {
+        \Log::error('storeOrUpdate failed', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+
+        // return JSON so frontend can show the exact error
+        return response()->json([
+            'message' => 'Server error saving preferences',
+            'error' => $e->getMessage(),
+            'file' => basename($e->getFile()),
+            'line' => $e->getLine(),
+        ], 500);
     }
+}
+
 }
