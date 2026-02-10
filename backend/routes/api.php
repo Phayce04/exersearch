@@ -24,6 +24,8 @@ use App\Http\Controllers\AdminOwnerController;
 use App\Http\Controllers\AdminProfileController;
 use App\Http\Controllers\UserProfileController;
 
+use App\Http\Controllers\AdminAdminController;
+
 Route::prefix('v1')->group(function () {
 
     // AUTH
@@ -73,14 +75,23 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/user/preferred-amenities', [UserPreferredAmenityController::class, 'index']);
         Route::post('/user/preferred-amenities', [UserPreferredAmenityController::class, 'store']);
+
         Route::get('/user/profile', [UserProfileController::class, 'show']);
-Route::put('/user/profile', [UserProfileController::class, 'update']);
+        Route::put('/user/profile', [UserProfileController::class, 'update']);
+
         // ADMIN (protected by your 'admin' middleware)
         Route::middleware('admin')->group(function () {
 
             // admin profile (edit profile page)
             Route::get('/admin/profile', [AdminProfileController::class, 'show']);
             Route::put('/admin/profile', [AdminProfileController::class, 'update']);
+
+            /* ✅ ADD THIS BLOCK: ADMIN MANAGEMENT (admins/superadmins) */
+            Route::get('/admin/admins', [AdminAdminController::class, 'index']);
+            Route::get('/admin/admins/{user}', [AdminAdminController::class, 'show']);
+            Route::post('/admin/admins', [AdminAdminController::class, 'store']);
+            Route::put('/admin/admins/{user}', [AdminAdminController::class, 'update']);
+            Route::delete('/admin/admins/{user}', [AdminAdminController::class, 'destroy']);
 
             // equipments
             Route::post('/equipments', [EquipmentController::class, 'store']);

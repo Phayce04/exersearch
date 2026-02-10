@@ -25,6 +25,7 @@ import AdminProfile from "./pages/admin/Profile"; // ✅ only change
 import GymResults from "./pages/user/GymResults";
 import GymDetails from "./pages/user/GymDetails";
 import GymDetailAdmin from "./pages/admin/GymDetails";
+import AdminAdmins from "./pages/admin/AdminAdmins";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -75,6 +76,8 @@ function App() {
         <Route path="amenities" element={<AdminAmenities />} />
         <Route path="gyms" element={<AdminGyms />} />
         <Route path="users" element={<AdminUsers />} />
+          <Route path="admins" element={<AdminAdmins />} />
+
         <Route path="map" element={<AdminPasigGymsMap />} />
         <Route path="applications" element={<AdminOwnerApplications />} />
         <Route path="profile" element={<AdminProfile />} /> {/* ✅ */}

@@ -43,6 +43,7 @@ const isPathActive = (pathname: string, targets: string[]) => {
     t === "/" ? pathname === "/" : pathname === t || pathname.startsWith(t + "/")
   );
 };
+
 const rtl = false;
 
 const AdminSidebar: React.FC<Props> = ({
@@ -122,7 +123,7 @@ const AdminSidebar: React.FC<Props> = ({
             }}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-        <SidebarHeader rtl={rtl} style={{ marginBottom: 12, marginTop: 0 }} />
+            <SidebarHeader rtl={rtl} style={{ marginBottom: 12, marginTop: 0 }} />
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
@@ -141,6 +142,7 @@ const AdminSidebar: React.FC<Props> = ({
             </div>
 
             <Menu menuItemStyles={menuItemStyles}>
+              {/* Dashboard */}
               <MenuItem
                 icon={<BarChart />}
                 onClick={() => go("/admin/dashboard")}
@@ -153,6 +155,7 @@ const AdminSidebar: React.FC<Props> = ({
                 Dashboard
               </MenuItem>
 
+              {/* Applications */}
               <MenuItem
                 icon={<Service />}
                 onClick={() => go("/admin/applications")}
@@ -165,6 +168,7 @@ const AdminSidebar: React.FC<Props> = ({
                 Owner Applications
               </MenuItem>
 
+              {/* Manage Data */}
               <SubMenu label="Manage Data" icon={<Diamond />}>
                 <MenuItem
                   icon={<Dumbbell />}
@@ -213,6 +217,19 @@ const AdminSidebar: React.FC<Props> = ({
                 >
                   Users
                 </MenuItem>
+
+                {/* ✅ NEW: ADMINS */}
+                <MenuItem
+                  icon={<Users />}
+                  onClick={() => go("/admin/admins")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/admins"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Admins
+                </MenuItem>
               </SubMenu>
 
               {/* Extra */}
@@ -256,6 +273,7 @@ const AdminSidebar: React.FC<Props> = ({
             </Menu>
           </div>
 
+          {/* Mobile footer */}
           {broken && (
             <div
               style={{
