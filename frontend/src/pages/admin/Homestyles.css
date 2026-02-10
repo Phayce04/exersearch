@@ -1,0 +1,2180 @@
+/* Hero Section */
+.find-gyms-page {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.section-hero {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  background: rgb(205, 193, 164);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-overlay {
+  text-align: center;
+  color: white;
+  padding: 2rem;
+  max-width: 800px;
+}
+
+.hero-overlay h1 {
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 800;
+  margin-bottom: 2rem;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+  line-height: 1.2;
+}
+
+.hero-btn {
+  padding: 1rem 2.5rem;
+  border: 2px solid #ff8c00;
+  background: transparent;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.hero-btn:hover {
+  background: #ff8c00;
+  color: #fff;
+  
+  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.4);
+}
+
+/* Modal Background */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+/* Modal Container */
+.modal {
+  width: 95%;
+  max-width: 1200px;
+  height: 85vh;
+  max-height: 700px;
+  background: white;
+  border: 2px solid #ff8c00;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal Header */
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 2px solid #ff8c00;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #ff8c00;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: #ff8c00;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.modal-close:hover {
+  background: #fff5e6;
+  transform: scale(1.1);
+}
+
+/* Modal Content */
+.modal-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  overflow: hidden;
+}
+
+.left-panel,
+.right-panel {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.left-panel {
+  border-right: 2px solid #ff8c00;
+}
+
+/* Section Title */
+.section-title {
+  margin-bottom: 1rem;
+  color: #ff8c00;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Location Section */
+.location-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.input-box {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #ff8c00;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.input-box:focus {
+  outline: none;
+  border-color: #cc7000;
+  box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+}
+
+.map-frame {
+  width: 100%;
+  flex: 1;
+  min-height: 300px;
+  border: 2px solid #ff8c00;
+  border-radius: 4px;
+}
+
+/* Options Grid */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.option {
+  border: 2px solid #ff8c00;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  background: white;
+}
+
+.option:hover {
+  background: #ff8c00;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 140, 0, 0.3);
+}
+
+.option strong {
+  display: block;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.option img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  margin-top: 0.75rem;
+  border-radius: 4px;
+}
+
+/* Right Panel */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.right-panel h3 {
+  color: #ff8c00;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.selected-list {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.empty-message {
+  color: #999;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.selected-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid #ff8c00;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.selected-item:hover {
+  background: #fff5e6;
+}
+
+.remove-btn {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #ff8c00;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.remove-btn:hover {
+  background: #ff8c00;
+  color: white;
+}
+
+.apply-btn {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #ff8c00;
+  background: #ff8c00;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 700;
+  font-size: 1rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.apply-btn:hover {
+  background: #cc7000;
+  border-color: #cc7000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 140, 0, 0.3);
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-top: 2px solid #ff8c00;
+  background: #fff;
+}
+
+.step-indicator {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.nav-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #ff8c00;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #ff8c00;
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.arrow {
+  width: 12px;
+  height: 12px;
+  border-top: 3px solid #ff8c00;
+  border-right: 3px solid #ff8c00;
+}
+
+.arrow.right {
+  transform: rotate(45deg);
+}
+
+.arrow.left {
+  transform: rotate(-135deg);
+}
+
+.nav-btn:hover:not(:disabled) .arrow {
+  border-color: white;
+}
+
+/* Scrollbar Styling */
+.left-panel::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar,
+.selected-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.left-panel::-webkit-scrollbar-track,
+.right-panel::-webkit-scrollbar-track,
+.selected-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.left-panel::-webkit-scrollbar-thumb,
+.right-panel::-webkit-scrollbar-thumb,
+.selected-list::-webkit-scrollbar-thumb {
+  background: #ff8c00;
+  border-radius: 4px;
+}
+
+.left-panel::-webkit-scrollbar-thumb:hover,
+.right-panel::-webkit-scrollbar-thumb:hover,
+.selected-list::-webkit-scrollbar-thumb:hover {
+  background: #cc7000;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modal {
+    height: 90vh;
+  }
+
+  .modal-content {
+    grid-template-columns: 1fr;
+  }
+
+  .left-panel {
+    border-right: none;
+    border-bottom: 2px solid #ff8c00;
+    max-height: 50vh;
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-overlay h1 {
+    font-size: clamp(24px, 6vw, 36px);
+  }
+
+  .modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .step-indicator {
+    font-size: 0.8rem;
+  }
+
+  .nav-btn {
+    width: 45px;
+    height: 45px;
+  }
+}
+
+/*homepage*/
+
+/* General */
+.home-page {
+  font-family: 'Montserrat', sans-serif;
+    background: #f4f6f8; 
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 1.5rem;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #d35400 0%, #ff8c00 100%);
+  padding: 4rem 2rem;
+  color: white;
+  text-align: center;
+}
+
+.hero-content h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.hero-content p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+.search-bar-container {
+  max-width: 650px;
+  margin: 0 auto;
+  display: flex;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  outline: none;
+  color: #333;
+}
+
+.search-btn {
+  background: #ff8c00;
+  color: white;
+  border: none;
+  padding: 1rem 2.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-btn:hover {
+  background: #e67e00;
+}
+
+/* Stats Section */
+.stats-section {
+  background: transparent;
+  padding: 3rem 0;
+  
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.stats-grid {
+  display:grid;
+  padding: 20px 0 50px 0;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ff8c00;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Recent Activity Section */
+.activity-section {
+  background: transparent;
+  padding: 3rem 0;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.activity-gym-link {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.activity-gym-link:hover {
+  color: #ff8c00;
+  text-decoration: underline;
+}
+
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.activity-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.activity-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activity-details strong {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.activity-details span {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.activity-link {
+  color: #ff8c00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.activity-link:hover {
+  color: #e67e00;
+}
+
+/* Categories Section */
+.categories-section {
+  background: transparent;
+  padding: 3rem 0;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.category-card {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover {
+  border-color: #ff8c00;
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
+}
+
+.category-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.category-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.category-card p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Featured Gyms Section */
+.featured-section {
+  background: transparent;
+  padding: 3rem 0;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.view-all-link {
+  color: #ff8c00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.view-all-link:hover {
+  color: #e67e00;
+}
+
+.gyms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.gym-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gym-card:hover {
+  border-color: #ff8c00;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.gym-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.gym-info {
+  padding: 1.25rem;
+}
+
+.gym-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.gym-location {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.gym-amenities {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.amenity-tag {
+  background: #fff5e6;
+  color: #ff8c00;
+  padding: 0.25rem 0.75rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #ffe6cc;
+}
+
+.gym-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gym-price-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.gym-price {
+  color: #ff8c00;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.gym-rating {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.gym-view-btn {
+  padding: 0.625rem 1.25rem;
+  background: #ff8c00;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.gym-view-btn:hover {
+  background: #e67e00;
+}
+
+/* Top Rated Section */
+.top-rated-section {
+  padding: 3rem 0;
+  background: #eef2f5;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.top-rated-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.top-rated-item {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.rating-rank {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ff8c00;
+  min-width: 50px;
+  text-align: center;
+}
+
+.rating-info {
+  flex: 1;
+}
+
+.rating-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.rating-details {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.rating-stars {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.rating-reviews {
+  color: #6b7280;
+}
+
+.rating-link {
+  color: #ff8c00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.rating-link:hover {
+  color: #e67e00;
+}
+
+.stat-icon {
+  color: #d23f0b;
+  margin-bottom: 0.4rem;
+}
+
+/* CTA Section */
+/* Preferences Section */
+.cta-section {
+  padding: 3rem 2rem;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cta-content {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cta-content h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.75rem;
+}
+
+.cta-content p {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.cta-btn {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: #ff8c00;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.cta-btn:hover {
+  background: #e67e00;
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 3rem 1.5rem;
+  }
+
+  .search-bar-container {
+    flex-direction: column;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .activity-date {
+    min-width: auto;
+  }
+
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gyms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .gym-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gym-view-btn {
+    width: 100%;
+  }
+
+  .top-rated-item {
+    flex-wrap: wrap;
+  }
+}
+.gym-results-page {
+  font-family: 'Montserrat', sans-serif;
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header Section */
+.results-header {
+  background: linear-gradient(135deg, #d35400 0%, #ff8c00 100%);
+  padding: 3rem 0;
+  color: white;
+  text-align: center;
+}
+
+.results-header h1 {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.results-header p {
+  font-size: 1.05rem;
+  opacity: 0.95;
+}
+
+/* Filter Bar */
+.filter-bar {
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 1.75rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: white;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff8c00' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #ff8c00;
+  box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+}
+
+.filter-group select:hover {
+  border-color: #fbbf24;
+}
+
+.clear-filters-btn {
+  align-self: flex-end; 
+  padding: 0.75rem 1.5rem;
+  background: #fff5e6;
+  color: #ff8c00;
+  border: 2px solid #ff8c00;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.clear-filters-btn:hover {
+  background: #ff8c00;
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.2);
+}
+
+/* Results Section */
+.results-section {
+  padding: 3rem 0;
+  min-height: 60vh;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Result Card */
+.result-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+  opacity: 0;
+  transform: translateY(20px);
+  display: flex;
+  flex-direction: column;
+}
+
+.result-card.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.result-card:hover {
+  border-color: #ff8c00;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Card Image */
+.card-image {
+  position: relative;
+  width: 100%;
+  padding-top: 60%; /* 5:3 aspect ratio */
+  overflow: hidden;
+}
+
+.card-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: #ff8c00;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* Card Content */
+.card-content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.card-content h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.gym-location {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.gym-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.rating {
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.reviews {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.gym-description {
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.gym-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.amenity-tag {
+  background: #fff5e6;
+  color: #ff8c00;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #ffe6cc;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.see-more-btn {
+  flex: 1;
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  background: #ff8c00;
+  color: white;
+  text-decoration: none;
+  text-align: center;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.see-more-btn:hover {
+  background: #e67e00;
+}
+
+.favorite-btn {
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heart-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.favorite-btn:hover {
+  border-color: #ff8c00;
+  color: #ff8c00;
+}
+
+.favorite-btn.liked {
+  border-color: #ff8c00;
+  color: #ff8c00;
+}
+
+/* Load More */
+.load-more-container {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.load-more-btn {
+  padding: 1rem 2.5rem;
+  background: white;
+  color: #ff8c00;
+  border: 2px solid #ff8c00;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.load-more-btn:hover {
+  background: #ff8c00;
+  color: white;
+}
+
+/* CTA Section */
+.cta-section {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c00 100%);
+  padding: 4rem 2rem;
+  text-align: center;
+  color: white;
+  margin-top: 3rem;
+}
+
+.cta-section h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.cta-section p {
+  font-size: 1.05rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+}
+
+.cta-btn {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  background: white;
+  color: #ff8c00;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.cta-btn:hover {
+  background: #f5f5f5;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+
+  .clear-filters-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .favorite-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-header {
+    padding: 2rem 0;
+  }
+}
+/* ============================================
+   GYM DETAILS PAGE STYLES
+   All selectors scoped to .gym-details-page
+   Professional design with minimal animations
+   ============================================ */
+
+/* General Styles */
+/* Homestyles.css (WHOLE)
+   NOTE: This is your full file as you pasted, with ONLY the admin override section fixed.
+   I did NOT change your main layout CSS — I only replaced the broken admin overrides at the bottom.
+*/
+
+.gym-details-page {
+  font-family: 'Montserrat', sans-serif;
+  background: #f9fafb;
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+/* Hero Section */
+.gym-details-page .gym-hero {
+  position: relative;
+  background: linear-gradient(135deg, #d35400 0%, #ff8c00 100%);
+  color: white;
+  padding: 2rem 0;
+  overflow: hidden;
+}
+
+.gym-details-page .gym-hero .hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.gym-details-page .gym-hero .hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+}
+
+.gym-details-page .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  transition: opacity 0.2s;
+}
+
+.gym-details-page .back-link:hover {
+  opacity: 0.85;
+}
+
+.gym-details-page .back-link svg {
+  width: 20px;
+  height: 20px;
+}
+
+.gym-details-page .hero-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.gym-details-page .hero-text h1.gym-name {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.gym-details-page .gym-tagline {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+}
+
+.gym-details-page .hero-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.gym-details-page .rating-badge,
+.gym-details-page .location-badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.gym-details-page .hero-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.gym-details-page .price-tag {
+  background: white;
+  color: #ff8c00;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.gym-details-page .favorite-btn-hero {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gym-details-page .favorite-btn-hero svg {
+  width: 24px;
+  height: 24px;
+}
+
+.gym-details-page .favorite-btn-hero:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.gym-details-page .favorite-btn-hero.liked {
+  background: white;
+  color: #ff8c00;
+  border-color: white;
+}
+
+/* Image Gallery - Now outside hero */
+.gym-details-page .image-gallery {
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 500px;
+  overflow: hidden;
+  background: #000;
+}
+
+.gym-details-page .gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s;
+}
+
+.gym-details-page .gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  color: #ff8c00;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.gym-details-page .gallery-nav:hover {
+  background: white;
+}
+
+.gym-details-page .gallery-nav.prev {
+  left: 1.5rem;
+}
+
+.gym-details-page .gallery-nav.next {
+  right: 1.5rem;
+}
+
+.gym-details-page .gallery-dots {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.gym-details-page .gallery-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gym-details-page .gallery-dots .dot.active {
+  background: white;
+  width: 30px;
+  border-radius: 5px;
+}
+
+/* Main Content */
+.gym-details-page .gym-details-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.gym-details-page .details-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Detail Cards */
+.gym-details-page .detail-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s;
+}
+
+.gym-details-page .detail-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.gym-details-page .detail-card .section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+/* About Section */
+.gym-details-page .gym-description {
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* Hours Section */
+.gym-details-page .hours-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.gym-details-page .hours-icon {
+  font-size: 3rem;
+  flex-shrink: 0;
+}
+
+.gym-details-page .hours-text {
+  flex: 1;
+}
+
+.gym-details-page .hours-time {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+}
+
+.gym-details-page .hours-status {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.gym-details-page .hours-status.open {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Crowd Section */
+.gym-details-page .crowd-info {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.gym-details-page .crowd-percentage {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #ff8c00;
+  flex-shrink: 0;
+}
+
+.gym-details-page .crowd-details {
+  flex: 1;
+}
+
+.gym-details-page .crowd-bar-container {
+  width: 100%;
+  height: 12px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.gym-details-page .crowd-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff8c00, #d35400);
+  border-radius: 6px;
+  transition: width 1s ease-out;
+}
+
+.gym-details-page .crowd-status {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* Stats Section */
+.gym-details-page .stats-section .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+}
+
+.gym-details-page .stat-card {
+  background: linear-gradient(135deg, #fff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.gym-details-page .stat-card:hover {
+  border-color: #d1d5db;
+}
+
+.gym-details-page .stat-card.stat-orange {
+  border-color: #ff8c00;
+}
+
+.gym-details-page .stat-card.stat-orange:hover {
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+}
+
+.gym-details-page .stat-card.stat-blue {
+  border-color: #3b82f6;
+}
+
+.gym-details-page .stat-card.stat-blue:hover {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.gym-details-page .stat-card.stat-green {
+  border-color: #10b981;
+}
+
+.gym-details-page .stat-card.stat-green:hover {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.gym-details-page .stat-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.gym-details-page .stat-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.gym-details-page .stat-label {
+  font-size: 0.95rem;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Amenities Section */
+.gym-details-page .amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.gym-details-page .amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.gym-details-page .amenity-item:hover {
+  background: #fff5e6;
+  border-color: #ff8c00;
+}
+
+.gym-details-page .amenity-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.gym-details-page .amenity-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Equipment Section */
+.gym-details-page .equipment-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.75rem;
+}
+
+.gym-details-page .equipment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  color: #374151;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.gym-details-page .equipment-item svg {
+  width: 20px;
+  height: 20px;
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+/* Sidebar */
+.gym-details-page .sidebar-column {
+  position: relative;
+}
+
+.gym-details-page .sticky-card {
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+/* Map Card */
+.gym-details-page .map-container {
+  width: 100%;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.gym-details-page .gym-map {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.gym-details-page .map-address {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.6;
+}
+
+.gym-details-page .direction-btn {
+  width: 100%;
+  padding: 1rem;
+  background: #ff8c00;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.gym-details-page .direction-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.gym-details-page .direction-btn:hover {
+  background: #e67e00;
+}
+
+/* Actions Card */
+.gym-details-page .action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gym-details-page .action-btn {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.gym-details-page .action-icon {
+  font-size: 1.25rem;
+}
+
+.gym-details-page .action-btn.primary {
+  background: #ff8c00;
+  color: white;
+}
+
+.gym-details-page .action-btn.primary:hover {
+  background: #e67e00;
+}
+
+.gym-details-page .action-btn.secondary {
+  background: white;
+  color: #ff8c00;
+  border: 2px solid #ff8c00;
+}
+
+.gym-details-page .action-btn.secondary:hover {
+  background: #ff8c00;
+  color: white;
+}
+
+/* Contact Card */
+.gym-details-page .social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.gym-details-page .social-link {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: opacity 0.2s;
+  font-size: 1.1rem;
+  text-decoration: none;
+}
+
+.gym-details-page .social-link:hover {
+  opacity: 0.85;
+}
+
+.gym-details-page .social-link.facebook {
+  background: #1877f2;
+}
+
+.gym-details-page .social-link.instagram {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.gym-details-page .social-link.phone {
+  background: #10b981;
+}
+
+.gym-details-page .social-link.email {
+  background: #3b82f6;
+}
+
+.gym-details-page .social-link.tiktok {
+  background: #000000;
+}
+
+.gym-details-page .contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gym-details-page .contact-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.gym-details-page .contact-info strong {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .gym-details-page .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gym-details-page .sticky-card {
+    position: relative;
+    top: 0;
+  }
+
+  .gym-details-page .image-gallery {
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .gym-details-page .gym-hero {
+    padding: 1.5rem 0;
+  }
+
+  .gym-details-page .gym-hero .hero-content {
+    padding: 0 1rem 1.5rem;
+  }
+
+  .gym-details-page .hero-info {
+    flex-direction: column;
+  }
+
+  .gym-details-page .hero-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .gym-details-page .hero-text h1.gym-name {
+    font-size: 1.75rem;
+  }
+
+  .gym-details-page .image-gallery {
+    height: 300px;
+  }
+
+  .gym-details-page .gallery-nav {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .gym-details-page .gallery-nav.prev {
+    left: 1rem;
+  }
+
+  .gym-details-page .gallery-nav.next {
+    right: 1rem;
+  }
+
+  .gym-details-page .detail-card {
+    padding: 1.5rem;
+  }
+
+  .gym-details-page .detail-card .section-title {
+    font-size: 1.25rem;
+  }
+
+  .gym-details-page .stats-section .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gym-details-page .amenities-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gym-details-page .equipment-list {
+    grid-template-columns: 1fr;
+  }
+
+  .gym-details-page .crowd-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gym-details-page .crowd-percentage {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gym-details-page .gym-details-container {
+    padding: 2rem 1rem;
+  }
+
+  .gym-details-page .hero-meta {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .gym-details-page .rating-badge,
+  .gym-details-page .location-badge {
+    display: block;
+    text-align: center;
+  }
+
+  .gym-details-page .detail-card {
+    padding: 1.25rem;
+  }
+
+  .gym-details-page .hours-info {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* =========================
+   Admin mode (THEME TOKEN OVERRIDES)
+   Put this at the VERY BOTTOM of Homestyles.css
+   ========================= */
+
+.gym-details-page.admin-mode {
+  background: var(--gd-bg) !important;
+  color: var(--gd-text) !important;
+}
+
+/* ✅ HERO: remove orange/black look, follow admin theme */
+.gym-details-page.admin-mode .gym-hero {
+  background: var(--gd-bg) !important;     /* no gradient, no black */
+  color: var(--gd-text) !important;
+  padding-bottom: 1.2rem;                  /* keep spacing similar */
+}
+
+.gym-details-page.admin-mode .gym-hero .hero-overlay {
+  background: transparent !important;      /* remove dark overlay */
+}
+
+/* Hero text + pills should not be forced white */
+.gym-details-page.admin-mode .back-link,
+.gym-details-page.admin-mode .gym-name,
+.gym-details-page.admin-mode .gym-tagline,
+.gym-details-page.admin-mode .rating-badge,
+.gym-details-page.admin-mode .location-badge {
+  color: var(--gd-text) !important;
+}
+
+/* Pills use theme surfaces */
+.gym-details-page.admin-mode .rating-badge,
+.gym-details-page.admin-mode .location-badge {
+  background: var(--gd-soft) !important;
+  border: 1px solid var(--gd-border) !important;
+  backdrop-filter: none !important;
+}
+
+/* Price tag uses theme surfaces (not white/orange) */
+.gym-details-page.admin-mode .price-tag {
+  background: var(--gd-soft2) !important;
+  color: var(--gd-text) !important;
+  border: 1px solid var(--gd-border) !important;
+  box-shadow: var(--gd-shadow) !important;
+}
+
+/* ✅ IMAGE GALLERY: avoid hard black background */
+.gym-details-page.admin-mode .image-gallery {
+  background: var(--gd-soft) !important;
+  border-top: 1px solid var(--gd-border);
+  border-bottom: 1px solid var(--gd-border);
+}
+
+/* ✅ CARDS: override white background */
+.gym-details-page.admin-mode .detail-card {
+  background: var(--gd-soft2) !important;
+  border: 1px solid var(--gd-border) !important;
+  box-shadow: var(--gd-shadow) !important;
+}
+
+.gym-details-page.admin-mode .detail-card .section-title {
+  color: var(--gd-text) !important;
+  border-bottom: 2px solid var(--gd-border) !important;
+}
+
+.gym-details-page.admin-mode .gym-description,
+.gym-details-page.admin-mode .hours-time,
+.gym-details-page.admin-mode .crowd-status,
+.gym-details-page.admin-mode .map-address,
+.gym-details-page.admin-mode .contact-info p,
+.gym-details-page.admin-mode .amenity-name,
+.gym-details-page.admin-mode .stat-label {
+  color: var(--gd-muted) !important;
+}
+
+/* Buttons follow theme */
+.gym-details-page.admin-mode .direction-btn {
+  background: var(--gd-soft) !important;
+  color: var(--gd-text) !important;
+  border: 1px solid var(--gd-border) !important;
+  box-shadow: var(--gd-shadow) !important;
+}
+.gym-details-page.admin-mode .direction-btn:hover {
+  filter: brightness(0.98);
+}

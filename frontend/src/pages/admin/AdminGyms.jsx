@@ -1,6 +1,6 @@
-// src/pages/admin/AdminGyms.jsx
+// ✅ WHOLE FILE: src/pages/admin/AdminGyms.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate, useLocation } from "react-router-dom";
 import { adminThemes } from "./AdminLayout";
 
 import { useAuthMe } from "../../utils/useAuthMe";
@@ -68,9 +68,15 @@ export default function AdminGyms() {
 
   const { isAdmin } = useAuthMe();
 
+  // ✅ NEW: for redirecting to GymDetails with "from"
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // ✅ your GymController index: /api/v1/gyms
   const { rows, loading: loadingRows, error, reload } = useApiList("/api/v1/gyms", {
     authed: true,
+    allPages: true, // ✅ NEW
+    perPage: 10,
   });
 
   const [q, setQ] = useState("");
@@ -224,7 +230,6 @@ export default function AdminGyms() {
 
       gym_type: "",
 
-
       contact_number: "",
       email: "",
       website: "",
@@ -365,8 +370,10 @@ export default function AdminGyms() {
       longitude = norm?.longitude ?? longitude;
     }
 
-    if (latitude !== null && (latitude < -90 || latitude > 90)) return setGymErr("Latitude must be between -90 and 90.");
-    if (longitude !== null && (longitude < -180 || longitude > 180)) return setGymErr("Longitude must be between -180 and 180.");
+    if (latitude !== null && (latitude < -90 || latitude > 90))
+      return setGymErr("Latitude must be between -90 and 90.");
+    if (longitude !== null && (longitude < -180 || longitude > 180))
+      return setGymErr("Longitude must be between -180 and 180.");
 
     setGymBusy(true);
     setGymErr("");
@@ -430,7 +437,8 @@ export default function AdminGyms() {
     ? URL.createObjectURL(gymForm.mainImageFile)
     : absoluteUrl(gymForm?.main_image_url);
 
-  const canShowMainInlineTools = Boolean(gymForm?.main_image_url) || Boolean(gymForm?.mainImageFile);
+  const canShowMainInlineTools =
+    Boolean(gymForm?.main_image_url) || Boolean(gymForm?.mainImageFile);
 
   return (
     <div className="ae-page" data-theme={theme} style={cssVars}>
@@ -476,7 +484,11 @@ export default function AdminGyms() {
                 <span className="ae-searchIcon">⌕</span>
               </div>
 
-              <select value={gymType} onChange={(e) => setGymType(e.target.value)} className="ae-select">
+              <select
+                value={gymType}
+                onChange={(e) => setGymType(e.target.value)}
+                className="ae-select"
+              >
                 {gymTypes.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -484,13 +496,21 @@ export default function AdminGyms() {
                 ))}
               </select>
 
-              <select value={is24} onChange={(e) => setIs24(e.target.value)} className="ae-select">
+              <select
+                value={is24}
+                onChange={(e) => setIs24(e.target.value)}
+                className="ae-select"
+              >
                 <option value="All">24H: All</option>
                 <option value="true">24H: Yes</option>
                 <option value="false">24H: No</option>
               </select>
 
-              <select value={hasClasses} onChange={(e) => setHasClasses(e.target.value)} className="ae-select">
+              <select
+                value={hasClasses}
+                onChange={(e) => setHasClasses(e.target.value)}
+                className="ae-select"
+              >
                 <option value="All">Classes: All</option>
                 <option value="true">Classes: Yes</option>
                 <option value="false">Classes: No</option>
@@ -511,17 +531,29 @@ export default function AdminGyms() {
               <table className="ae-table">
                 <thead>
                   <tr>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "name"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "name"))}
+                    >
                       Gym{sortIndicator(sort, "name")}
                     </th>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "type"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "type"))}
+                    >
                       Type{sortIndicator(sort, "type")}
                     </th>
                     <th className="ae-th">Location</th>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "monthly"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "monthly"))}
+                    >
                       Monthly{sortIndicator(sort, "monthly")}
                     </th>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "updated"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "updated"))}
+                    >
                       Updated{sortIndicator(sort, "updated")}
                     </th>
                     <th className="ae-th ae-thRight" />
@@ -572,19 +604,39 @@ export default function AdminGyms() {
                         </td>
 
                         <td className="ae-td">{r.gym_type || "-"}</td>
-                        <td className="ae-td">
-                          <div className="ae-mutedTiny">{r.address || "-"}</div>
-                          <div className="ae-mutedTiny">
-                            {r.latitude && r.longitude ? `${r.latitude}, ${r.longitude}` : "No coordinates"}
-                          </div>
-                        </td>
+<td className="ae-td">
+  <div className="ae-locCell">
+    <div
+      className="ae-mutedTiny ae-locAddress"
+      data-full={r.address || "-"}
+    >
+      {r.address || "-"}
+    </div>
+
+    <div className="ae-mutedTiny">
+      {r.latitude && r.longitude
+        ? `${r.latitude}, ${r.longitude}`
+        : "No coordinates"}
+    </div>
+  </div>
+</td>
+
 
                         <td className="ae-td">{r.monthly_price ?? "-"}</td>
                         <td className="ae-td ae-mutedCell">{formatDateTimeFallback(r.updated_at)}</td>
 
                         <td className="ae-td ae-tdRight">
                           <div className="ae-actionsInline">
-                            <IconBtn title="View" className="ae-iconBtn" onClick={() => openView(r)}>
+                            {/* ✅ VIEW NOW REDIRECTS TO DETAILS + REMEMBERS CURRENT PAGE */}
+                            <IconBtn
+                              title="View"
+                              className="ae-iconBtn"
+                              onClick={() =>
+                                navigate(`/admin/gyms/${r.gym_id}`, {
+                                  state: { from: location.pathname + location.search },
+                                })
+                              }
+                            >
                               👁
                             </IconBtn>
 
@@ -659,7 +711,11 @@ export default function AdminGyms() {
 
       {/* ✅ Add/Edit/View modal */}
       {gymOpen && gymForm && (
-        <div className="ae-backdrop" onClick={() => setGymOpen(false)} style={{ overflow: "auto", padding: "24px 12px" }}>
+        <div
+          className="ae-backdrop"
+          onClick={() => setGymOpen(false)}
+          style={{ overflow: "auto", padding: "24px 12px" }}
+        >
           <div
             className="ae-formModal"
             onClick={(e) => e.stopPropagation()}
@@ -941,29 +997,29 @@ export default function AdminGyms() {
         </div>
       )}
 
-<MapPickerModal
-  open={mapOpen}
-  onClose={() => setMapOpen(false)}
-  initialLat={gymForm?.latitude}
-  initialLng={gymForm?.longitude}
-  onConfirm={({ latitude, longitude, address }) => {
-    let latNum = toNumOrNull(latitude);
-    let lngNum = toNumOrNull(longitude);
+      <MapPickerModal
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        initialLat={gymForm?.latitude}
+        initialLng={gymForm?.longitude}
+        onConfirm={({ latitude, longitude, address }) => {
+          let latNum = toNumOrNull(latitude);
+          let lngNum = toNumOrNull(longitude);
 
-    if (typeof normalizeLatLng === "function") {
-      const norm = normalizeLatLng({ latitude: latNum, longitude: lngNum });
-      latNum = norm?.latitude ?? latNum;
-      lngNum = norm?.longitude ?? lngNum;
-    }
+          if (typeof normalizeLatLng === "function") {
+            const norm = normalizeLatLng({ latitude: latNum, longitude: lngNum });
+            latNum = norm?.latitude ?? latNum;
+            lngNum = norm?.longitude ?? lngNum;
+          }
 
-    setGymForm((p) => ({
-      ...p,
-      latitude: latNum ?? latitude,
-      longitude: lngNum ?? longitude,
-      address: String(address ?? ""), // ✅ ALWAYS overwrite
-    }));
-  }}
-/>
+          setGymForm((p) => ({
+            ...p,
+            latitude: latNum ?? latitude,
+            longitude: lngNum ?? longitude,
+            address: String(address ?? ""), // ✅ ALWAYS overwrite
+          }));
+        }}
+      />
 
       {/* ✅ save confirm */}
       {saveOpen && gymOpen && gymForm && (
@@ -975,9 +1031,7 @@ export default function AdminGyms() {
               </div>
 
               <div className="ae-confirmHeaderText">
-                <div className="ae-confirmTitle">
-                  {gymMode === "add" ? "Create gym?" : "Confirm changes?"}
-                </div>
+                <div className="ae-confirmTitle">{gymMode === "add" ? "Create gym?" : "Confirm changes?"}</div>
               </div>
 
               <button className="ae-modalClose" onClick={() => setSaveOpen(false)}>
@@ -992,11 +1046,7 @@ export default function AdminGyms() {
                 Cancel
               </button>
 
-              <button
-                className="ae-btn ae-btnPrimary"
-                onClick={saveGym}
-                disabled={gymBusy || galleryUploading}
-              >
+              <button className="ae-btn ae-btnPrimary" onClick={saveGym} disabled={gymBusy || galleryUploading}>
                 {gymBusy
                   ? "Saving…"
                   : galleryUploading
@@ -1022,8 +1072,7 @@ export default function AdminGyms() {
               <div className="ae-confirmHeaderText">
                 <div className="ae-confirmTitle">Delete gym?</div>
                 <div className="ae-mutedTiny">
-                  This will permanently remove{" "}
-                  <b className="ae-strongText">{activeGym.name}</b>. This can’t be undone.
+                  This will permanently remove <b className="ae-strongText">{activeGym.name}</b>. This can’t be undone.
                 </div>
               </div>
 

@@ -15,8 +15,8 @@ class AdminUserController extends Controller
             User::query()
                 ->whereIn('role', ['user', 'owner'])
                 ->with([
-                    'profile',
-                    'ownerProfile',          
+                    'userProfile',          // ✅ FIXED
+                    'ownerProfile',
                     'preference',
                     'preferredEquipments',
                     'preferredAmenities',
@@ -26,16 +26,13 @@ class AdminUserController extends Controller
         );
     }
 
-    /**
-     * GET /api/v1/admin/users/{user_id}
-     */
     public function show($user_id)
     {
         $user = User::query()
             ->whereIn('role', ['user', 'owner'])
             ->with([
-                'profile',
-                'ownerProfile',          // ✅ NEW
+                'userProfile',           // ✅ FIXED
+                'ownerProfile',
                 'preference',
                 'preferredEquipments',
                 'preferredAmenities',
@@ -45,9 +42,6 @@ class AdminUserController extends Controller
         return new UserResource($user);
     }
 
-    /**
-     * GET /api/v1/admin/users/{user_id}/preferences
-     */
     public function preferences($user_id)
     {
         $user = User::query()
@@ -72,9 +66,6 @@ class AdminUserController extends Controller
         ]);
     }
 
-    /**
-     * PUT /api/v1/admin/users/{user_id}/preferences
-     */
     public function updatePreferences(Request $request, $user_id)
     {
         $user = User::query()
@@ -118,8 +109,8 @@ class AdminUserController extends Controller
             'message' => 'User preferences updated by admin.',
             'data' => new UserResource(
                 $user->load([
-                    'profile',
-                    'ownerProfile',          // ✅ NEW
+                    'userProfile',        // ✅ FIXED
+                    'ownerProfile',
                     'preference',
                     'preferredEquipments',
                     'preferredAmenities',

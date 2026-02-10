@@ -1,17 +1,17 @@
 // src/pages/admin/AdminPasigGymsMap.jsx
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const MAIN = "#d23f0b";
 const MATCH_GREEN = "#22c55e";
 const DB_ONLY_ORANGE = "#ff9f1a";
-const APP_BLUE = "#3b82f6"; // owner applications
+const APP_BLUE = "#3b82f6";
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
-// Matching tolerance
-const MATCH_RADIUS_METERS = 180; // allow some errors
-const NAME_SIM_THRESHOLD = 0.35; // loose
+const MATCH_RADIUS_METERS = 180;
+const NAME_SIM_THRESHOLD = 0.35;
 
 async function fetchPasigBoundaryGeoJSON() {
   const q = encodeURIComponent("Pasig City, National Capital Region, Philippines");
@@ -135,8 +135,6 @@ async function fetchGymsOverpass({ south, west, north, east }) {
 out center tags;
 `.trim();
 
-  console.log("[OSM] Overpass bbox:", { south, west, north, east });
-
   const res = await fetch("https://overpass-api.de/api/interpreter", {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
@@ -150,13 +148,6 @@ out center tags;
   } catch {
     data = null;
   }
-
-  console.log("[OSM] Overpass response:", {
-    status: res.status,
-    ok: res.ok,
-    elements: data?.elements?.length ?? null,
-    sample: data?.elements?.[0] ?? null,
-  });
 
   if (!res.ok) throw new Error("Failed to fetch gyms from Overpass.");
 
@@ -178,11 +169,9 @@ out center tags;
     })
     .filter(Boolean);
 
-  console.log("[OSM] Parsed OSM features:", features.length);
   return { type: "FeatureCollection", features };
 }
 
-// DB gyms
 async function fetchDbGymsInBbox(bbox) {
   const params = new URLSearchParams({
     south: String(bbox.south),
@@ -192,7 +181,6 @@ async function fetchDbGymsInBbox(bbox) {
   });
 
   const url = `/api/v1/gyms/map?${params.toString()}`;
-  console.log("[DB] Requesting:", url);
 
   const token =
     localStorage.getItem("token") ||
@@ -216,8 +204,6 @@ async function fetchDbGymsInBbox(bbox) {
     json = null;
   }
 
-  console.log("[DB] Response:", { status: res.status, ok: res.ok, body: json ?? text });
-
   if (!res.ok) {
     const msg =
       (json && (json.message || json.error)) || `Failed to fetch DB gyms (HTTP ${res.status})`;
@@ -225,7 +211,6 @@ async function fetchDbGymsInBbox(bbox) {
   }
 
   const rows = json?.data || json?.rows || (Array.isArray(json) ? json : []);
-  console.log("[DB] Raw rows count:", Array.isArray(rows) ? rows.length : "not-array");
 
   const features = (Array.isArray(rows) ? rows : [])
     .map((g) => {
@@ -235,17 +220,7 @@ async function fetchDbGymsInBbox(bbox) {
       const lng = parseFloat(lngRaw);
       const lat = parseFloat(latRaw);
 
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.log("[DB] Skipping row (bad coords):", {
-          gym_id: g.gym_id ?? g.id,
-          name: g.name,
-          latitude: g.latitude,
-          longitude: g.longitude,
-          latRaw,
-          lngRaw,
-        });
-        return null;
-      }
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
 
       return {
         type: "Feature",
@@ -259,11 +234,9 @@ async function fetchDbGymsInBbox(bbox) {
     })
     .filter(Boolean);
 
-  console.log("[DB] Parsed DB features:", features.length);
   return { type: "FeatureCollection", features };
 }
 
-// Owner applications (admin)
 async function fetchOwnerAppsInBbox(bbox) {
   const params = new URLSearchParams({
     south: String(bbox.south),
@@ -273,7 +246,6 @@ async function fetchOwnerAppsInBbox(bbox) {
   });
 
   const url = `/api/v1/owner-applications/map?${params.toString()}`;
-  console.log("[APPS] Requesting:", url);
 
   const token =
     localStorage.getItem("token") ||
@@ -297,8 +269,6 @@ async function fetchOwnerAppsInBbox(bbox) {
     json = null;
   }
 
-  console.log("[APPS] Response:", { status: res.status, ok: res.ok, body: json ?? text });
-
   if (!res.ok) {
     const msg =
       (json && (json.message || json.error)) ||
@@ -307,21 +277,12 @@ async function fetchOwnerAppsInBbox(bbox) {
   }
 
   const rows = json?.data || (Array.isArray(json) ? json : []);
-  console.log("[APPS] Raw rows count:", Array.isArray(rows) ? rows.length : "not-array");
 
   const features = (Array.isArray(rows) ? rows : [])
     .map((a) => {
       const lng = parseFloat(a.longitude);
       const lat = parseFloat(a.latitude);
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.log("[APPS] Skipping row (bad coords):", {
-          id: a.id,
-          gym_name: a.gym_name,
-          latitude: a.latitude,
-          longitude: a.longitude,
-        });
-        return null;
-      }
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
 
       return {
         type: "Feature",
@@ -338,7 +299,6 @@ async function fetchOwnerAppsInBbox(bbox) {
     })
     .filter(Boolean);
 
-  console.log("[APPS] Parsed features:", features.length);
   return { type: "FeatureCollection", features };
 }
 
@@ -351,7 +311,6 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-// Matching helpers
 function toRad(d) {
   return (d * Math.PI) / 180;
 }
@@ -396,9 +355,6 @@ function matchOsmToDb(osmFC, dbFC) {
   const db = dbFC.features || [];
   const usedDbIds = new Set();
 
-  console.log("[MATCH] OSM features:", osmFC.features?.length ?? 0);
-  console.log("[MATCH] DB features:", db.length);
-
   const osmMatched = (osmFC.features || []).map((f) => {
     let best = null;
 
@@ -433,8 +389,6 @@ function matchOsmToDb(osmFC, dbFC) {
   });
 
   const dbOnly = db.filter((d) => !usedDbIds.has(d.properties?.gym_id));
-  console.log("[MATCH] Matched DB gyms:", usedDbIds.size);
-  console.log("[MATCH] DB-only gyms:", dbOnly.length);
 
   return {
     osm: { type: "FeatureCollection", features: osmMatched },
@@ -446,6 +400,9 @@ function matchOsmToDb(osmFC, dbFC) {
 export default function AdminPasigGymsMap() {
   const mapRef = useRef(null);
   const containerRef = useRef(null);
+  const popupRef = useRef(null);
+  const navigate = useNavigate();
+
   const [status, setStatus] = useState("Loading Pasig boundary…");
 
   useEffect(() => {
@@ -457,7 +414,6 @@ export default function AdminPasigGymsMap() {
         if (cancelled) return;
 
         const bbox = getBboxFromFeature(pasigFeature);
-        console.log("[INIT] Pasig bbox:", bbox);
 
         const map = new maplibregl.Map({
           container: containerRef.current,
@@ -511,10 +467,6 @@ export default function AdminPasigGymsMap() {
           ]);
           if (cancelled) return;
 
-          setStatus(
-            `Fetched OSM: ${gymsFC.features.length} • DB: ${dbFC.features.length} • Apps: ${appsFC.features.length}`
-          );
-
           const osmInside = {
             type: "FeatureCollection",
             features: gymsFC.features.filter((f) =>
@@ -522,15 +474,12 @@ export default function AdminPasigGymsMap() {
             ),
           };
 
-          console.log("[OSM] Inside Pasig:", osmInside.features.length);
-
           const { osm, dbOnly, matchedCount } = matchOsmToDb(osmInside, dbFC);
 
           map.addSource("gyms-osm", { type: "geojson", data: osm });
           map.addSource("gyms-db-only", { type: "geojson", data: dbOnly });
           map.addSource("owner-apps", { type: "geojson", data: appsFC });
 
-          // OSM circles (GREEN if matched)
           map.addLayer({
             id: "gyms-osm-circles",
             type: "circle",
@@ -544,7 +493,6 @@ export default function AdminPasigGymsMap() {
             },
           });
 
-          // DB-only circles
           map.addLayer({
             id: "gyms-db-only-circles",
             type: "circle",
@@ -558,7 +506,6 @@ export default function AdminPasigGymsMap() {
             },
           });
 
-          // Applications circles
           map.addLayer({
             id: "owner-apps-circles",
             type: "circle",
@@ -572,22 +519,84 @@ export default function AdminPasigGymsMap() {
             },
           });
 
-          function popupHtml(title, lines = []) {
+          function closePopup() {
+            if (popupRef.current) {
+              popupRef.current.remove();
+              popupRef.current = null;
+            }
+          }
+
+          function popupHtml(title, lines = [], action = null) {
             const items = lines
               .filter(Boolean)
-              .map((l) => `<div style="margin-top:4px;opacity:.9">${escapeHtml(l)}</div>`)
+              .map((l) => `<div style="margin-top:6px;opacity:.92">${escapeHtml(l)}</div>`)
               .join("");
-            return `<strong>${escapeHtml(title)}</strong>${items}`;
+
+            const btn = action
+              ? `<button
+                    data-action="${escapeHtml(action.type)}"
+                    style="
+                      margin-top:10px;
+                      width:100%;
+                      padding:8px 10px;
+                      border-radius:10px;
+                      border:0;
+                      font-weight:800;
+                      cursor:pointer;
+                      background:#111827;
+                      color:#fff;
+                    "
+                  >${escapeHtml(action.label)}</button>`
+              : "";
+
+            return `
+              <div style="min-width:220px">
+                <div style="font-weight:900; font-size:14px; margin-bottom:2px;">${escapeHtml(
+                  title
+                )}</div>
+                ${items}
+                ${btn}
+              </div>
+            `;
+          }
+
+          function attachPopupButtonHandler(extra = {}) {
+            // wait for popup DOM to mount
+            window.requestAnimationFrame(() => {
+              const el = document.querySelector(".maplibregl-popup");
+              if (!el) return;
+              const btn = el.querySelector("button[data-action]");
+              if (!btn) return;
+
+              btn.addEventListener("click", (ev) => {
+                ev.preventDefault();
+                const type = btn.getAttribute("data-action");
+
+                closePopup();
+
+                if (type === "gym_details" && extra.gymId) {
+                  navigate(`/admin/gyms/${extra.gymId}`);
+                }
+                if (type === "app_details" && extra.appId) {
+                  navigate(`/admin/owner-applications/${extra.appId}`);
+                }
+              });
+            });
           }
 
           map.on("click", "gyms-osm-circles", (e) => {
             const f = e.features?.[0];
             if (!f) return;
 
+            closePopup();
+
             const [lng, lat] = f.geometry.coordinates;
             const name = f.properties?.name || "Fitness Center";
             const inDb = !!f.properties?.in_db;
             const dist = f.properties?.match_dist_m;
+
+            // ✅ if matched, we can route to details
+            const gymId = f.properties?.matched_gym_id;
 
             map.easeTo({
               center: [lng, lat],
@@ -595,24 +604,33 @@ export default function AdminPasigGymsMap() {
               duration: 800,
             });
 
-            new maplibregl.Popup({ closeButton: true })
+            const html = popupHtml(
+              name,
+              [
+                inDb ? "✅ In database (matched)" : "❌ Not in database",
+                inDb && dist != null ? `Match distance: ${dist}m` : "",
+              ],
+              inDb && gymId ? { type: "gym_details", label: "View full details" } : null
+            );
+
+            popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true })
               .setLngLat([lng, lat])
-              .setHTML(
-                popupHtml(name, [
-                  inDb ? "✅ In database (matched)" : "❌ Not in database",
-                  inDb && dist != null ? `Match distance: ${dist}m` : "",
-                ])
-              )
+              .setHTML(html)
               .addTo(map);
+
+            if (inDb && gymId) attachPopupButtonHandler({ gymId });
           });
 
           map.on("click", "gyms-db-only-circles", (e) => {
             const f = e.features?.[0];
             if (!f) return;
 
+            closePopup();
+
             const [lng, lat] = f.geometry.coordinates;
             const name = f.properties?.name || "Gym";
             const address = f.properties?.address || "";
+            const gymId = f.properties?.gym_id;
 
             map.easeTo({
               center: [lng, lat],
@@ -620,20 +638,28 @@ export default function AdminPasigGymsMap() {
               duration: 800,
             });
 
-            new maplibregl.Popup({ closeButton: true })
+            const html = popupHtml(
+              name,
+              [
+                address ? `Address: ${address}` : "",
+                "🟧 In DB but not found/tagged as gym on OSM (or too far to match)",
+              ],
+              gymId ? { type: "gym_details", label: "View full details" } : null
+            );
+
+            popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true })
               .setLngLat([lng, lat])
-              .setHTML(
-                popupHtml(name, [
-                  "🟧 In DB but not found/tagged as gym on OSM (or too far to match)",
-                  address ? `Address: ${address}` : "",
-                ])
-              )
+              .setHTML(html)
               .addTo(map);
+
+            if (gymId) attachPopupButtonHandler({ gymId });
           });
 
           map.on("click", "owner-apps-circles", (e) => {
             const f = e.features?.[0];
             if (!f) return;
+
+            closePopup();
 
             const [lng, lat] = f.geometry.coordinates;
             const gymName = f.properties?.gym_name || "Gym Application";
@@ -647,16 +673,22 @@ export default function AdminPasigGymsMap() {
               duration: 800,
             });
 
-            new maplibregl.Popup({ closeButton: true })
+            const html = popupHtml(
+              gymName,
+              [
+                `📄 Application #${appId ?? "-"}`,
+                `Status: ${statusVal}`,
+                address ? `Address: ${address}` : "",
+              ],
+              appId ? { type: "app_details", label: "View application" } : null
+            );
+
+            popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true })
               .setLngLat([lng, lat])
-              .setHTML(
-                popupHtml(gymName, [
-                  `📄 Application #${appId ?? "-"}`,
-                  `Status: ${statusVal}`,
-                  address ? `Address: ${address}` : "",
-                ])
-              )
+              .setHTML(html)
               .addTo(map);
+
+            if (appId) attachPopupButtonHandler({ appId });
           });
 
           map.on("mouseenter", "gyms-osm-circles", () => (map.getCanvas().style.cursor = "pointer"));
@@ -692,7 +724,7 @@ export default function AdminPasigGymsMap() {
 
     init();
     return () => mapRef.current?.remove();
-  }, []);
+  }, [navigate]);
 
   const Legend = () => (
     <div style={{ display: "grid", gap: 6 }}>
@@ -770,7 +802,6 @@ export default function AdminPasigGymsMap() {
         <div style={{ fontWeight: 700, marginBottom: 6 }}>Pasig Gyms Map</div>
         <div style={{ opacity: 0.9, marginBottom: 10 }}>{status}</div>
         <Legend />
-
       </div>
     </div>
   );

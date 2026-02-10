@@ -638,3 +638,42 @@
     min-width: 140px;
   }
 }
+/* ================================
+   AdminGyms – Location column fix
+   ================================ */
+
+.ae-locCell {
+  max-width: 320px; 
+  position: relative;
+}
+
+.ae-locAddress {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  cursor: help;
+}
+
+.ae-locAddress:hover::after {
+  content: attr(data-full);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 6px;
+
+  max-width: 420px;
+  padding: 8px 10px;
+
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: normal;
+  z-index: 9999;
+}
