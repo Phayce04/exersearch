@@ -24,10 +24,10 @@ import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
 import AdminProfile from "./pages/admin/Profile"; // ✅ only change
 import GymResults from "./pages/user/GymResults";
 import GymDetails from "./pages/user/GymDetails";
+import GymResultsVert from "./pages/user/GymResultMatching";
 import GymDetailAdmin from "./pages/admin/GymDetails";
 import AdminAdmins from "./pages/admin/AdminAdmins";
-import AdminSettings from "./pages/admin/AdminSettings";
-import Maintenance from "./pages/Maintenance";
+import GymResultsMatching from "./pages/user/GymResultMatching";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -55,6 +55,7 @@ function App() {
       {/* testroute for design*/}
     <Route path="/test-find-gyms" element={<FindGyms />} />
     <Route path="/test-gym-results" element={<GymResults />} />
+    <Route path="/test-gym-results-matching" element={<GymResultsMatching />} />
     <Route path="/test-gym-details" element={<GymDetails />} />
 
       {/* Standalone profile page */}
