@@ -23,6 +23,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminOwnerController;
 use App\Http\Controllers\AdminProfileController;
 use App\Http\Controllers\UserProfileController;
+use App\Http\Controllers\AdminAppSettingsController;
 
 use App\Http\Controllers\AdminAdminController;
 
@@ -79,14 +80,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/user/profile', [UserProfileController::class, 'show']);
         Route::put('/user/profile', [UserProfileController::class, 'update']);
 
+
         // ADMIN (protected by your 'admin' middleware)
         Route::middleware('admin')->group(function () {
-
-            // admin profile (edit profile page)
+        Route::get('/admin/settings', [AdminAppSettingsController::class, 'show']);
+    Route::put('/admin/settings', [AdminAppSettingsController::class, 'update']);
             Route::get('/admin/profile', [AdminProfileController::class, 'show']);
             Route::put('/admin/profile', [AdminProfileController::class, 'update']);
 
-            /* ✅ ADD THIS BLOCK: ADMIN MANAGEMENT (admins/superadmins) */
             Route::get('/admin/admins', [AdminAdminController::class, 'index']);
             Route::get('/admin/admins/{user}', [AdminAdminController::class, 'show']);
             Route::post('/admin/admins', [AdminAdminController::class, 'store']);

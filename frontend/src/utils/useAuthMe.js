@@ -1,13 +1,6 @@
+// ✅ WHOLE FILE: src/utils/useAuthMe.js
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API_BASE = "https://exersearch.test";
-const TOKEN_KEY = "token";
-
-function authHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { api } from "./apiClient";
 
 export function useAuthMe() {
   const [me, setMe] = useState(null);
@@ -16,13 +9,15 @@ export function useAuthMe() {
   const loadMe = async () => {
     setLoadingMe(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/v1/me`, {
-        headers: authHeaders(),
-        withCredentials: true,
-      });
+      const res = await api.get("/me");
       setMe(res.data.user || res.data);
       return res.data.user || res.data;
-    } catch {
+    } catch (err) {
+      // ✅ IMPORTANT: don't treat maintenance as "logged out"
+      if (err?.response?.status === 503) {
+        return null;
+      }
+
       setMe(null);
       return null;
     } finally {
