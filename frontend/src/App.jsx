@@ -27,7 +27,9 @@ import GymDetails from "./pages/user/GymDetails";
 import GymResultsVert from "./pages/user/GymResultMatching";
 import GymDetailAdmin from "./pages/admin/GymDetails";
 import AdminAdmins from "./pages/admin/AdminAdmins";
+import Onboarding from "./pages/user/Onboarding";
 import GymResultsMatching from "./pages/user/GymResultMatching";
+
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -51,10 +53,12 @@ function App() {
       <Route path="/" element={<Index />} />
      <Route path="/login" element={<Login />} /> 
       {/* testroute for design*/}
+    <Route path="/onboarding" element={<Onboarding />} />
     <Route path="/test-find-gyms" element={<FindGyms />} />
     <Route path="/test-gym-results" element={<GymResults />} />
     <Route path="/test-gym-results-matching" element={<GymResultsMatching />} />
     <Route path="/test-gym-details" element={<GymDetails />} />
+
 
       {/* Standalone profile page */}
       <Route path="/profile" element={<Profile />} />
