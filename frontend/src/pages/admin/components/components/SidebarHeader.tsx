@@ -1,12 +1,37 @@
 import styled from "@emotion/styled";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { Typography } from "./Typography";
 
 interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   rtl: boolean;
 }
 
+type AdminSettings = {
+  app_name?: string | null;
+  logo_url?: string | null;
+};
+
 const THEME = "#d23f0b";
+const API_BASE = "https://exersearch.test";
+const TOKEN_KEY = "token";
+
+function authHeaders() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// Convert /storage/... to absolute
+function toAbsUrl(u?: string | null) {
+  if (!u) return "";
+  const s = String(u).trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+
+  const base = API_BASE.replace(/\/$/, "");
+  const path = s.startsWith("/") ? s : `/${s}`;
+  return `${base}${path}`;
+}
 
 const StyledSidebarHeader = styled.div`
   height: 64px;
@@ -43,18 +68,59 @@ const LogoWrap = styled.div<{ rtl?: boolean }>`
 `;
 
 export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ rtl, ...rest }) => {
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  const [appName, setAppName] = useState<string>("ExerSearch");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSettings = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/v1/admin/settings`, {
+          headers: authHeaders(),       // ✅ REQUIRED
+          withCredentials: true,
+        });
+
+        const data: AdminSettings = res.data?.data ?? res.data;
+
+        if (!mounted) return;
+
+        if (data?.logo_url) setLogoUrl(toAbsUrl(data.logo_url));
+        if (data?.app_name) setAppName(String(data.app_name));
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const msg = err?.response?.data?.message || err?.message;
+
+        console.error("Failed to load branding (SidebarHeader)", {
+          status,
+          msg,
+          token_present: !!localStorage.getItem(TOKEN_KEY),
+        });
+      }
+    };
+
+    loadSettings();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <StyledSidebarHeader {...rest}>
       <div style={{ display: "flex", alignItems: "center" }}>
         <LogoWrap rtl={rtl}>
           <img
-            src="/SHADOW.png"
-            alt="ExerSearch logo"
+            src={logoUrl || "/SHADOW.png"}
+            alt={`${appName} logo`}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "contain",
               display: "block",
+            }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/SHADOW.png";
             }}
           />
         </LogoWrap>
@@ -69,7 +135,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({ rtl, ...rest }) =>
             textOverflow: "ellipsis",
           }}
         >
-          ExerSearch
+          {appName}
         </Typography>
       </div>
     </StyledSidebarHeader>

@@ -218,7 +218,7 @@ const AdminSidebar: React.FC<Props> = ({
                   Users
                 </MenuItem>
 
-                {/* ✅ NEW: ADMINS */}
+                {/* ADMINS */}
                 <MenuItem
                   icon={<Users />}
                   onClick={() => go("/admin/admins")}
@@ -229,6 +229,47 @@ const AdminSidebar: React.FC<Props> = ({
                   }
                 >
                   Admins
+                </MenuItem>
+              </SubMenu>
+
+              {/* ✅ NEW: SUPERADMIN */}
+              <div style={{ padding: "0 24px", marginTop: 24, marginBottom: 8 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  style={{
+                    opacity: collapsed ? 0 : 0.75,
+                    letterSpacing: "0.5px",
+                    color: t.mutedText,
+                  }}
+                >
+                  Superadmin
+                </Typography>
+              </div>
+
+              <SubMenu label="Site Controls" icon={<Sparkles />}>
+                <MenuItem
+                  icon={<Sparkles />}
+                  onClick={() => go("/admin/settings")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/settings"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  App Settings
+                </MenuItem>
+
+                <MenuItem
+                  icon={<Book />}
+                  onClick={() => go("/admin/maintenance")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/maintenance"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Maintenance
                 </MenuItem>
               </SubMenu>
 

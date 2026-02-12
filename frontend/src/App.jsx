@@ -26,6 +26,8 @@ import GymResults from "./pages/user/GymResults";
 import GymDetails from "./pages/user/GymDetails";
 import GymDetailAdmin from "./pages/admin/GymDetails";
 import AdminAdmins from "./pages/admin/AdminAdmins";
+import AdminSettings from "./pages/admin/AdminSettings";
+import Maintenance from "./pages/Maintenance";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -46,6 +48,8 @@ function ProtectedRoutes({ children }) {
 function App() {
   return (
     <Routes>
+      <Route path="/maintenance" element={<Maintenance />} />
+
       <Route path="/" element={<Index />} />
      <Route path="/login" element={<Login />} /> 
       {/* testroute for design*/}
@@ -82,6 +86,7 @@ function App() {
         <Route path="applications" element={<AdminOwnerApplications />} />
         <Route path="profile" element={<AdminProfile />} /> {/* ✅ */}
           <Route path="gyms/:gymId" element={<GymDetailAdmin />} />
+<Route path="settings" element={<AdminSettings />} />
 
       </Route>
 

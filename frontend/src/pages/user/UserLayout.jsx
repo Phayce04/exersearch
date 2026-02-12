@@ -1,11 +1,13 @@
+// ✅ WHOLE FILE: src/pages/user/UserLayout.jsx
 import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import axios from "axios";
 import UserLoading from "./UserLoading";
 
 // Header & Footer for all user pages
 import HeaderUser from "./Header-user";
 import Footer from "./Footer";
+
+import { api } from "../../utils/apiClient";
 
 export default function UserLayout() {
   const [ready, setReady] = useState(false);
@@ -18,29 +20,34 @@ export default function UserLayout() {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          navigate("/login");
+          navigate("/login", { replace: true });
           return;
         }
 
         const minDelay = new Promise((r) => setTimeout(r, 800));
-        const meReq = axios.get("https://exersearch.test/api/v1/me", {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
+
+        // ✅ USE apiClient so maintenance 503 redirect works
+        const meReq = api.get("/me");
 
         const [meRes] = await Promise.all([meReq, minDelay]);
         const fetchedUser = meRes.data.user || meRes.data;
 
         if (fetchedUser?.role !== "user") {
-          navigate("/login");
+          navigate("/login", { replace: true });
           return;
         }
 
         if (!alive) return;
         setReady(true);
-      } catch {
+      } catch (err) {
+        // ✅ If maintenance, go to maintenance page (not login)
+        if (err?.response?.status === 503) {
+          navigate("/maintenance", { replace: true });
+          return;
+        }
+
         localStorage.removeItem("token");
-        navigate("/login");
+        navigate("/login", { replace: true });
       }
     };
 
@@ -52,7 +59,6 @@ export default function UserLayout() {
 
   if (!ready) return <UserLoading />;
 
-  // ✅ Wrap all nested routes with header & footer
   return (
     <>
       <HeaderUser />
