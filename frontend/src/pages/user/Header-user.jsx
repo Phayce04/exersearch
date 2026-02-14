@@ -1,12 +1,23 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import "./HF.css";
-import logo from "../../assets/exersearchlogo.png";
+import fallbackLogo from "../../assets/exersearchlogo.png";
 import { useAuth } from "../../authcon";
 import { Link, useNavigate } from "react-router-dom";
 
 const API_BASE = "https://exersearch.test";
 const FALLBACK_AVATAR = "https://i.pravatar.cc/60?img=12";
+const TOKEN_KEY = "token";
+
+function toAbsUrl(u) {
+  if (!u) return "";
+  const s = String(u).trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  const base = String(API_BASE || "").replace(/\/$/, "");
+  const path = s.startsWith("/") ? s : `/${s}`;
+  return `${base}${path}`;
+}
 
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -20,8 +31,10 @@ export default function HeaderUser() {
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(false);
 
+  const [userLogoUrl, setUserLogoUrl] = useState("");
+
   const containerRef = useRef(null);
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem(TOKEN_KEY);
 
   const effectiveUser = user || me;
 
@@ -49,6 +62,33 @@ export default function HeaderUser() {
     if (!user && !me && token) loadMe();
     return () => (mounted = false);
   }, [user, me, token]);
+
+  // Fetch user-side logo from settings
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUserLogo() {
+      try {
+        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+        const res = await axios.get(`${API_BASE}/api/v1/admin/settings`, {
+          headers,
+          withCredentials: true,
+        });
+
+        const data = res.data?.data ?? res.data;
+        const url = data?.user_logo_url || "";
+
+        if (!mounted) return;
+        setUserLogoUrl(toAbsUrl(url));
+      } catch (err) {
+        if (mounted) setUserLogoUrl("");
+      }
+    }
+
+    loadUserLogo();
+    return () => (mounted = false);
+  }, [token]);
 
   // avatar resolver
   const avatarSrc = useMemo(() => {
@@ -91,7 +131,11 @@ export default function HeaderUser() {
   // click outside dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (profileDropdown && containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        profileDropdown &&
+        containerRef.current &&
+        !containerRef.current.contains(e.target)
+      ) {
         setProfileDropdown(false);
       }
     };
@@ -110,13 +154,22 @@ export default function HeaderUser() {
     <>
       <header className={`header ${isScrolled ? "header--scrolled" : ""}`}>
         <div className="logo">
-          <img src={logo} alt="ExerSearch" />
+          <img
+            src={userLogoUrl || fallbackLogo}
+            alt="ExerSearch"
+            onError={(e) => {
+              e.currentTarget.src = fallbackLogo;
+            }}
+          />
         </div>
 
         {/* DESKTOP NAV */}
         <nav className="nav-links">
           <Link to="/home">DASHBOARD</Link>
-          <Link to="/home/gyms">MY GYMS</Link>
+
+          {/* ✅ changed "MY GYMS" to Saved Gyms */}
+          <Link to="/home/saved-gyms">SAVED GYMS</Link>
+
           <Link to="/home/find-gyms">FIND GYMS</Link>
 
           {/* PROFILE */}
@@ -132,7 +185,9 @@ export default function HeaderUser() {
                 alt="profile"
                 onError={(e) => (e.currentTarget.src = FALLBACK_AVATAR)}
               />
-              <span className={`dropdown-arrow ${profileDropdown ? "open" : ""}`}>▾</span>
+              <span className={`dropdown-arrow ${profileDropdown ? "open" : ""}`}>
+                ▾
+              </span>
             </button>
 
             <div className={`profile-dropdown ${profileDropdown ? "open" : ""}`}>
@@ -153,6 +208,14 @@ export default function HeaderUser() {
 
               <Link to="/home/profile" onClick={() => setProfileDropdown(false)}>
                 My Profile
+              </Link>
+
+              {/* ✅ also add saved gyms inside dropdown (optional but nice) */}
+              <Link
+                to="/home/saved-gyms"
+                onClick={() => setProfileDropdown(false)}
+              >
+                Saved Gyms
               </Link>
 
               <Link to="/home/settings" onClick={() => setProfileDropdown(false)}>
@@ -180,8 +243,9 @@ export default function HeaderUser() {
           DASHBOARD
         </Link>
 
-        <Link to="/home/gyms" onClick={() => setMobileMenuOpen(false)}>
-          MY GYMS
+        {/* ✅ changed "MY GYMS" to Saved Gyms */}
+        <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>
+          SAVED GYMS
         </Link>
 
         <Link to="/home/find-gyms" onClick={() => setMobileMenuOpen(false)}>

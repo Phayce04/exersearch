@@ -2178,3 +2178,32 @@
 .gym-details-page.admin-mode .direction-btn:hover {
   filter: brightness(0.98);
 }
+/* Clean back button (looks like a styled link, not a bulky button) */
+.back-link-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 0;
+  opacity: 0.95;
+  transition: all 0.2s ease;
+}
+
+.back-link-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.back-link-btn:hover {
+  opacity: 1;
+}
+
+.back-link-btn:hover svg {
+  transform: translateX(-3px);
+}

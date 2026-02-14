@@ -1,310 +1,577 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import './GymRes-Matching.css';
+// ✅ WHOLE FILE: src/pages/user/GymResultsMatching.jsx
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import "./GymRes-Matching.css";
+import { api } from "../../utils/apiClient";
+import { absoluteUrl } from "../../utils/findGymsData";
+
+const MAIN_ORANGE = "#ff8c00";
+const RECOMMEND_ENDPOINT = "/gyms/recommend";
+const GYM_SHOW_ENDPOINT = (id) => `/gyms/${id}`;
+const DEFAULT_MODE = "driving";
+const SAVED_ENDPOINT = "/user/saved-gyms";
+
+// --------- cache (sessionStorage) ----------
+const REC_CACHE_PREFIX = "rec_cache_v1__";
+const REC_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function cacheKey(mode) {
+  return `${REC_CACHE_PREFIX}${mode || DEFAULT_MODE}`;
+}
+
+function saveRecCache(mode, payload) {
+  try {
+    sessionStorage.setItem(
+      cacheKey(mode),
+      JSON.stringify({ ts: Date.now(), payload })
+    );
+  } catch {}
+}
+
+function loadRecCache(mode) {
+  try {
+    const raw = sessionStorage.getItem(cacheKey(mode));
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj?.ts || !obj?.payload) return null;
+    if (Date.now() - obj.ts > REC_CACHE_TTL_MS) return null;
+    return obj.payload;
+  } catch {
+    return null;
+  }
+}
+
+// Call this from FindGyms after saving prefs (optional)
+// export function clearRecCacheAll() {
+//   try {
+//     Object.keys(sessionStorage).forEach((k) => {
+//       if (k.startsWith(REC_CACHE_PREFIX)) sessionStorage.removeItem(k);
+//     });
+//   } catch {}
+// }
+
+function safeNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function fmtPeso(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return "—";
+  return `₱${x.toLocaleString()}`;
+}
+
+function toSet(arr) {
+  return new Set(Array.isArray(arr) ? arr : []);
+}
+
+// user-facing % (no TOPSIS shown as %)
+function buildMatchPercent(gym) {
+  const equip = safeNum(gym?.equipment_match); // 0..1
+  const amen = safeNum(gym?.amenity_match); // 0..1
+  const pen = safeNum(gym?.budget_penalty); // 0..1
+
+  const score01 = equip * 0.45 + amen * 0.35 + pen * 0.2;
+  return Math.round(Math.max(0, Math.min(1, score01)) * 100);
+}
+
+// ExerSearch Score from TOPSIS (0..1 -> 0..100 whole number)
+function buildExerSearchScore(gym) {
+  const t = safeNum(gym?.topsis_score);
+  return Math.round(Math.max(0, Math.min(1, t)) * 100);
+}
 
 export default function GymResultsMatching() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ prefer state payload (coming back), else session cache
+  const stateMode = location?.state?.mode || null;
+  const statePayload = location?.state?.recommendation || null;
+
+  const initialMode = stateMode || DEFAULT_MODE;
+  const cachedPayload = !statePayload ? loadRecCache(initialMode) : null;
+
+  const initialPayload = statePayload || cachedPayload || null;
+
+  const [mode, setMode] = useState(initialMode);
+
+  const [loading, setLoading] = useState(!initialPayload);
+  const [error, setError] = useState(null);
+
+  const [user, setUser] = useState(initialPayload?.user || null);
+  const [gyms, setGyms] = useState(initialPayload?.gyms || []);
+
+  const [gymImages, setGymImages] = useState({});
+  const [gymAddresses, setGymAddresses] = useState({});
+
+  // modal state
+  const [openBreakdown, setOpenBreakdown] = useState(false);
+  const [activeGym, setActiveGym] = useState(null);
+
+  // saved gyms (server-backed)
   const [likedGyms, setLikedGyms] = useState(new Set());
-  
-  // Mock user preferences - replace with actual data from FindGyms
-  const userPreferences = {
-    budget: 150,
-    location: { lat: 14.5764, lng: 121.0851 }, // User's location
-    amenities: ['AC', 'Shower', 'Locker'],
-    equipment: ['Cardio', 'Free Weights', 'Machines']
-  };
+  const [savingGymId, setSavingGymId] = useState(null);
 
-  // Mock gym data with matching scores - replace with API data
-  const [gyms, setGyms] = useState([
-    {
-      id: 1,
-      name: "Elite Fitness Center",
-      location: "Ortigas, Pasig",
-      coordinates: { lat: 14.5865, lng: 121.0569 },
-      price: 200,
-      rating: 4.9,
-      reviews: 312,
-      image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&h=400&fit=crop",
-      amenities: ['AC', 'Shower', 'Locker', 'Pool', 'Sauna'],
-      equipment: ['Cardio', 'Free Weights', 'Machines', 'Functional'],
-      hours: "24/7",
-      description: "Premium gym with state-of-the-art equipment and professional trainers."
-    },
-    {
-      id: 2,
-      name: "FitZone Ortigas",
-      location: "Ortigas Avenue, Pasig",
-      coordinates: { lat: 14.5823, lng: 121.0631 },
-      price: 100,
-      rating: 4.5,
-      reviews: 234,
-      image: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&h=400&fit=crop",
-      amenities: ['AC', 'Shower', 'WiFi'],
-      equipment: ['Cardio', 'Free Weights', 'Machines'],
-      hours: "5AM - 11PM",
-      description: "Well-equipped commercial gym with modern machines and friendly staff."
-    },
-    {
-      id: 3,
-      name: "Local Strength Hub",
-      location: "Kapitolyo, Pasig",
-      coordinates: { lat: 14.5667, lng: 121.0631 },
-      price: 80,
-      rating: 4.3,
-      reviews: 156,
-      image: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800&h=400&fit=crop",
-      amenities: ['AC', 'Locker'],
-      equipment: ['Free Weights', 'Machines'],
-      hours: "6AM - 10PM",
-      description: "Affordable neighborhood gym perfect for daily workouts."
-    },
-    {
-      id: 4,
-      name: "PowerHouse Gym",
-      location: "Capitol Commons, Pasig",
-      coordinates: { lat: 14.5750, lng: 121.0518 },
-      price: 150,
-      rating: 4.8,
-      reviews: 189,
-      image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=400&fit=crop",
-      amenities: ['24/7', 'AC', 'Shower', 'Locker'],
-      equipment: ['Cardio', 'Free Weights', 'Machines'],
-      hours: "24/7",
-      description: "Train anytime with round-the-clock access and premium facilities."
-    }
-  ]);
+  const fetchRecommend = useCallback(async (m) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const finalMode = m || DEFAULT_MODE;
+      const res = await api.get(RECOMMEND_ENDPOINT, {
+        params: { mode: finalMode },
+      });
 
-  // Calculate match percentage
-  const calculateMatch = (gym) => {
-    let totalScore = 0;
-    let maxScore = 0;
+      const payload = {
+        user: res.data?.user || null,
+        gyms: Array.isArray(res.data?.gyms) ? res.data.gyms : [],
+      };
 
-    // Amenities match (40%)
-    const amenitiesMatch = userPreferences.amenities.filter(a => 
-      gym.amenities.includes(a)
-    ).length;
-    const amenitiesScore = (amenitiesMatch / userPreferences.amenities.length) * 40;
-    totalScore += amenitiesScore;
-    maxScore += 40;
+      setUser(payload.user);
+      setGyms(payload.gyms);
 
-    // Equipment match (40%)
-    const equipmentMatch = userPreferences.equipment.filter(e => 
-      gym.equipment.includes(e)
-    ).length;
-    const equipmentScore = (equipmentMatch / userPreferences.equipment.length) * 40;
-    totalScore += equipmentScore;
-    maxScore += 40;
-
-    // Budget match (20%)
-    const budgetDiff = Math.abs(gym.price - userPreferences.budget);
-    const budgetScore = budgetDiff <= 50 ? 20 : budgetDiff <= 100 ? 10 : 0;
-    totalScore += budgetScore;
-    maxScore += 20;
-
-    return Math.round((totalScore / maxScore) * 100);
-  };
-
-  // Calculate distance (simplified - use actual distance calculation)
-  const calculateDistance = (gymCoords) => {
-    const R = 6371; // Earth's radius in km
-    const dLat = (gymCoords.lat - userPreferences.location.lat) * Math.PI / 180;
-    const dLng = (gymCoords.lng - userPreferences.location.lng) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(userPreferences.location.lat * Math.PI / 180) * 
-      Math.cos(gymCoords.lat * Math.PI / 180) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return (R * c).toFixed(1);
-  };
-
-  // Sort gyms by match percentage
-  const sortedGyms = [...gyms].sort((a, b) => 
-    calculateMatch(b) - calculateMatch(a)
-  );
-
-  // Handle like/unlike functionality
-  const toggleLike = async (gymId) => {
-    const newLikedGyms = new Set(likedGyms);
-    
-    if (newLikedGyms.has(gymId)) {
-      newLikedGyms.delete(gymId);
-      console.log(`Unliked gym ${gymId}`);
-    } else {
-      newLikedGyms.add(gymId);
-      console.log(`Liked gym ${gymId}`);
-    }
-    
-    setLikedGyms(newLikedGyms);
-    localStorage.setItem('likedGyms', JSON.stringify([...newLikedGyms]));
-  };
-
-  // Load liked gyms from localStorage on mount
-  useEffect(() => {
-    const savedLikes = localStorage.getItem('likedGyms');
-    if (savedLikes) {
-      setLikedGyms(new Set(JSON.parse(savedLikes)));
+      // ✅ cache for instant back navigation
+      saveRecCache(finalMode, payload);
+    } catch (e) {
+      console.error(e);
+      setError(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Failed to load recommendations"
+      );
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  // ✅ on first mount: if we already have initial payload, do NOT fetch
+  useEffect(() => {
+    if (initialPayload) return;
+    fetchRecommend(mode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✅ when mode changes: use cache instantly if available, otherwise fetch
+  useEffect(() => {
+    const cached = loadRecCache(mode);
+    if (cached?.gyms) {
+      setUser(cached.user || null);
+      setGyms(Array.isArray(cached.gyms) ? cached.gyms : []);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    fetchRecommend(mode);
+  }, [mode, fetchRecommend]);
+
+  // ✅ load saved gyms from backend once
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSaved() {
+      try {
+        const res = await api.get(SAVED_ENDPOINT);
+        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
+        const ids = rows.map((r) => r.gym_id).filter((x) => x != null);
+        if (mounted) setLikedGyms(new Set(ids));
+      } catch {
+        // silent
+      }
+    }
+
+    loadSaved();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // ✅ toggle save/unsave via backend
+  const toggleLike = async (gymId) => {
+    if (!gymId) return;
+    if (savingGymId) return;
+
+    const wasLiked = likedGyms.has(gymId);
+
+    // optimistic UI
+    setLikedGyms((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) next.delete(gymId);
+      else next.add(gymId);
+      return next;
+    });
+
+    setSavingGymId(gymId);
+
+    try {
+      if (wasLiked) {
+        await api.delete(`${SAVED_ENDPOINT}/${gymId}`);
+      } else {
+        await api.post(SAVED_ENDPOINT, { gym_id: gymId });
+      }
+    } catch (e) {
+      console.error(e);
+      // rollback
+      setLikedGyms((prev) => {
+        const rollback = new Set(prev);
+        if (wasLiked) rollback.add(gymId);
+        else rollback.delete(gymId);
+        return rollback;
+      });
+    } finally {
+      setSavingGymId(null);
+    }
+  };
+
+  // fetch main_image_url + address via /gyms/{id}
+  useEffect(() => {
+    if (!gyms?.length) return;
+
+    let cancelled = false;
+
+    async function loadDetails() {
+      const missing = gyms
+        .map((g) => g.gym_id)
+        .filter((id) => id != null && gymImages[id] === undefined);
+
+      if (missing.length === 0) return;
+
+      const batch = missing.slice(0, 30);
+
+      const imgResults = {};
+      const addrResults = {};
+
+      await Promise.all(
+        batch.map(async (id) => {
+          try {
+            const r = await api.get(GYM_SHOW_ENDPOINT(id));
+            const gymObj = r.data?.data || r.data?.gym || r.data || null;
+
+            const main =
+              gymObj?.main_image_url ||
+              gymObj?.mainImageUrl ||
+              gymObj?.main_image ||
+              null;
+
+            imgResults[id] = main ? absoluteUrl(main) : null;
+
+            const addr =
+              gymObj?.address ||
+              gymObj?.full_address ||
+              gymObj?.location ||
+              null;
+
+            addrResults[id] = addr ? String(addr) : null;
+          } catch {
+            imgResults[id] = null;
+            addrResults[id] = null;
+          }
+        })
+      );
+
+      if (!cancelled) {
+        setGymImages((prev) => ({ ...prev, ...imgResults }));
+        setGymAddresses((prev) => ({ ...prev, ...addrResults }));
+      }
+    }
+
+    loadDetails();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gyms]);
+
+  const rankedGyms = useMemo(() => gyms || [], [gyms]);
+
+  if (loading) {
+    return (
+      <div className="matching-results-page">
+        <section className="matching-header">
+          <div className="container">
+            <h1>Your Best Matches</h1>
+            <p>Gyms ranked by how well they match your preferences</p>
+          </div>
+        </section>
+        <section className="matching-results">
+          <div className="container">
+            <div style={{ padding: "24px", fontWeight: 800 }}>
+              Loading ranked gyms…
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="matching-results-page">
+        <section className="matching-header">
+          <div className="container">
+            <h1>Your Best Matches</h1>
+            <p>Gyms ranked by how well they match your preferences</p>
+          </div>
+        </section>
+        <section className="matching-results">
+          <div className="container">
+            <div style={{ padding: "24px" }}>
+              <div style={{ fontWeight: 900, color: "#dc2626" }}>{error}</div>
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                <button
+                  className="favorite-btn-small"
+                  onClick={() => fetchRecommend(mode)}
+                >
+                  Retry
+                </button>
+                <button
+                  className="favorite-btn-small"
+                  onClick={() => navigate("/home/find-gyms")}
+                >
+                  Back to Preferences
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="matching-results-page">
-      {/* Header */}
       <section className="matching-header">
         <div className="container">
           <h1>Your Best Matches</h1>
           <p>Gyms ranked by how well they match your preferences</p>
+
+          <div className="mode-switch">
+            {["driving", "walking", "transit"].map((m) => (
+              <button
+                key={m}
+                className="favorite-btn-small"
+                aria-pressed={mode === m}
+                onClick={() => setMode(m)} // ✅ no double-fetch
+                style={{
+                  borderColor: mode === m ? MAIN_ORANGE : undefined,
+                  background: mode === m ? "#fff5e6" : "white",
+                }}
+              >
+                {m.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Results List */}
       <section className="matching-results">
         <div className="container">
           <div className="results-list">
-            {sortedGyms.map((gym) => {
-              const matchPercentage = calculateMatch(gym);
-              const distance = calculateDistance(gym.coordinates);
-              const isOverBudget = gym.price > userPreferences.budget;
+            {rankedGyms.map((gym, idx) => {
+              const matchPercentage = buildMatchPercent(gym);
+              const exerScore = buildExerSearchScore(gym);
+              const isOverBudget = safeNum(gym?.price) > safeNum(user?.budget);
+
+              const img =
+                gymImages[gym.gym_id] ||
+                "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&h=400&fit=crop";
+
+              const addressText = gymAddresses[gym.gym_id]
+                ? gymAddresses[gym.gym_id]
+                : gym?.latitude != null && gym?.longitude != null
+                ? `${gym.latitude}, ${gym.longitude}`
+                : "—";
+
+              const distanceText =
+                safeNum(gym?.google_distance_km) > 0
+                  ? `${gym.google_distance_km} km`
+                  : `${gym.distance_km} km`;
+
+              const isSaved = likedGyms.has(gym.gym_id);
+              const isSaving = savingGymId === gym.gym_id;
 
               return (
-                <div key={gym.id} className="match-card">
+                <div key={gym.gym_id} className="match-card">
                   <div className="match-card-inner">
-                    {/* Left: Image */}
                     <div className="match-image">
-                      <img src={gym.image} alt={gym.name} />
-                      <div className="rank-badge">#{sortedGyms.indexOf(gym) + 1}</div>
+                      <img src={img} alt={gym.name} />
+
+                      <div className="rank-badge">#{idx + 1}</div>
+
                       <div className="match-badge">
-                        <div className="match-percentage">{matchPercentage}%</div>
-                        <div className="match-label">Match</div>
+                        <div className="match-percentage">
+                          {matchPercentage}%
+                        </div>
+                        <div className="match-label">MATCH</div>
                       </div>
                     </div>
 
-                    {/* Right: Details */}
                     <div className="match-details">
                       <div className="match-header">
                         <div>
                           <h2>{gym.name}</h2>
-                          <p className="gym-location">📍 {gym.location}</p>
+
+                          <p className="gym-location">📍 {addressText}</p>
+
+                          <p className="gym-subline">
+                            {distanceText} away{" "}
+                            {gym?.travel_time_min
+                              ? `• ${gym.travel_time_min} min`
+                              : ""}
+                          </p>
                         </div>
-                        <div className="gym-rating">
-                          <span className="rating-stars">⭐ {gym.rating}</span>
-                          <span className="rating-count">({gym.reviews})</span>
+
+                        <div
+                          className="score-star"
+                          title="Derived from TOPSIS score (0–100)"
+                        >
+                          <span className="star">★</span>
+                          <span className="score-text">
+                            ExerSearch Score: {exerScore}
+                          </span>
                         </div>
                       </div>
 
-                      {/* Quick Info Pills */}
                       <div className="quick-info">
                         <div className="info-pill distance">
-                          <span className="info-pill-icon">📍</span>
-                          <span>{distance} km away</span>
+                          📍 {distanceText} away
                         </div>
-                        <div className={`info-pill price ${isOverBudget ? 'over-budget' : 'in-budget'}`}>
-                          <span className="info-pill-icon">💰</span>
-                          <span>₱{gym.price}/day {isOverBudget ? '(Over)' : '(Good)'}</span>
-                        </div>
-                        <div className="info-pill hours">
-                          <span className="info-pill-icon">🕐</span>
-                          <span>{gym.hours}</span>
+
+                        <div
+                          className={`info-pill price ${
+                            isOverBudget ? "over-budget" : "in-budget"
+                          }`}
+                        >
+                          💰 {fmtPeso(gym?.price)} / {user?.plan_type || "plan"}{" "}
+                          {isOverBudget ? "• Over" : "• Good"}
                         </div>
                       </div>
 
-                      {/* Match Breakdown with Bars */}
                       <div className="match-breakdown">
-                        <div className="breakdown-title">Match Breakdown</div>
+                        <div className="breakdown-title">
+                          <span>MATCH BREAKDOWN</span>
+
+                          <button
+                            type="button"
+                            className="breakdown-view"
+                            onClick={() => {
+                              setActiveGym(gym);
+                              setOpenBreakdown(true);
+                            }}
+                            title="View equipment & amenities breakdown"
+                          >
+                            View →
+                          </button>
+                        </div>
+
                         <div className="breakdown-bars">
                           <div className="breakdown-bar-item">
-                            <span className="breakdown-bar-label">Amenities</span>
+                            <span className="breakdown-bar-label">
+                              Amenities
+                            </span>
                             <div className="breakdown-bar-container">
-                              <div 
-                                className="breakdown-bar-fill" 
-                                style={{ 
-                                  width: `${(userPreferences.amenities.filter(a => gym.amenities.includes(a)).length / userPreferences.amenities.length) * 100}%` 
+                              <div
+                                className="breakdown-bar-fill"
+                                style={{
+                                  width: `${Math.round(
+                                    safeNum(gym?.amenity_match) * 100
+                                  )}%`,
                                 }}
                               />
                             </div>
                             <span className="breakdown-bar-value">
-                              {userPreferences.amenities.filter(a => gym.amenities.includes(a)).length}/{userPreferences.amenities.length}
+                              {Math.round(safeNum(gym?.amenity_match) * 100)}%
                             </span>
                           </div>
+
                           <div className="breakdown-bar-item">
-                            <span className="breakdown-bar-label">Equipment</span>
+                            <span className="breakdown-bar-label">
+                              Equipment
+                            </span>
                             <div className="breakdown-bar-container">
-                              <div 
-                                className="breakdown-bar-fill" 
-                                style={{ 
-                                  width: `${(userPreferences.equipment.filter(e => gym.equipment.includes(e)).length / userPreferences.equipment.length) * 100}%` 
+                              <div
+                                className="breakdown-bar-fill"
+                                style={{
+                                  width: `${Math.round(
+                                    safeNum(gym?.equipment_match) * 100
+                                  )}%`,
                                 }}
                               />
                             </div>
                             <span className="breakdown-bar-value">
-                              {userPreferences.equipment.filter(e => gym.equipment.includes(e)).length}/{userPreferences.equipment.length}
+                              {Math.round(safeNum(gym?.equipment_match) * 100)}%
                             </span>
                           </div>
+
                           <div className="breakdown-bar-item">
-                            <span className="breakdown-bar-label">Budget</span>
+                            <span className="breakdown-bar-label">
+                              Budget Fit
+                            </span>
                             <div className="breakdown-bar-container">
-                              <div 
-                                className="breakdown-bar-fill" 
-                                style={{ 
-                                  width: `${isOverBudget ? 50 : 100}%` 
+                              <div
+                                className="breakdown-bar-fill"
+                                style={{
+                                  width: `${Math.round(
+                                    safeNum(gym?.budget_penalty) * 100
+                                  )}%`,
                                 }}
                               />
                             </div>
                             <span className="breakdown-bar-value">
-                              {isOverBudget ? '50%' : '100%'}
+                              {Math.round(safeNum(gym?.budget_penalty) * 100)}%
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Features */}
-                      <div className="features-section">
-                        <div className="features-group">
-                          <h4>Amenities ({gym.amenities.length})</h4>
-                          <div className="features-tags">
-                            {gym.amenities.map((amenity, idx) => (
-                              <span 
-                                key={idx} 
-                                className={`feature-tag ${userPreferences.amenities.includes(amenity) ? 'matched' : ''}`}
-                              >
-                                {amenity}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="features-group">
-                          <h4>Equipment ({gym.equipment.length})</h4>
-                          <div className="features-tags">
-                            {gym.equipment.map((equip, idx) => (
-                              <span 
-                                key={idx} 
-                                className={`feature-tag ${userPreferences.equipment.includes(equip) ? 'matched' : ''}`}
-                              >
-                                {equip}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="match-actions">
-                        <Link to={`/home/gym/${gym.id}`} className="view-details-btn">
+                      <div className="match-actions-row">
+                        <Link
+                          to={`/home/gym/${gym.gym_id}`}
+                          className="view-full-btn"
+                          title="Open gym details page"
+                        >
                           View Full Details
                         </Link>
-                        <button 
-                          className={`favorite-btn-small ${likedGyms.has(gym.id) ? 'liked' : ''}`}
-                          onClick={() => toggleLike(gym.id)}
+
+                        <button
+                          className={`save-btn ${isSaved ? "liked" : ""}`}
+                          onClick={() => toggleLike(gym.gym_id)}
+                          disabled={isSaving}
+                          title={isSaved ? "Remove from saved" : "Save this gym"}
                         >
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 0 24 24" 
-                            fill={likedGyms.has(gym.id) ? "currentColor" : "none"}
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                          </svg>
-                          {likedGyms.has(gym.id) ? 'Saved' : 'Save'}
+                          <span className="heart">{isSaved ? "♥" : "♡"}</span>
+                          {isSaving
+                            ? isSaved
+                              ? "Removing…"
+                              : "Saving…"
+                            : isSaved
+                            ? "Saved"
+                            : "Save"}
+                        </button>
+                      </div>
+
+                      {/* OPTIONAL: go to Saved Gyms without refetching results */}
+                      <div style={{ marginTop: 10 }}>
+                        <button
+                          className="favorite-btn-small"
+                          onClick={() =>
+                            navigate("/home/saved-gyms", {
+                              state: {
+                                from: "/home/gym-results",
+                                mode,
+                                recommendation: { user, gyms },
+                              },
+                            })
+                          }
+                        >
+                          Go to Saved Gyms →
                         </button>
                       </div>
                     </div>
@@ -312,9 +579,176 @@ export default function GymResultsMatching() {
                 </div>
               );
             })}
+
+            {rankedGyms.length === 0 ? (
+              <div style={{ padding: "24px", fontWeight: 800 }}>
+                No gyms found for your current filters.
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
+
+      {openBreakdown && activeGym && (
+        <BreakdownModal
+          gym={activeGym}
+          user={user}
+          onClose={() => {
+            setOpenBreakdown(false);
+            setActiveGym(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function BreakdownModal({ gym, user, onClose }) {
+  const prefEq = Array.isArray(user?.preferred_equipments)
+    ? user.preferred_equipments
+    : [];
+  const prefAm = Array.isArray(user?.preferred_amenities)
+    ? user.preferred_amenities
+    : [];
+
+  const matchedEq = toSet(gym?.matched_equipment_ids);
+  const matchedAm = toSet(gym?.matched_amenity_ids);
+
+  const preferredEquipments = prefEq.map((e) => ({
+    ...e,
+    matched: matchedEq.has(e.equipment_id),
+  }));
+  const preferredAmenities = prefAm.map((a) => ({
+    ...a,
+    matched: matchedAm.has(a.amenity_id),
+  }));
+
+  const matchedEqCount = preferredEquipments.filter((x) => x.matched).length;
+  const matchedAmCount = preferredAmenities.filter((x) => x.matched).length;
+
+  return (
+    <div className="breakdown-overlay" onClick={onClose}>
+      <div className="breakdown-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="breakdown-top">
+          <div className="breakdown-heading">Breakdown • {gym?.name}</div>
+          <button className="breakdown-close" onClick={onClose} title="Close">
+            ✖
+          </button>
+        </div>
+
+        <div className="breakdown-body">
+          <div className="breakdown-stats">
+            <span>Preferred Amenities: {prefAm.length}</span>
+            <span>Matched: {matchedAmCount}</span>
+            <span>Preferred Equipment: {prefEq.length}</span>
+            <span>Matched: {matchedEqCount}</span>
+          </div>
+
+          <div className="breakdown-section">
+            <div className="breakdown-section-title">
+              Your Preferred Amenities
+            </div>
+            <div className="breakdown-grid">
+              {preferredAmenities.length === 0 ? (
+                <div className="breakdown-empty">
+                  No preferred amenities selected.
+                </div>
+              ) : (
+                preferredAmenities.map((a) => (
+                  <div
+                    key={a.amenity_id}
+                    className={`breakdown-chip ${a.matched ? "ok" : "bad"}`}
+                    title={a.matched ? "This gym has it" : "Missing in this gym"}
+                  >
+                    {a.image_url ? (
+                      <img src={absoluteUrl(a.image_url)} alt={a.name} />
+                    ) : (
+                      <div className="breakdown-img-fallback" />
+                    )}
+                    <span className="mark">{a.matched ? "✓" : "✖"}</span>
+                    <span className="txt">{a.name}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="breakdown-section">
+            <div className="breakdown-section-title">
+              Your Preferred Equipment
+            </div>
+            <div className="breakdown-grid">
+              {preferredEquipments.length === 0 ? (
+                <div className="breakdown-empty">
+                  No preferred equipment selected.
+                </div>
+              ) : (
+                preferredEquipments.map((e) => (
+                  <div
+                    key={e.equipment_id}
+                    className={`breakdown-chip ${e.matched ? "ok" : "bad"}`}
+                    title={e.matched ? "This gym has it" : "Missing in this gym"}
+                  >
+                    {e.image_url ? (
+                      <img src={absoluteUrl(e.image_url)} alt={e.name} />
+                    ) : (
+                      <div className="breakdown-img-fallback" />
+                    )}
+                    <span className="mark">{e.matched ? "✓" : "✖"}</span>
+                    <span className="txt" style={{ textTransform: "capitalize" }}>
+                      {e.name}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <details className="breakdown-details">
+            <summary>Show what this gym has</summary>
+
+            <div className="breakdown-has">
+              <div>
+                <div className="has-title">Gym Amenities</div>
+                <div className="has-tags">
+                  {(Array.isArray(gym?.gym_amenities) ? gym.gym_amenities : []).map(
+                    (a) => (
+                      <span key={a.amenity_id} className="has-tag">
+                        {a.name}
+                      </span>
+                    )
+                  )}
+                  {(Array.isArray(gym?.gym_amenities) ? gym.gym_amenities : [])
+                    .length === 0 ? (
+                    <div className="breakdown-empty">No amenities listed.</div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div>
+                <div className="has-title">Gym Equipments</div>
+                <div className="has-tags">
+                  {(Array.isArray(gym?.gym_equipments) ? gym.gym_equipments : []).map(
+                    (e) => (
+                      <span
+                        key={e.equipment_id}
+                        className="has-tag"
+                        style={{ textTransform: "capitalize" }}
+                      >
+                        {e.name}
+                      </span>
+                    )
+                  )}
+                  {(Array.isArray(gym?.gym_equipments) ? gym.gym_equipments : [])
+                    .length === 0 ? (
+                    <div className="breakdown-empty">No equipments listed.</div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
     </div>
   );
 }

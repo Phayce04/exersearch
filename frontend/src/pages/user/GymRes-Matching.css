@@ -1,6 +1,8 @@
+/* ✅ WHOLE FILE: src/pages/user/GymRes-Matching.css */
+
 /* General */
 .matching-results-page {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   background: #f5f7fa;
   min-height: 100vh;
 }
@@ -30,6 +32,40 @@
   opacity: 0.95;
 }
 
+/* ✅ Mode buttons wrapper */
+.mode-switch {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ✅ Mode buttons styling (brings back the “nice pills”) */
+.mode-switch .favorite-btn-small {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 140, 0, 0.35);
+  background: white;
+  color: #92400e;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.mode-switch .favorite-btn-small:hover {
+  background: #fff5e6;
+  border-color: #ff8c00;
+  transform: translateY(-1px);
+}
+
+.mode-switch .favorite-btn-small:active {
+  transform: translateY(0);
+}
+
 /* Results Section */
 .matching-results {
   padding: 3rem 0;
@@ -41,7 +77,7 @@
   gap: 2rem;
 }
 
-/* Match Card - Redesigned */
+/* Match Card */
 .match-card {
   background: white;
   border-radius: 16px;
@@ -52,7 +88,7 @@
 }
 
 .match-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -71,17 +107,24 @@
   opacity: 1;
 }
 
-/* Card Content Wrapper */
+/* ✅ Card Content Wrapper */
 .match-card-inner {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 2rem;
   padding: 2rem;
+
+  /* ✅ KEY FIX: center image vertically if right side grows */
+  align-items: center;
 }
 
-/* Left Side - Image + Match Badge */
+/* ✅ Left Side: center image block vertically/horizontally */
 .match-image {
   position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;     /* ✅ vertical center */
+  justify-content: center; /* ✅ horizontal center */
 }
 
 .match-image img {
@@ -89,8 +132,24 @@
   height: 320px;
   object-fit: cover;
   border-radius: 12px;
+  display: block;
 }
 
+/* ✅ rank badge */
+.rank-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: white;
+  color: #ff8c00;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ✅ circle badge */
 .match-badge {
   position: absolute;
   top: 1rem;
@@ -105,6 +164,8 @@
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   border: 4px solid white;
+  text-align: center;
+  line-height: 1;
 }
 
 .match-percentage {
@@ -112,7 +173,6 @@
   font-weight: 900;
   color: white;
   line-height: 1;
-  letter-spacing: -1px;
 }
 
 .match-label {
@@ -124,20 +184,7 @@
   margin-top: 0.25rem;
 }
 
-.rank-badge {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background: white;
-  color: #ff8c00;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: 800;
-  font-size: 0.9rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Right Side - Details */
+/* Right Side */
 .match-details {
   display: flex;
   flex-direction: column;
@@ -157,43 +204,94 @@
   font-size: 1.75rem;
   font-weight: 800;
   color: #1a1a1a;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.35rem 0;
   line-height: 1.2;
+  word-break: break-word;
 }
 
 .gym-location {
   color: #6b7280;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 650;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  max-width: 560px;
+  white-space: normal; /* ✅ allow wrapping */
+  line-height: 1.25;
 }
 
-.gym-rating {
-  display: flex;
+.gym-subline {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: #6b7280;
+}
+
+/* ✅ Score pill */
+.score-star {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   background: #fff5e6;
+  border: 2px solid #ffd7a6;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 10px;
   white-space: nowrap;
 }
 
-.rating-stars {
-  color: #fbbf24;
+.score-star .star {
+  color: #f59e0b;
+  font-weight: 900;
+  font-size: 1.05rem;
+}
+
+.score-star .score-text {
+  color: #92400e;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+/* Quick Info Pills */
+.quick-info {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.info-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 0.875rem;
   font-weight: 700;
-  font-size: 1.1rem;
+  color: #374151;
 }
 
-.rating-count {
-  color: #9ca3af;
-  font-size: 0.85rem;
-  font-weight: 600;
+.info-pill.distance {
+  border-color: #3b82f6;
+  color: #1e40af;
+  background: #eff6ff;
 }
 
-/* Match Breakdown - New Visual Design */
+.info-pill.price.in-budget {
+  border-color: #10b981;
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.info-pill.price.over-budget {
+  border-color: #dc2626;
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+/* Match Breakdown */
 .match-breakdown {
   background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   padding: 1.25rem;
@@ -202,12 +300,23 @@
 }
 
 .breakdown-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
+}
+
+.breakdown-view {
+  background: transparent;
+  border: none;
+  color: #ff8c00;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .breakdown-bars {
@@ -224,7 +333,7 @@
 
 .breakdown-bar-label {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #374151;
   min-width: 100px;
 }
@@ -246,101 +355,14 @@
 
 .breakdown-bar-value {
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #ff8c00;
   min-width: 45px;
   text-align: right;
 }
 
-/* Quick Info Pills */
-.quick-info {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.info-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.info-pill-icon {
-  font-size: 1rem;
-}
-
-.info-pill.distance {
-  border-color: #3b82f6;
-  color: #1e40af;
-  background: #eff6ff;
-}
-
-.info-pill.price.in-budget {
-  border-color: #10b981;
-  color: #065f46;
-  background: #d1fae5;
-}
-
-.info-pill.price.over-budget {
-  border-color: #dc2626;
-  color: #991b1b;
-  background: #fee2e2;
-}
-
-.info-pill.hours {
-  border-color: #f59e0b;
-  color: #92400e;
-  background: #fef3c7;
-}
-
-/* Features Section - Compact */
-.features-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.features-group h4 {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #6b7280;
-  margin: 0 0 0.5rem 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.features-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.feature-tag {
-  background: #f3f4f6;
-  color: #6b7280;
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border: 1px solid #e5e7eb;
-}
-
-.feature-tag.matched {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  color: #065f46;
-  border-color: #6ee7b7;
-  font-weight: 700;
-}
-
-/* Actions */
-.match-actions {
+/* ✅ Actions row */
+.match-actions-row {
   display: flex;
   gap: 0.75rem;
   align-items: center;
@@ -348,7 +370,7 @@
   border-top: 2px solid #f3f4f6;
 }
 
-.view-details-btn {
+.view-full-btn {
   flex: 1;
   padding: 1rem 1.5rem;
   background: #ff8c00;
@@ -356,45 +378,199 @@
   text-decoration: none;
   text-align: center;
   border-radius: 8px;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 0.95rem;
   transition: all 0.2s;
 }
 
-.view-details-btn:hover {
+.view-full-btn:hover {
   background: #e67e00;
   box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
 }
 
-.favorite-btn-small {
+.save-btn {
   padding: 1rem 1.25rem;
   background: white;
   color: #ff8c00;
   border: 2px solid #ff8c00;
   border-radius: 8px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 0.9rem;
   transition: all 0.2s;
 }
 
-.favorite-btn-small svg {
-  width: 18px;
-  height: 18px;
+.save-btn:hover {
+  background: #ff8c00;
+  color: #fff;
 }
 
-.favorite-btn-small:hover {
+.save-btn.liked {
   background: #ff8c00;
-  color: white;
-}
-
-.favorite-btn-small.liked {
-  background: #ff8c00;
-  color: white;
+  color: #fff;
   border-color: #ff8c00;
+}
+
+.heart {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* ✅ Fix “elongating” numbers */
+.match-percentage,
+.breakdown-bar-value,
+.rank-badge,
+.score-text {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0 !important;
+  white-space: nowrap;
+}
+
+/* Modal */
+.breakdown-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.breakdown-modal {
+  width: min(980px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 14px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+.breakdown-top {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.breakdown-heading {
+  font-weight: 950;
+  font-size: 16px;
+}
+
+.breakdown-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.breakdown-body {
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+}
+
+.breakdown-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-weight: 900;
+  color: #374151;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.breakdown-section-title {
+  font-weight: 950;
+  margin-bottom: 10px;
+}
+
+.breakdown-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.breakdown-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 900;
+  border: 2px solid #e5e7eb;
+}
+
+.breakdown-chip img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.breakdown-img-fallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.breakdown-chip.ok {
+  border-color: #6ee7b7;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.breakdown-chip.bad {
+  border-color: #fecaca;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.breakdown-empty {
+  opacity: 0.75;
+  font-weight: 700;
+}
+
+.breakdown-details summary {
+  cursor: pointer;
+  font-weight: 950;
+  color: #111;
+}
+
+.breakdown-has {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.has-title {
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.has-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.has-tag {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  font-weight: 800;
 }
 
 /* Responsive */
@@ -402,6 +578,12 @@
   .match-card-inner {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .match-image {
+    height: auto;
+    display: block;
   }
 
   .match-image img {
@@ -412,19 +594,15 @@
     flex-direction: column;
   }
 
-  .gym-rating {
+  .score-star {
     align-self: flex-start;
   }
 
-  .features-section {
-    grid-template-columns: 1fr;
-  }
-
-  .match-actions {
+  .match-actions-row {
     flex-direction: column;
   }
 
-  .favorite-btn-small {
+  .save-btn {
     width: 100%;
     justify-content: center;
   }
@@ -445,11 +623,36 @@
     gap: 0.5rem;
   }
 
-  .breakdown-bar-label {
-    min-width: auto;
-  }
-
   .breakdown-bar-container {
     width: 100%;
   }
+}
+/* ✅ Make modal use the SAME font as results page */
+.breakdown-overlay,
+.breakdown-modal,
+.breakdown-modal * {
+  font-family: "Montserrat", sans-serif !important;
+}
+
+/* ✅ Make typography match the page vibe */
+.breakdown-heading {
+  font-weight: 800 !important;
+  color: #111827;
+}
+
+.breakdown-body {
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.breakdown-section-title,
+.has-title {
+  font-weight: 800 !important;
+  letter-spacing: 0.2px;
+}
+
+.breakdown-chip,
+.has-tag,
+.breakdown-stats {
+  font-weight: 700 !important;
 }

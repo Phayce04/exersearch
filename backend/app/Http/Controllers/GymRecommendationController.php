@@ -12,8 +12,25 @@ class GymRecommendationController extends Controller
     {
         $user = $request->user();
 
-        $profile = $user->profile;
-        if (!$profile || !$profile->latitude || !$profile->longitude) {
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        // ✅ load correct relationships (matching your app)
+        $user->load([
+            'userProfile',
+            'preference',
+            'preferredEquipments',
+            'preferredAmenities',
+        ]);
+
+        $profile = $user->userProfile;
+
+        if (
+            !$profile ||
+            $profile->latitude === null || $profile->longitude === null ||
+            $profile->latitude === ''   || $profile->longitude === ''
+        ) {
             return response()->json(['message' => 'User location not set'], 422);
         }
 
@@ -22,7 +39,7 @@ class GymRecommendationController extends Controller
             return response()->json(['message' => 'User preferences not set'], 422);
         }
 
-        $mode = $request->query('mode', 'driving');
+        $mode = (string) $request->query('mode', 'driving');
         if (!in_array($mode, ['driving', 'walking', 'transit'], true)) {
             $mode = 'driving';
         }
@@ -35,22 +52,46 @@ class GymRecommendationController extends Controller
                 'longitude',
                 'daily_price',
                 'monthly_price',
-                'annual_price',     // ✅ include this
+                'annual_price',
+                // add if you have it:
+                // 'main_image_url',
             ])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->get();
 
-        // ✅ pass mode
+        // ✅ user preferred lists (names/images) so frontend can render green/red
+        // NOTE: we use relationship already loaded; no extra query needed.
+        $preferredEquipments = $user->preferredEquipments
+            ->map(fn($e) => [
+                'equipment_id' => $e->equipment_id,
+                'name' => $e->name,
+                'image_url' => $e->image_url,
+                'category' => $e->category ?? null,
+            ])
+            ->values();
+
+        $preferredAmenities = $user->preferredAmenities
+            ->map(fn($a) => [
+                'amenity_id' => $a->amenity_id,
+                'name' => $a->name,
+                'image_url' => $a->image_url,
+            ])
+            ->values();
+
         $gymsWithFeatures = FitRank::getGymFeatures($user, $gyms, $mode);
 
         return response()->json([
             'user' => [
-                'latitude' => $profile->latitude,
-                'longitude' => $profile->longitude,
-                'budget' => $preferences->budget,
+                'latitude'  => (float) $profile->latitude,
+                'longitude' => (float) $profile->longitude,
+                'budget'    => $preferences->budget,
                 'plan_type' => $preferences->plan_type,
-                'mode' => $mode,
+                'mode'      => $mode,
+
+                // ✅ breakdown data
+                'preferred_equipments' => $preferredEquipments,
+                'preferred_amenities'  => $preferredAmenities,
             ],
             'gyms' => $gymsWithFeatures,
         ]);

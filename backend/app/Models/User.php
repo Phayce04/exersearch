@@ -143,4 +143,25 @@ class User extends Authenticatable
     {
         return $this->role === 'superadmin';
     }
+        public function savedGyms()
+    {
+        return $this->hasMany(
+            \App\Models\SavedGym::class,
+            'user_id',
+            'user_id'
+        );
+    }
+
+    // Direct access to Gym models the user has saved
+    public function savedGymDetails()
+    {
+        return $this->belongsToMany(
+            \App\Models\Gym::class,
+            'saved_gyms',     
+            'user_id',      
+            'gym_id',      
+            'user_id',       
+            'gym_id'         
+        )->withTimestamps();
+    }
 }

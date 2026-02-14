@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Index from "./pages/index";
 import Login from "./pages/auth/Login";
 import UserHome from "./pages/user/Home";
-import Profile from "./pages/user/Profile"; 
+import Profile from "./pages/user/Profile";
 import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Recommendations from "./pages/Recommendations";
@@ -12,7 +12,7 @@ import Recommendations from "./pages/Recommendations";
 import AdminLayout from "./pages/admin/AdminLayout";
 import UserLayout from "./pages/user/UserLayout";
 import OwnerLayout from "./pages/owner/OwnerLayout";
-import FindGyms from './pages/user/FindGyms';
+import FindGyms from "./pages/user/FindGyms";
 import { getUserRole } from "./utils/auth";
 import AdminEquipments from "./pages/admin/AdminEquipments";
 import AdminAmenities from "./pages/admin/AdminAmenities";
@@ -21,13 +21,16 @@ import "leaflet/dist/leaflet.css";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
 import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
-import AdminProfile from "./pages/admin/Profile"; // ✅ only change
+import AdminProfile from "./pages/admin/Profile";
 import GymResults from "./pages/user/GymResults";
-import GymDetails from "./pages/user/GymDetails";
 import GymResultsVert from "./pages/user/GymResultMatching";
 import GymDetailAdmin from "./pages/admin/GymDetails";
 import AdminAdmins from "./pages/admin/AdminAdmins";
 import GymResultsMatching from "./pages/user/GymResultMatching";
+import Maintenance from "./pages/Maintenance";
+import AdminSettings from "./pages/admin/AdminSettings";
+import GymDetails from "./pages/user/GymDetails";
+import SavedGyms from "./pages/user/SavedGyms";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -51,12 +54,11 @@ function App() {
       <Route path="/maintenance" element={<Maintenance />} />
 
       <Route path="/" element={<Index />} />
-     <Route path="/login" element={<Login />} /> 
-      {/* testroute for design*/}
-    <Route path="/test-find-gyms" element={<FindGyms />} />
-    <Route path="/test-gym-results" element={<GymResults />} />
-    <Route path="/test-gym-results-matching" element={<GymResultsMatching />} />
-    <Route path="/test-gym-details" element={<GymDetails />} />
+      <Route path="/login" element={<Login />} />
+
+      {/* testroute for design */}
+      <Route path="/test-find-gyms" element={<FindGyms />} />
+      <Route path="/test-gym-results" element={<GymResults />} />
 
       {/* Standalone profile page */}
       <Route path="/profile" element={<Profile />} />
@@ -64,9 +66,13 @@ function App() {
       {/* User */}
       <Route path="/home" element={<UserLayout />}>
         <Route index element={<UserHome />} />
-       <Route path="profile" element={<Profile />} />
-          <Route path="find-gyms" element={<FindGyms />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="find-gyms" element={<FindGyms />} />
+        <Route path="gym/:id" element={<GymDetails />} />
+        <Route path="gym-results" element={<GymResultsMatching />} />
 
+        {/* ✅ Saved Gyms */}
+        <Route path="saved-gyms" element={<SavedGyms />} />
       </Route>
 
       {/* Owner */}
@@ -81,14 +87,12 @@ function App() {
         <Route path="amenities" element={<AdminAmenities />} />
         <Route path="gyms" element={<AdminGyms />} />
         <Route path="users" element={<AdminUsers />} />
-          <Route path="admins" element={<AdminAdmins />} />
-
+        <Route path="admins" element={<AdminAdmins />} />
         <Route path="map" element={<AdminPasigGymsMap />} />
         <Route path="applications" element={<AdminOwnerApplications />} />
-        <Route path="profile" element={<AdminProfile />} /> {/* ✅ */}
-          <Route path="gyms/:gymId" element={<GymDetailAdmin />} />
-<Route path="settings" element={<AdminSettings />} />
-
+        <Route path="profile" element={<AdminProfile />} />
+        <Route path="gyms/:gymId" element={<GymDetailAdmin />} />
+        <Route path="settings" element={<AdminSettings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

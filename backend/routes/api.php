@@ -24,10 +24,13 @@ use App\Http\Controllers\AdminOwnerController;
 use App\Http\Controllers\AdminProfileController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\AdminAppSettingsController;
+use App\Http\Controllers\AppSettingsPublicController;
+use App\Http\Controllers\SavedGymController;
 
 use App\Http\Controllers\AdminAdminController;
 
 Route::prefix('v1')->group(function () {
+Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
 
     // AUTH
     Route::post('/auth/login', [UserAuthController::class, 'login']);
@@ -79,6 +82,9 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/user/profile', [UserProfileController::class, 'show']);
         Route::put('/user/profile', [UserProfileController::class, 'update']);
+        Route::get('/user/saved-gyms', [SavedGymController::class, 'index']);
+        Route::post('/user/saved-gyms', [SavedGymController::class, 'store']);
+        Route::delete('/user/saved-gyms/{gym_id}', [SavedGymController::class, 'destroy'])->whereNumber('gym_id');
 
 
         // ADMIN (protected by your 'admin' middleware)

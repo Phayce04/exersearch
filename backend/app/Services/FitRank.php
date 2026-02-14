@@ -40,10 +40,6 @@ class FitRank
         return count(array_intersect($userAmenityIds, $gymAmenityIds)) / max(1, count($userAmenityIds));
     }
 
-    /**
-     * Supports daily/monthly/annual.
-     * Returns null if that plan has no price for the gym.
-     */
     private static function getPriceForPlan(string $planType, Gym $gym): ?float
     {
         return match ($planType) {
@@ -59,12 +55,6 @@ class FitRank
         return self::getPriceForPlan((string) $userPlan, $gym) !== null;
     }
 
-    /**
-     * Optional budget guardrail as a *penalty multiplier* (benefit-ish).
-     * - No budget set => 1.0 (no penalty)
-     * - Within budget => 1.0
-     * - Over budget => decreases linearly; can hit 0
-     */
     private static function budgetPenalty(?float $budget, ?float $price): float
     {
         if (!$budget || $budget <= 0) return 1.0;
@@ -72,7 +62,7 @@ class FitRank
 
         if ($price <= $budget) return 1.0;
 
-        $overRatio = ($price - $budget) / $budget; // 0..∞
+        $overRatio = ($price - $budget) / $budget;
         return max(0.0, 1.0 - $overRatio);
     }
 
@@ -126,7 +116,6 @@ class FitRank
 
     private static function normalizeVector(array $values): array
     {
-        // Vector normalization: x / sqrt(sum(x^2))
         $denom = sqrt(array_sum(array_map(fn($v) => $v * $v, $values)));
         if ($denom <= 0) $denom = 1;
 
@@ -135,52 +124,38 @@ class FitRank
 
     private static function estimateTravelTime(array $gym): float
     {
-        if (!empty($gym['travel_time_min'])) {
-            return (float) $gym['travel_time_min'];
-        }
-
-        // Fallback: 3 min per km
+        if (!empty($gym['travel_time_min'])) return (float) $gym['travel_time_min'];
         return ((float) ($gym['distance_km'] ?? 0)) * 3.0;
     }
 
-    /**
-     * TOPSIS:
-     * Benefit: equipment_match, amenity_match, budget_penalty
-     * Cost: travel_time, price
-     */
     public static function applyTopsis(array $gyms, array $weights): array
     {
         if (count($gyms) === 0) return $gyms;
 
-        // Benefits
         $equip   = array_map(fn($g) => (float) ($g['equipment_match'] ?? 0), $gyms);
         $amen    = array_map(fn($g) => (float) ($g['amenity_match'] ?? 0), $gyms);
         $penalty = array_map(fn($g) => (float) ($g['budget_penalty'] ?? 1), $gyms);
 
-        // Costs
         $travel  = array_map(fn($g) => (float) self::estimateTravelTime($g), $gyms);
         $price   = array_map(fn($g) => (float) ($g['price'] ?? 0), $gyms);
 
-        // Normalize
         $equipN   = self::normalizeVector($equip);
         $amenN    = self::normalizeVector($amen);
         $penN     = self::normalizeVector($penalty);
         $travelN  = self::normalizeVector($travel);
         $priceN   = self::normalizeVector($price);
 
-        // Weighted normalized matrix v_ij
         foreach ($gyms as $i => &$g) {
             $g['_v'] = [
-                'equip'  => ($weights['equipment'] ?? 0) * $equipN[$i],   // benefit
-                'amen'   => ($weights['amenity']   ?? 0) * $amenN[$i],    // benefit
-                'pen'    => ($weights['penalty']   ?? 0) * $penN[$i],     // benefit
-                'travel' => ($weights['travel']    ?? 0) * $travelN[$i],  // cost
-                'price'  => ($weights['price']     ?? 0) * $priceN[$i],   // cost
+                'equip'  => ($weights['equipment'] ?? 0) * $equipN[$i],
+                'amen'   => ($weights['amenity']   ?? 0) * $amenN[$i],
+                'pen'    => ($weights['penalty']   ?? 0) * $penN[$i],
+                'travel' => ($weights['travel']    ?? 0) * $travelN[$i],
+                'price'  => ($weights['price']     ?? 0) * $priceN[$i],
             ];
         }
         unset($g);
 
-        // Ideal best (A+) and worst (A-)
         $vEquip  = array_map(fn($g) => $g['_v']['equip'],  $gyms);
         $vAmen   = array_map(fn($g) => $g['_v']['amen'],   $gyms);
         $vPen    = array_map(fn($g) => $g['_v']['pen'],    $gyms);
@@ -188,11 +163,11 @@ class FitRank
         $vPrice  = array_map(fn($g) => $g['_v']['price'],  $gyms);
 
         $Aplus = [
-            'equip'  => max($vEquip),          // benefit => max
-            'amen'   => max($vAmen),           // benefit => max
-            'pen'    => max($vPen),            // benefit => max
-            'travel' => min($vTravel),         // cost    => min
-            'price'  => min($vPrice),          // cost    => min  ✅ cheaper is better
+            'equip'  => max($vEquip),
+            'amen'   => max($vAmen),
+            'pen'    => max($vPen),
+            'travel' => min($vTravel),
+            'price'  => min($vPrice),
         ];
 
         $Aminus = [
@@ -203,7 +178,6 @@ class FitRank
             'price'  => max($vPrice),
         ];
 
-        // Distances and closeness coefficient
         foreach ($gyms as &$g) {
             $Dp = sqrt(
                 pow($g['_v']['equip']  - $Aplus['equip'], 2) +
@@ -237,31 +211,23 @@ class FitRank
      * Main entry: build features + rank
      * ----------------------------- */
 
-    /**
-     * $mode: driving|walking|transit (from your controller query param)
-     */
     public static function getGymFeatures(User $user, $gyms, string $mode = 'driving')
     {
-        // Weights must sum to 1
-        // price is a COST => lower is better
         $weights = [
             'equipment' => 0.33,
             'amenity'   => 0.22,
             'travel'    => 0.20,
             'price'     => 0.20,
-            'penalty'   => 0.05, // budget guardrail
+            'penalty'   => 0.05,
         ];
 
-        $profile = $user->profile;
+        // ✅ use userProfile (NOT profile)
+        $profile = $user->userProfile;
         $preferences = $user->preference;
 
-        $userEquipIds = $user->preferredEquipments()
-            ->pluck('equipments.equipment_id')
-            ->toArray();
-
-        $userAmenityIds = $user->preferredAmenities()
-            ->pluck('amenities.amenity_id')
-            ->toArray();
+        // user preferred ids from loaded relations (no ambiguous SQL)
+        $userEquipIds = $user->preferredEquipments->pluck('equipment_id')->toArray();
+        $userAmenityIds = $user->preferredAmenities->pluck('amenity_id')->toArray();
 
         $planType = (string) $preferences->plan_type;
         $budget   = $preferences->budget !== null ? (float) $preferences->budget : null;
@@ -272,6 +238,10 @@ class FitRank
             $gymEquipIds   = $gym->equipments->pluck('equipment_id')->toArray();
             $gymAmenityIds = $gym->amenities->pluck('amenity_id')->toArray();
 
+            // ✅ matched IDs for frontend green/red
+            $matchedEquipIds = array_values(array_intersect($userEquipIds, $gymEquipIds));
+            $matchedAmenityIds = array_values(array_intersect($userAmenityIds, $gymAmenityIds));
+
             $distanceKm = self::computeDistance(
                 (float) $profile->latitude,
                 (float) $profile->longitude,
@@ -279,10 +249,8 @@ class FitRank
                 (float) $gym->longitude
             );
 
-            // Plan-aware price (daily/monthly/annual)
             $gymPrice = self::getPriceForPlan($planType, $gym);
 
-            // Google enhancements (nullable)
             $google = null;
             if ($distanceKm <= 15) {
                 $google = self::getGoogleTravelData(
@@ -294,35 +262,51 @@ class FitRank
                 );
             }
 
+            // ✅ gym lists (what the gym has)
+            $gymEquipments = $gym->equipments
+                ->map(fn($e) => [
+                    'equipment_id' => $e->equipment_id,
+                    'name' => $e->name,
+                    'image_url' => $e->image_url,
+                    'category' => $e->category ?? null,
+                ])
+                ->values();
+
+            $gymAmenities = $gym->amenities
+                ->map(fn($a) => [
+                    'amenity_id' => $a->amenity_id,
+                    'name' => $a->name,
+                    'image_url' => $a->image_url,
+                ])
+                ->values();
+
             $results[] = [
                 'gym_id' => $gym->gym_id,
                 'name' => $gym->name,
                 'latitude' => $gym->latitude,
                 'longitude' => $gym->longitude,
 
-                // Straight-line distance
                 'distance_km' => round($distanceKm, 2),
 
-                // Google enhancements
                 'google_distance_km' => $google['google_distance_km'] ?? null,
                 'travel_time_min' => $google['travel_time_min'] ?? null,
 
-                // ✅ Cost criterion (cheaper = better in TOPSIS)
                 'price' => $gymPrice,
-
-                // ✅ Optional budget guardrail (benefit-ish)
                 'budget_penalty' => self::budgetPenalty($budget, $gymPrice),
 
-                // Matches
                 'equipment_match' => self::computeEquipmentMatch($userEquipIds, $gymEquipIds),
                 'amenity_match'   => self::computeAmenityMatch($userAmenityIds, $gymAmenityIds),
 
-                // Compatibility (must have price for the plan)
                 'plan_compatible' => self::isPlanCompatible($planType, $gym) ? 1 : 0,
+
+                // ✅ breakdown payload
+                'gym_equipments' => $gymEquipments,
+                'gym_amenities' => $gymAmenities,
+                'matched_equipment_ids' => $matchedEquipIds,
+                'matched_amenity_ids' => $matchedAmenityIds,
             ];
         }
 
-        // Filter out gyms that are not compatible OR missing price
         $results = array_values(array_filter($results, fn($g) =>
             ($g['plan_compatible'] ?? 0) == 1 && ($g['price'] ?? null) !== null
         ));

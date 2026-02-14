@@ -1,10 +1,12 @@
-// src/pages/user/FindGyms.jsx
+// ✅ WHOLE FILE: src/pages/user/FindGyms.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "./Homestyles.css";
+
+import { api } from "../../utils/apiClient"; // ✅ uses Bearer token via interceptor
 
 import {
   fetchAmenities,
@@ -30,7 +32,7 @@ import {
 // -----------------------
 // CONFIG: redirect route
 // -----------------------
-const GYMS_LIST_ROUTE = "/user/gyms"; // ✅ change to your gyms list page route
+const RESULTS_ROUTE = "/home/gym-results";
 const MAIN_ORANGE = "#ff8c00";
 
 // Leaflet icon fix
@@ -117,17 +119,24 @@ export default function FindGyms() {
   const [progress, setProgress] = useState(0);
 
   // steps
-  const sections = ["Location", "Budget", "Amenities", "Gym Types", "Machines", "Free Weights"];
+  const sections = [
+    "Location",
+    "Budget",
+    "Amenities",
+    "Gym Types",
+    "Machines",
+    "Free Weights",
+  ];
 
   // Static sections for now
   const sectionData = {
     Budget: [
-      { label: "₱50 and below", value: 50 },
-      { label: "₱100 and below", value: 100 },
-      { label: "₱200", value: 200 },
-      { label: "₱300", value: 300 },
-      { label: "₱500 and above", value: 500 },
+      { label: "₱500", value: 500 },
+      { label: "₱1,000", value: 1000 },
+      { label: "₱1,500", value: 1500 },
+      { label: "₱2,000 and above", value: 2000 },
     ],
+
     "Gym Types": [
       "Commercial Gym - Large gym with full equipment",
       "Local Gym - Small neighborhood gym",
@@ -318,32 +327,34 @@ export default function FindGyms() {
     }
   };
 
-  // ✅ Apply at the END: SAVE to backend + loading effects + redirect
+  // ✅ Apply at the END: SAVE to backend + SHORT loading + redirect
+  // ✅ Removed redundant "ranking/compute" here (Results page handles it)
+  // ✅ Removed extra delays before navigating
   const handleApply = async () => {
     try {
       // ---- Phase 1: Saving ----
       setSavingPhase(true);
       setRankingPhase(false);
-      setProgress(5);
+      setProgress(8);
 
       const budget = buildBudget(selectedItems);
       if (budget !== null) {
-        setProgress(15);
+        setProgress(22);
         await saveUserPreferences({ budget });
       }
 
       const equipment_ids = buildEquipmentIds(selectedItems);
-      setProgress(30);
+      setProgress(42);
       await savePreferredEquipments(equipment_ids);
 
       const amenity_ids = buildAmenityIds(selectedItems);
-      setProgress(50);
+      setProgress(62);
       await savePreferredAmenities(amenity_ids);
 
       const locKey = getSelectedLocationKey(selectedItems);
-      const address = locKey ? locKey.slice("location:".length) : (locationMeta.address || "");
+      const address = locKey ? locKey.slice("location:".length) : locationMeta.address || "";
       if (address || (locationMeta?.lat != null && locationMeta?.lng != null)) {
-        setProgress(65);
+        setProgress(78);
         await saveUserProfileLocation({
           address: address || null,
           latitude: locationMeta.lat,
@@ -351,36 +362,30 @@ export default function FindGyms() {
         });
       }
 
-      setProgress(80);
-
-      // small pause so user feels the save is real
-      await sleep(450);
-
       setProgress(100);
-      await sleep(250);
 
-      // ---- Phase 2: Ranking / Calculating ----
+      // ✅ Immediately go to results (no redundant recommend call, no extra sleeps)
       setSavingPhase(false);
-      setRankingPhase(true);
+      setRankingPhase(false);
       setProgress(0);
 
-      // fake "calculation" progress
-      // (later, replace this with a real API call to your ranking endpoint)
-      const steps = [10, 22, 35, 48, 60, 72, 84, 92, 100];
-      for (const p of steps) {
-        setProgress(p);
-        await sleep(180);
-      }
-
-      // redirect to gyms list (your ranking page)
       closeModal();
-      navigate(GYMS_LIST_ROUTE, { replace: false });
+
+      // ✅ Tell results page to refetch fresh (and you can clear cache there if you want)
+      navigate(RESULTS_ROUTE, {
+        replace: false,
+        state: {
+          mode: "driving",
+          refetch: true,
+          updatedAt: Date.now(),
+        },
+      });
     } catch (e) {
       console.error("❌ Apply failed:", e);
       setSavingPhase(false);
       setRankingPhase(false);
       setProgress(0);
-      alert(`Failed to save:\n${e.message}`);
+      alert(`Failed to save:\n${e?.response?.data?.message || e.message}`);
     }
   };
 
@@ -888,12 +893,8 @@ export default function FindGyms() {
                   <span className="arrow right"></span>
                 </button>
               ) : (
-                <button
-                  className="apply-btn apply-btn--compact"
-                  onClick={handleApply}
-                  disabled={showOverlay}
-                >
-                  {savingPhase ? "SAVING..." : rankingPhase ? "RANKING..." : "APPLY PREFERENCES"}
+                <button className="apply-btn apply-btn--compact" onClick={handleApply} disabled={showOverlay}>
+                  {savingPhase ? "SAVING..." : rankingPhase ? "RANKING..." : "APPLY"}
                 </button>
               )}
             </div>
@@ -923,8 +924,7 @@ export default function FindGyms() {
                       <strong>Difficulty:</strong> {previewEquip.difficulty || "-"}
                     </div>
                     <div>
-                      <strong>Target:</strong>{" "}
-                      {parseTargets(previewEquip.target_muscle_group).join(", ") || "-"}
+                      <strong>Target:</strong> {parseTargets(previewEquip.target_muscle_group).join(", ") || "-"}
                     </div>
                   </div>
 
@@ -980,7 +980,6 @@ export default function FindGyms() {
                     {overlaySub}
                   </div>
 
-                  {/* spinner */}
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
                     <div
                       style={{
@@ -995,7 +994,6 @@ export default function FindGyms() {
                     <div style={{ fontWeight: 900 }}>{progress}%</div>
                   </div>
 
-                  {/* progress bar */}
                   <div
                     style={{
                       height: 10,
@@ -1021,7 +1019,6 @@ export default function FindGyms() {
                   </div>
                 </div>
 
-                {/* keyframes */}
                 <style>{`
                   @keyframes spin {
                     from { transform: rotate(0deg); }

@@ -1,0 +1,330 @@
+/* ✅ NEW FILE: src/pages/user/SavedGyms.css */
+/* Clean + matches your GymRes-Matching vibe but lighter */
+
+.saved-page {
+  font-family: "Montserrat", sans-serif;
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header */
+.saved-header {
+  background: linear-gradient(135deg, #d35400 0%, #ff8c00 100%);
+  padding: 2.5rem 0 1.5rem;
+  color: white;
+}
+
+.saved-header-top {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.saved-header h1 {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  margin: 0 0 0.35rem 0;
+}
+
+.saved-header p {
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+.saved-header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.saved-summary {
+  margin-top: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.summary-pill {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Body */
+.saved-body {
+  padding: 2.25rem 0 3rem;
+}
+
+/* Buttons */
+.btn-solid {
+  padding: 0.85rem 1.2rem;
+  background: #ff8c00;
+  color: white;
+  border: 2px solid #ff8c00;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s;
+}
+
+.btn-solid:hover {
+  background: #e67e00;
+  border-color: #e67e00;
+}
+
+.btn-outline {
+  padding: 0.85rem 1.2rem;
+  background: white;
+  color: #ff8c00;
+  border: 2px solid #ff8c00;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s;
+}
+
+.btn-outline:hover {
+  background: #fff5e6;
+}
+
+.btn-outline.danger {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.btn-outline.danger:hover {
+  background: #fee2e2;
+}
+
+.btn-outline:disabled,
+.btn-solid:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* List */
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.saved-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  transition: all 0.2s;
+}
+
+.saved-card:hover {
+  border-color: #ff8c00;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+}
+
+.saved-image {
+  width: 320px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.saved-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.saved-details {
+  padding: 1.6rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.saved-toprow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.saved-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin: 0 0 0.35rem 0;
+  color: #111827;
+}
+
+.saved-location {
+  margin: 0;
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.saved-price .price-pill {
+  background: #fff5e6;
+  border: 1px solid #ffd8a8;
+  color: #9a4f00;
+  font-weight: 900;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* meta pills */
+.saved-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.meta-pill {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  color: #374151;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* actions */
+.saved-actions {
+  margin-top: 0.3rem;
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.saved-actions .btn-solid {
+  flex: 1;
+  min-width: 220px;
+}
+
+.saved-actions .btn-outline {
+  min-width: 160px;
+}
+
+/* states */
+.state-box {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.state-box.error {
+  border-color: #fecaca;
+}
+
+.state-title {
+  font-weight: 900;
+  font-size: 1.2rem;
+  margin-bottom: 0.35rem;
+}
+
+.state-sub {
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.state-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* empty */
+.empty-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.empty-card {
+  width: min(680px, 100%);
+  background: white;
+  border: 2px dashed #e5e7eb;
+  border-radius: 14px;
+  padding: 2.5rem 1.8rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #ff8c00;
+  margin-bottom: 0.75rem;
+}
+
+.empty-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin-bottom: 0.4rem;
+  color: #111827;
+}
+
+.empty-sub {
+  color: #6b7280;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.empty-actions {
+  margin-top: 1.4rem;
+  display: flex;
+  gap: 0.85rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* responsive */
+@media (max-width: 968px) {
+  .saved-card {
+    flex-direction: column;
+  }
+
+  .saved-image {
+    width: 100%;
+    height: 260px;
+  }
+
+  .saved-details {
+    padding: 1.25rem;
+  }
+
+  .saved-actions .btn-solid,
+  .saved-actions .btn-outline {
+    width: 100%;
+    min-width: unset;
+  }
+}

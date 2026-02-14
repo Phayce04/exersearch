@@ -37,5 +37,10 @@ return [
     'google_maps' => [
         'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
+    'ml' => [
+    'url' => env('ML_SERVICE_URL', 'http://127.0.0.1:8000'),
+    'timeout' => env('ML_SERVICE_TIMEOUT', 2),
+],
+
 
 ];

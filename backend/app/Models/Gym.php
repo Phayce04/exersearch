@@ -170,4 +170,8 @@ class Gym extends Model
 
         return min(100, round($score));
     }
+    public function savedBy()
+{
+    return $this->hasMany(\App\Models\SavedGym::class, 'gym_id', 'gym_id');
+}
 }
