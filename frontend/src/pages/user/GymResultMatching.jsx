@@ -1,4 +1,3 @@
-// ✅ WHOLE FILE: src/pages/user/GymResultsMatching.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./GymRes-Matching.css";
@@ -9,46 +8,19 @@ const MAIN_ORANGE = "#ff8c00";
 const RECOMMEND_ENDPOINT = "/gyms/recommend";
 const GYM_SHOW_ENDPOINT = (id) => `/gyms/${id}`;
 const DEFAULT_MODE = "driving";
-const SAVED_ENDPOINT = "/user/saved-gyms";
 
-// --------- cache (sessionStorage) ----------
-const REC_CACHE_PREFIX = "rec_cache_v1__";
-const REC_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
-function cacheKey(mode) {
-  return `${REC_CACHE_PREFIX}${mode || DEFAULT_MODE}`;
-}
-
-function saveRecCache(mode, payload) {
-  try {
-    sessionStorage.setItem(
-      cacheKey(mode),
-      JSON.stringify({ ts: Date.now(), payload })
-    );
-  } catch {}
-}
-
-function loadRecCache(mode) {
-  try {
-    const raw = sessionStorage.getItem(cacheKey(mode));
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    if (!obj?.ts || !obj?.payload) return null;
-    if (Date.now() - obj.ts > REC_CACHE_TTL_MS) return null;
-    return obj.payload;
-  } catch {
-    return null;
+// ✅ session id storage
+const SESSION_KEY = "exersearch_session_id";
+function getSessionId() {
+  let sid = localStorage.getItem(SESSION_KEY);
+  if (!sid) {
+    sid =
+      (crypto?.randomUUID?.() ||
+        `sess_${Date.now()}_${Math.random().toString(16).slice(2)}`);
+    localStorage.setItem(SESSION_KEY, sid);
   }
+  return sid;
 }
-
-// Call this from FindGyms after saving prefs (optional)
-// export function clearRecCacheAll() {
-//   try {
-//     Object.keys(sessionStorage).forEach((k) => {
-//       if (k.startsWith(REC_CACHE_PREFIX)) sessionStorage.removeItem(k);
-//     });
-//   } catch {}
-// }
 
 function safeNum(v) {
   const n = Number(v);
@@ -75,27 +47,63 @@ function buildMatchPercent(gym) {
   return Math.round(Math.max(0, Math.min(1, score01)) * 100);
 }
 
-// ExerSearch Score from TOPSIS (0..1 -> 0..100 whole number)
+// ✅ ExerSearch Score from TOPSIS (0..1 -> 0..100 whole number)
 function buildExerSearchScore(gym) {
   const t = safeNum(gym?.topsis_score);
   return Math.round(Math.max(0, Math.min(1, t)) * 100);
 }
 
+function GymSearchLoader() {
+  return (
+    <div className="gym-search-loader">
+      <div className="gym-search-loader__stage">
+        <div className="gym-search-loader__card">
+          <div className="gym-search-loader__avatar" />
+          <div className="gym-search-loader__text" />
+        </div>
+
+        <div className="gym-search-loader__card">
+          <div className="gym-search-loader__avatar" />
+          <div className="gym-search-loader__text" />
+        </div>
+
+        <div className="gym-search-loader__glass">
+          <div className="gym-search-loader__glassInner" />
+          <div className="gym-search-loader__handle">
+            <div className="gym-search-loader__handleInner" />
+          </div>
+        </div>
+      </div>
+
+      {/* 👇 moved clearly BELOW animation */}
+      <div className="gym-search-loader__caption">
+        <div className="gym-search-loader__title">
+          Finding your best gyms…
+        </div>
+        <div className="gym-search-loader__sub">
+          Matching equipment • amenities • distance • budget
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function GymResultsMatching() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ prefer state payload (coming back), else session cache
-  const stateMode = location?.state?.mode || null;
-  const statePayload = location?.state?.recommendation || null;
+  // ✅ accept either old shape OR new shape
+  const initialPayload = useMemo(() => {
+    const s = location?.state || null;
+    if (!s) return null;
+    // new: { user, gyms }
+    if (s.user || s.gyms) return { user: s.user || null, gyms: s.gyms || [] };
+    // old: { recommendation: { user, gyms } }
+    return s.recommendation || null;
+  }, [location?.state]);
 
-  const initialMode = stateMode || DEFAULT_MODE;
-  const cachedPayload = !statePayload ? loadRecCache(initialMode) : null;
-
-  const initialPayload = statePayload || cachedPayload || null;
-
-  const [mode, setMode] = useState(initialMode);
-
+  const [mode, setMode] = useState(location?.state?.mode || DEFAULT_MODE);
   const [loading, setLoading] = useState(!initialPayload);
   const [error, setError] = useState(null);
 
@@ -109,29 +117,55 @@ export default function GymResultsMatching() {
   const [openBreakdown, setOpenBreakdown] = useState(false);
   const [activeGym, setActiveGym] = useState(null);
 
-  // saved gyms (server-backed)
+  // likes (local)
   const [likedGyms, setLikedGyms] = useState(new Set());
-  const [savingGymId, setSavingGymId] = useState(null);
+
+  // ✅ log interaction helper (POST only)
+  const logInteraction = useCallback(
+    async (event, gym, extraMeta = {}) => {
+      try {
+        const gymId = gym?.gym_id ?? gym;
+        if (!gymId) return;
+
+        const payload = {
+          gym_id: Number(gymId),
+          event: String(event),
+          source: "results",
+          session_id: getSessionId(),
+          meta: {
+            // features at time of interaction (for ML training)
+            equipment_match: safeNum(gym?.equipment_match),
+            amenity_match: safeNum(gym?.amenity_match),
+            travel_time_min: safeNum(gym?.travel_time_min),
+            price: safeNum(gym?.price),
+            budget_penalty: safeNum(gym?.budget_penalty),
+            topsis_score: safeNum(gym?.topsis_score),
+            mode: mode || DEFAULT_MODE,
+            ...extraMeta,
+          },
+        };
+
+        await api.post("/gym-interactions", payload);
+      } catch (e) {
+        // don't break UI if logger fails
+        console.warn(
+          "[logInteraction] failed:",
+          e?.response?.status || e?.message
+        );
+      }
+    },
+    [mode]
+  );
 
   const fetchRecommend = useCallback(async (m) => {
     setLoading(true);
     setError(null);
     try {
-      const finalMode = m || DEFAULT_MODE;
       const res = await api.get(RECOMMEND_ENDPOINT, {
-        params: { mode: finalMode },
+        params: { mode: m || DEFAULT_MODE },
       });
-
-      const payload = {
-        user: res.data?.user || null,
-        gyms: Array.isArray(res.data?.gyms) ? res.data.gyms : [],
-      };
-
-      setUser(payload.user);
-      setGyms(payload.gyms);
-
-      // ✅ cache for instant back navigation
-      saveRecCache(finalMode, payload);
+      setUser(res.data?.user || null);
+      setGyms(Array.isArray(res.data?.gyms) ? res.data.gyms : []);
     } catch (e) {
       console.error(e);
       setError(
@@ -144,81 +178,39 @@ export default function GymResultsMatching() {
     }
   }, []);
 
-  // ✅ on first mount: if we already have initial payload, do NOT fetch
   useEffect(() => {
     if (initialPayload) return;
     fetchRecommend(mode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialPayload, fetchRecommend, mode]);
 
-  // ✅ when mode changes: use cache instantly if available, otherwise fetch
   useEffect(() => {
-    const cached = loadRecCache(mode);
-    if (cached?.gyms) {
-      setUser(cached.user || null);
-      setGyms(Array.isArray(cached.gyms) ? cached.gyms : []);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-    fetchRecommend(mode);
-  }, [mode, fetchRecommend]);
-
-  // ✅ load saved gyms from backend once
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadSaved() {
+    const saved = localStorage.getItem("likedGyms");
+    if (saved) {
       try {
-        const res = await api.get(SAVED_ENDPOINT);
-        const rows = Array.isArray(res.data?.data) ? res.data.data : [];
-        const ids = rows.map((r) => r.gym_id).filter((x) => x != null);
-        if (mounted) setLikedGyms(new Set(ids));
-      } catch {
-        // silent
-      }
+        setLikedGyms(new Set(JSON.parse(saved)));
+      } catch {}
     }
-
-    loadSaved();
-    return () => {
-      mounted = false;
-    };
   }, []);
 
-  // ✅ toggle save/unsave via backend
-  const toggleLike = async (gymId) => {
+  // ✅ Save/Unsave is still local for now; we also log "save" / "click"
+  const toggleLike = async (gymObj) => {
+    const gymId = gymObj?.gym_id;
     if (!gymId) return;
-    if (savingGymId) return;
 
-    const wasLiked = likedGyms.has(gymId);
+    const next = new Set(likedGyms);
+    const willSave = !next.has(gymId);
 
-    // optimistic UI
-    setLikedGyms((prev) => {
-      const next = new Set(prev);
-      if (wasLiked) next.delete(gymId);
-      else next.add(gymId);
-      return next;
-    });
+    if (willSave) next.add(gymId);
+    else next.delete(gymId);
 
-    setSavingGymId(gymId);
+    setLikedGyms(next);
+    localStorage.setItem("likedGyms", JSON.stringify([...next]));
 
-    try {
-      if (wasLiked) {
-        await api.delete(`${SAVED_ENDPOINT}/${gymId}`);
-      } else {
-        await api.post(SAVED_ENDPOINT, { gym_id: gymId });
-      }
-    } catch (e) {
-      console.error(e);
-      // rollback
-      setLikedGyms((prev) => {
-        const rollback = new Set(prev);
-        if (wasLiked) rollback.add(gymId);
-        else rollback.delete(gymId);
-        return rollback;
-      });
-    } finally {
-      setSavingGymId(null);
+    // ✅ log: Save or Click (unsave not in allowed list by default)
+    if (willSave) {
+      await logInteraction("save", gymObj, { action: "save" });
+    } else {
+      await logInteraction("click", gymObj, { action: "unsave" });
     }
   };
 
@@ -283,37 +275,41 @@ export default function GymResultsMatching() {
 
   const rankedGyms = useMemo(() => gyms || [], [gyms]);
 
-  if (loading) {
-    return (
-      <div className="matching-results-page">
-        <section className="matching-header">
-          <div className="container">
-            <h1>Your Best Matches</h1>
-            <p>Gyms ranked by how well they match your preferences</p>
-          </div>
-        </section>
-        <section className="matching-results">
-          <div className="container">
-            <div style={{ padding: "24px", fontWeight: 800 }}>
-              Loading ranked gyms…
-            </div>
-          </div>
-        </section>
-      </div>
-    );
-  }
+  return (
+    <div className="matching-results-page">
+      <section className="matching-header">
+        <div className="container">
+          <h1>Your Best Matches</h1>
+          <p>Gyms ranked by how well they match your preferences</p>
 
-  if (error) {
-    return (
-      <div className="matching-results-page">
-        <section className="matching-header">
-          <div className="container">
-            <h1>Your Best Matches</h1>
-            <p>Gyms ranked by how well they match your preferences</p>
+          <div className="mode-switch">
+            {["driving", "walking", "transit"].map((m) => (
+              <button
+                key={m}
+                className="favorite-btn-small"
+                aria-pressed={mode === m}
+                onClick={() => {
+                  setMode(m);
+                  fetchRecommend(m);
+                }}
+                style={{
+                  borderColor: mode === m ? MAIN_ORANGE : undefined,
+                  background: mode === m ? "#fff5e6" : "white",
+                }}
+              >
+                {m.toUpperCase()}
+              </button>
+            ))}
           </div>
-        </section>
-        <section className="matching-results">
-          <div className="container">
+        </div>
+      </section>
+
+      <section className="matching-results">
+        <div className="container">
+          {/* ✅ Keep page structure; show loader inside results area */}
+          {loading ? (
+            <GymSearchLoader />
+          ) : error ? (
             <div style={{ padding: "24px" }}>
               <div style={{ fontWeight: 900, color: "#dc2626" }}>{error}</div>
               <div
@@ -339,257 +335,220 @@ export default function GymResultsMatching() {
                 </button>
               </div>
             </div>
-          </div>
-        </section>
-      </div>
-    );
-  }
+          ) : (
+            <div className="results-list">
+              {rankedGyms.map((gym, idx) => {
+                const matchPercentage = buildMatchPercent(gym);
+                const exerScore = buildExerSearchScore(gym);
+                const isOverBudget =
+                  safeNum(gym?.price) > safeNum(user?.budget);
 
-  return (
-    <div className="matching-results-page">
-      <section className="matching-header">
-        <div className="container">
-          <h1>Your Best Matches</h1>
-          <p>Gyms ranked by how well they match your preferences</p>
+                const img =
+                  gymImages[gym.gym_id] ||
+                  "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&h=400&fit=crop";
 
-          <div className="mode-switch">
-            {["driving", "walking", "transit"].map((m) => (
-              <button
-                key={m}
-                className="favorite-btn-small"
-                aria-pressed={mode === m}
-                onClick={() => setMode(m)} // ✅ no double-fetch
-                style={{
-                  borderColor: mode === m ? MAIN_ORANGE : undefined,
-                  background: mode === m ? "#fff5e6" : "white",
-                }}
-              >
-                {m.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+                const addressText = gymAddresses[gym.gym_id]
+                  ? gymAddresses[gym.gym_id]
+                  : gym?.latitude != null && gym?.longitude != null
+                  ? `${gym.latitude}, ${gym.longitude}`
+                  : "—";
 
-      <section className="matching-results">
-        <div className="container">
-          <div className="results-list">
-            {rankedGyms.map((gym, idx) => {
-              const matchPercentage = buildMatchPercent(gym);
-              const exerScore = buildExerSearchScore(gym);
-              const isOverBudget = safeNum(gym?.price) > safeNum(user?.budget);
+                const distanceText =
+                  safeNum(gym?.google_distance_km) > 0
+                    ? `${gym.google_distance_km} km`
+                    : `${gym.distance_km} km`;
 
-              const img =
-                gymImages[gym.gym_id] ||
-                "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&h=400&fit=crop";
+                return (
+                  <div key={gym.gym_id} className="match-card">
+                    <div className="match-card-inner">
+                      <div className="match-image">
+                        <img src={img} alt={gym.name} />
 
-              const addressText = gymAddresses[gym.gym_id]
-                ? gymAddresses[gym.gym_id]
-                : gym?.latitude != null && gym?.longitude != null
-                ? `${gym.latitude}, ${gym.longitude}`
-                : "—";
+                        <div className="rank-badge">#{idx + 1}</div>
 
-              const distanceText =
-                safeNum(gym?.google_distance_km) > 0
-                  ? `${gym.google_distance_km} km`
-                  : `${gym.distance_km} km`;
-
-              const isSaved = likedGyms.has(gym.gym_id);
-              const isSaving = savingGymId === gym.gym_id;
-
-              return (
-                <div key={gym.gym_id} className="match-card">
-                  <div className="match-card-inner">
-                    <div className="match-image">
-                      <img src={img} alt={gym.name} />
-
-                      <div className="rank-badge">#{idx + 1}</div>
-
-                      <div className="match-badge">
-                        <div className="match-percentage">
-                          {matchPercentage}%
-                        </div>
-                        <div className="match-label">MATCH</div>
-                      </div>
-                    </div>
-
-                    <div className="match-details">
-                      <div className="match-header">
-                        <div>
-                          <h2>{gym.name}</h2>
-
-                          <p className="gym-location">📍 {addressText}</p>
-
-                          <p className="gym-subline">
-                            {distanceText} away{" "}
-                            {gym?.travel_time_min
-                              ? `• ${gym.travel_time_min} min`
-                              : ""}
-                          </p>
-                        </div>
-
-                        <div
-                          className="score-star"
-                          title="Derived from TOPSIS score (0–100)"
-                        >
-                          <span className="star">★</span>
-                          <span className="score-text">
-                            ExerSearch Score: {exerScore}
-                          </span>
+                        <div className="match-badge">
+                          <div className="match-percentage">
+                            {matchPercentage}%
+                          </div>
+                          <div className="match-label">MATCH</div>
                         </div>
                       </div>
 
-                      <div className="quick-info">
-                        <div className="info-pill distance">
-                          📍 {distanceText} away
+                      <div className="match-details">
+                        <div className="match-header">
+                          <div>
+                            <h2>{gym.name}</h2>
+
+                            <p className="gym-location">📍 {addressText}</p>
+
+                            <p className="gym-subline">
+                              {distanceText} away{" "}
+                              {gym?.travel_time_min
+                                ? `• ${gym.travel_time_min} min`
+                                : ""}
+                            </p>
+                          </div>
+
+                          <div
+                            className="score-star"
+                            title="Derived from TOPSIS score (0–100)"
+                          >
+                            <span className="star">★</span>
+                            <span className="score-text">
+                              ExerSearch Score: {exerScore}
+                            </span>
+                          </div>
                         </div>
 
-                        <div
-                          className={`info-pill price ${
-                            isOverBudget ? "over-budget" : "in-budget"
-                          }`}
-                        >
-                          💰 {fmtPeso(gym?.price)} / {user?.plan_type || "plan"}{" "}
-                          {isOverBudget ? "• Over" : "• Good"}
-                        </div>
-                      </div>
+                        <div className="quick-info">
+                          <div className="info-pill distance">
+                            📍 {distanceText} away
+                          </div>
 
-                      <div className="match-breakdown">
-                        <div className="breakdown-title">
-                          <span>MATCH BREAKDOWN</span>
+                          <div
+                            className={`info-pill price ${
+                              isOverBudget ? "over-budget" : "in-budget"
+                            }`}
+                          >
+                            💰 {fmtPeso(gym?.price)} /{" "}
+                            {user?.plan_type || "plan"}{" "}
+                            {isOverBudget ? "• Over" : "• Good"}
+                          </div>
+                        </div>
+
+                        <div className="match-breakdown">
+                          <div className="breakdown-title">
+                            <span>MATCH BREAKDOWN</span>
+
+                            <button
+                              type="button"
+                              className="breakdown-view"
+                              onClick={async () => {
+                                await logInteraction("click", gym, {
+                                  action: "open_breakdown",
+                                });
+                                setActiveGym(gym);
+                                setOpenBreakdown(true);
+                              }}
+                              title="View equipment & amenities breakdown"
+                            >
+                              View →
+                            </button>
+                          </div>
+
+                          <div className="breakdown-bars">
+                            <div className="breakdown-bar-item">
+                              <span className="breakdown-bar-label">
+                                Amenities
+                              </span>
+                              <div className="breakdown-bar-container">
+                                <div
+                                  className="breakdown-bar-fill"
+                                  style={{
+                                    width: `${Math.round(
+                                      safeNum(gym?.amenity_match) * 100
+                                    )}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="breakdown-bar-value">
+                                {Math.round(safeNum(gym?.amenity_match) * 100)}%
+                              </span>
+                            </div>
+
+                            <div className="breakdown-bar-item">
+                              <span className="breakdown-bar-label">
+                                Equipment
+                              </span>
+                              <div className="breakdown-bar-container">
+                                <div
+                                  className="breakdown-bar-fill"
+                                  style={{
+                                    width: `${Math.round(
+                                      safeNum(gym?.equipment_match) * 100
+                                    )}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="breakdown-bar-value">
+                                {Math.round(
+                                  safeNum(gym?.equipment_match) * 100
+                                )}
+                                %
+                              </span>
+                            </div>
+
+                            <div className="breakdown-bar-item">
+                              <span className="breakdown-bar-label">
+                                Budget Fit
+                              </span>
+                              <div className="breakdown-bar-container">
+                                <div
+                                  className="breakdown-bar-fill"
+                                  style={{
+                                    width: `${Math.round(
+                                      safeNum(gym?.budget_penalty) * 100
+                                    )}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="breakdown-bar-value">
+                                {Math.round(
+                                  safeNum(gym?.budget_penalty) * 100
+                                )}
+                                %
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ✅ Actions */}
+                        <div className="match-actions-row">
+                          <Link
+                            to={`/home/gym/${gym.gym_id}`}
+                            className="view-full-btn"
+                            title="Open gym details page"
+                            onClick={async () => {
+                              await logInteraction("view", gym, {
+                                action: "open_details",
+                                to: `/home/gym/${gym.gym_id}`,
+                              });
+                            }}
+                          >
+                            View Full Details
+                          </Link>
 
                           <button
-                            type="button"
-                            className="breakdown-view"
-                            onClick={() => {
-                              setActiveGym(gym);
-                              setOpenBreakdown(true);
-                            }}
-                            title="View equipment & amenities breakdown"
+                            className={`save-btn ${
+                              likedGyms.has(gym.gym_id) ? "liked" : ""
+                            }`}
+                            onClick={() => toggleLike(gym)}
+                            title="Save this gym"
                           >
-                            View →
+                            <span className="heart">
+                              {likedGyms.has(gym.gym_id) ? "♥" : "♡"}
+                            </span>
+                            {likedGyms.has(gym.gym_id) ? "Saved" : "Save"}
                           </button>
                         </div>
-
-                        <div className="breakdown-bars">
-                          <div className="breakdown-bar-item">
-                            <span className="breakdown-bar-label">
-                              Amenities
-                            </span>
-                            <div className="breakdown-bar-container">
-                              <div
-                                className="breakdown-bar-fill"
-                                style={{
-                                  width: `${Math.round(
-                                    safeNum(gym?.amenity_match) * 100
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="breakdown-bar-value">
-                              {Math.round(safeNum(gym?.amenity_match) * 100)}%
-                            </span>
-                          </div>
-
-                          <div className="breakdown-bar-item">
-                            <span className="breakdown-bar-label">
-                              Equipment
-                            </span>
-                            <div className="breakdown-bar-container">
-                              <div
-                                className="breakdown-bar-fill"
-                                style={{
-                                  width: `${Math.round(
-                                    safeNum(gym?.equipment_match) * 100
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="breakdown-bar-value">
-                              {Math.round(safeNum(gym?.equipment_match) * 100)}%
-                            </span>
-                          </div>
-
-                          <div className="breakdown-bar-item">
-                            <span className="breakdown-bar-label">
-                              Budget Fit
-                            </span>
-                            <div className="breakdown-bar-container">
-                              <div
-                                className="breakdown-bar-fill"
-                                style={{
-                                  width: `${Math.round(
-                                    safeNum(gym?.budget_penalty) * 100
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="breakdown-bar-value">
-                              {Math.round(safeNum(gym?.budget_penalty) * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="match-actions-row">
-                        <Link
-                          to={`/home/gym/${gym.gym_id}`}
-                          className="view-full-btn"
-                          title="Open gym details page"
-                        >
-                          View Full Details
-                        </Link>
-
-                        <button
-                          className={`save-btn ${isSaved ? "liked" : ""}`}
-                          onClick={() => toggleLike(gym.gym_id)}
-                          disabled={isSaving}
-                          title={isSaved ? "Remove from saved" : "Save this gym"}
-                        >
-                          <span className="heart">{isSaved ? "♥" : "♡"}</span>
-                          {isSaving
-                            ? isSaved
-                              ? "Removing…"
-                              : "Saving…"
-                            : isSaved
-                            ? "Saved"
-                            : "Save"}
-                        </button>
-                      </div>
-
-                      {/* OPTIONAL: go to Saved Gyms without refetching results */}
-                      <div style={{ marginTop: 10 }}>
-                        <button
-                          className="favorite-btn-small"
-                          onClick={() =>
-                            navigate("/home/saved-gyms", {
-                              state: {
-                                from: "/home/gym-results",
-                                mode,
-                                recommendation: { user, gyms },
-                              },
-                            })
-                          }
-                        >
-                          Go to Saved Gyms →
-                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-            {rankedGyms.length === 0 ? (
-              <div style={{ padding: "24px", fontWeight: 800 }}>
-                No gyms found for your current filters.
-              </div>
-            ) : null}
-          </div>
+              {rankedGyms.length === 0 ? (
+                <div style={{ padding: "24px", fontWeight: 800 }}>
+                  No gyms found for your current filters.
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </section>
 
-      {openBreakdown && activeGym && (
+      {/* ✅ Modal stays available */}
+      {openBreakdown && activeGym && !loading && (
         <BreakdownModal
           gym={activeGym}
           user={user}
@@ -627,7 +586,12 @@ function BreakdownModal({ gym, user, onClose }) {
   const matchedAmCount = preferredAmenities.filter((x) => x.matched).length;
 
   return (
-    <div className="breakdown-overlay" onClick={onClose}>
+    <div
+      className="breakdown-overlay"
+      onClick={() => {
+        onClose?.();
+      }}
+    >
       <div className="breakdown-modal" onClick={(e) => e.stopPropagation()}>
         <div className="breakdown-top">
           <div className="breakdown-heading">Breakdown • {gym?.name}</div>
@@ -645,9 +609,7 @@ function BreakdownModal({ gym, user, onClose }) {
           </div>
 
           <div className="breakdown-section">
-            <div className="breakdown-section-title">
-              Your Preferred Amenities
-            </div>
+            <div className="breakdown-section-title">Your Preferred Amenities</div>
             <div className="breakdown-grid">
               {preferredAmenities.length === 0 ? (
                 <div className="breakdown-empty">
@@ -674,9 +636,7 @@ function BreakdownModal({ gym, user, onClose }) {
           </div>
 
           <div className="breakdown-section">
-            <div className="breakdown-section-title">
-              Your Preferred Equipment
-            </div>
+            <div className="breakdown-section-title">Your Preferred Equipment</div>
             <div className="breakdown-grid">
               {preferredEquipments.length === 0 ? (
                 <div className="breakdown-empty">

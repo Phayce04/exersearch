@@ -1,0 +1,104 @@
+/* ===============================
+   ExerSearch Custom Scribe Theme
+   =============================== */
+
+:root {
+  --exersearch-primary: #ff8c00;
+  --exersearch-dark: #1e1e1e;
+}
+
+/* Global font + smooth look */
+body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #f8f9fb;
+}
+
+/* Top navbar */
+.navbar {
+  background: var(--exersearch-primary) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Sidebar */
+.sidebar {
+  background: #ffffff;
+  border-right: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Sidebar active link */
+.sidebar .active {
+  color: var(--exersearch-primary) !important;
+  font-weight: 600;
+}
+
+/* Endpoint cards */
+.endpoint {
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  border: none;
+  margin-bottom: 20px;
+}
+
+/* Method badges (GET, POST, etc) */
+.endpoint .method {
+  border-radius: 999px !important;
+  padding: 4px 14px !important;
+  font-weight: 600;
+}
+
+.method.GET {
+  background-color: #e8f7ff !important;
+  color: #0077b6 !important;
+}
+
+.method.POST {
+  background-color: #fff3e6 !important;
+  color: var(--exersearch-primary) !important;
+}
+
+.method.PUT,
+.method.PATCH {
+  background-color: #f3f0ff !important;
+  color: #6f42c1 !important;
+}
+
+.method.DELETE {
+  background-color: #ffeaea !important;
+  color: #d90429 !important;
+}
+
+/* Buttons */
+button,
+.try-it-out button {
+  background: var(--exersearch-primary) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Code blocks */
+pre {
+  border-radius: 12px !important;
+  background: #1e1e1e !important;
+}
+
+/* Links */
+a {
+  color: var(--exersearch-primary);
+}
+
+/* Section titles */
+h1, h2, h3 {
+  font-weight: 700;
+}
+
+/* Smooth spacing */
+.section {
+  margin-bottom: 50px;
+}

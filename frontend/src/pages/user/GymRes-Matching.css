@@ -627,6 +627,7 @@
     width: 100%;
   }
 }
+
 /* ✅ Make modal use the SAME font as results page */
 .breakdown-overlay,
 .breakdown-modal,
@@ -655,4 +656,325 @@
 .has-tag,
 .breakdown-stats {
   font-weight: 700 !important;
+}
+
+/* =========================================================
+   ✅ GYM SEARCH LOADER (Magnifying glass + cards)
+   Brand colors: orange + white + soft neutrals
+   No fixed overlay -> header/footer stays visible
+   ========================================================= */
+
+/* ===============================
+   Loader Caption (moved lower)
+   =============================== */
+
+.gym-search-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gym-search-loader__stage {
+  position: relative;
+  width: 300px;
+  height: 300px;
+}
+
+/* Push caption much lower */
+.gym-search-loader__caption {
+  margin-top: 70px;      /* ← big separation */
+  padding-top: 10px;
+  text-align: center;
+  max-width: 420px;
+}
+
+/* Optional subtle separation line (looks very clean) */
+.gym-search-loader__caption::before {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #ff8c00, #d35400);
+  border-radius: 999px;
+  margin: 0 auto 18px auto;
+  opacity: 0.4;
+}
+
+
+.gym-search-loader__title {
+  font-weight: 900;
+  color: #111827;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+}
+
+.gym-search-loader__sub {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 750;
+  color: #6b7280;
+}
+
+
+/* Stage container (like your .container in LESS) */
+.gym-search-loader__stage {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  /* matches page vibe */
+}
+
+/* Contact card */
+.gym-search-loader__card {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 250px;
+  height: 120px;
+
+  /* brand recolor */
+  background: #ffffff;
+  border-radius: 12px;
+  border: 2px solid #eef2f7;
+  border-bottom: 8px solid #ffe7cc;
+
+  overflow: hidden;
+  opacity: 0;
+
+  animation: gym-card-animate 3s ease-in-out infinite;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+}
+
+.gym-search-loader__card:nth-child(2) {
+  animation-delay: 1.5s;
+}
+
+/* Avatar block */
+.gym-search-loader__avatar {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  left: -125px;
+
+  width: 65px;
+  height: 65px;
+
+  background: #fff5e6;
+  border: 2px solid #ffd7a6;
+  border-radius: 12px;
+  z-index: 3;
+}
+
+.gym-search-loader__avatar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  top: -15px;
+
+  height: 22.5px;
+  width: 22.5px;
+
+  background: #ff8c00;
+  border-radius: 50%;
+  opacity: 0.95;
+}
+
+.gym-search-loader__avatar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  top: 40px;
+
+  height: 25px;
+  width: 40px;
+
+  background: #d35400;
+  border-top-left-radius: 50%;
+  border-top-right-radius: 50%;
+  opacity: 0.92;
+}
+
+/* Text bars */
+.gym-search-loader__text {
+  position: absolute;
+  top: 42.5px;
+  right: 40px;
+  width: 100px;
+  height: 7.5px;
+  background: #92400e;
+  border-radius: 4px;
+  opacity: 0.85;
+}
+
+.gym-search-loader__text::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 17.5px;
+  width: 120px;
+  height: 7.5px;
+  background: #92400e;
+  border-radius: 4px;
+  opacity: 0.7;
+}
+
+.gym-search-loader__text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 32.5px;
+  width: 110px;
+  height: 7.5px;
+  background: #92400e;
+  border-radius: 4px;
+  opacity: 0.55;
+}
+
+/* Magnifying glass */
+.gym-search-loader__glass {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+
+  width: 150px;
+  height: 150px;
+
+  border: 14px solid #ff8c00; /* brand orange */
+  border-radius: 50%;
+
+  transform: rotate(37.5deg);
+  left: 150px;
+  top: 0;
+
+  animation: gym-glass-animate 1.5s ease-in-out infinite;
+  animation-delay: 0.375s;
+
+  /* subtle highlight */
+  box-shadow: 0 18px 30px rgba(255, 140, 0, 0.12);
+}
+
+.gym-search-loader__glass::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: -5px;
+  height: 160px;
+  width: 160px;
+  border-radius: 50%;
+  opacity: 0.75;
+  border-left: 6px solid rgba(255, 255, 255, 0.95);
+  transform: rotate(15deg);
+}
+
+.gym-search-loader__glass::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -5px;
+  height: 160px;
+  width: 160px;
+  border-radius: 50%;
+  opacity: 0.65;
+  border-right: 6px solid rgba(255, 255, 255, 0.95);
+  transform: rotate(15deg);
+}
+
+.gym-search-loader__glassInner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  height: 150px;
+  width: 150px;
+  border-radius: 50%;
+  background: rgba(255, 140, 0, 0.12); /* tinted lens */
+  border: 1px solid rgba(255, 140, 0, 0.18);
+}
+
+.gym-search-loader__handle {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+
+  height: 100px;
+  width: 35px;
+  border-radius: 10px;
+
+  background: #ff8c00;
+  top: 240px;
+}
+
+.gym-search-loader__handle::after {
+  content: "";
+  position: absolute;
+  border-top-right-radius: 30px;
+  left: 5px;
+  top: -20px;
+  height: 30px;
+  width: 20px;
+  background: #d35400;
+}
+
+.gym-search-loader__handleInner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+
+  height: 92px;
+  width: 27.5px;
+
+  left: -7.5px;
+  top: -7.5px;
+
+  border-top-left-radius: 10px;
+  border-bottom-right-radius: 18px;
+
+  background: #ffe7cc; /* light orange */
+  z-index: 2;
+}
+
+.gym-search-loader__handleInner::before,
+.gym-search-loader__handleInner::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  height: 8px;
+  width: 27.5px;
+  background: rgba(255, 140, 0, 0.55);
+  border-radius: 6px;
+}
+
+.gym-search-loader__handleInner::before { top: 34px; }
+.gym-search-loader__handleInner::after { top: 20px; }
+
+/* Animations (converted from your LESS) */
+@keyframes gym-card-animate {
+  0% { opacity: 0; top: -300px; width: 0px; }
+  1% { opacity: 1; top: -300px; width: 0px; }
+  10% { top: -300px; width: 250px; }
+  20% { top: 0px; width: 250px; }
+  25% { top: 0px; width: 250px; }
+  35% { top: 0px; width: 250px; }
+  50% { top: 300px; width: 250px; }
+  65% { opacity: 1; top: 300px; width: 0px; }
+  100% { opacity: 0; top: 300px; width: 0px; }
+}
+
+@keyframes gym-glass-animate {
+  0%   { transform: rotate(37.5deg); left: 150px; top: 0; }
+  10%  { transform: rotate(37.5deg); left: 150px; top: 0; }
+  50%  { transform: rotate(5deg); left: -150px; top: 0; }
+  75%  { transform: rotate(5deg); left: -150px; top: 0; }
+  82.5% { top: 27.5px; }
+  90%  { transform: rotate(37.5deg); left: 150px; top: 0; }
+  100% { transform: rotate(37.5deg); left: 150px; top: 0; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gym-search-loader__card,
+  .gym-search-loader__glass {
+    animation: none !important;
+  }
 }

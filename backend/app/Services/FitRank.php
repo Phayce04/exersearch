@@ -211,21 +211,12 @@ class FitRank
      * Main entry: build features + rank
      * ----------------------------- */
 
+    // ✅ NOW RETURNS: [ rankedGyms, weightsUsed ]
     public static function getGymFeatures(User $user, $gyms, string $mode = 'driving')
     {
-        $weights = [
-            'equipment' => 0.33,
-            'amenity'   => 0.22,
-            'travel'    => 0.20,
-            'price'     => 0.20,
-            'penalty'   => 0.05,
-        ];
-
-        // ✅ use userProfile (NOT profile)
         $profile = $user->userProfile;
         $preferences = $user->preference;
 
-        // user preferred ids from loaded relations (no ambiguous SQL)
         $userEquipIds = $user->preferredEquipments->pluck('equipment_id')->toArray();
         $userAmenityIds = $user->preferredAmenities->pluck('amenity_id')->toArray();
 
@@ -238,7 +229,6 @@ class FitRank
             $gymEquipIds   = $gym->equipments->pluck('equipment_id')->toArray();
             $gymAmenityIds = $gym->amenities->pluck('amenity_id')->toArray();
 
-            // ✅ matched IDs for frontend green/red
             $matchedEquipIds = array_values(array_intersect($userEquipIds, $gymEquipIds));
             $matchedAmenityIds = array_values(array_intersect($userAmenityIds, $gymAmenityIds));
 
@@ -262,7 +252,6 @@ class FitRank
                 );
             }
 
-            // ✅ gym lists (what the gym has)
             $gymEquipments = $gym->equipments
                 ->map(fn($e) => [
                     'equipment_id' => $e->equipment_id,
@@ -299,7 +288,6 @@ class FitRank
 
                 'plan_compatible' => self::isPlanCompatible($planType, $gym) ? 1 : 0,
 
-                // ✅ breakdown payload
                 'gym_equipments' => $gymEquipments,
                 'gym_amenities' => $gymAmenities,
                 'matched_equipment_ids' => $matchedEquipIds,
@@ -311,6 +299,9 @@ class FitRank
             ($g['plan_compatible'] ?? 0) == 1 && ($g['price'] ?? null) !== null
         ));
 
-        return self::applyTopsis($results, $weights);
+        $weights = \App\Services\MlWeights::get($user, $results);
+        $ranked = self::applyTopsis($results, $weights);
+
+        return [$ranked, $weights];
     }
 }

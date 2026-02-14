@@ -16,7 +16,6 @@ class GymRecommendationController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // ✅ load correct relationships (matching your app)
         $user->load([
             'userProfile',
             'preference',
@@ -53,15 +52,11 @@ class GymRecommendationController extends Controller
                 'daily_price',
                 'monthly_price',
                 'annual_price',
-                // add if you have it:
-                // 'main_image_url',
             ])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->get();
 
-        // ✅ user preferred lists (names/images) so frontend can render green/red
-        // NOTE: we use relationship already loaded; no extra query needed.
         $preferredEquipments = $user->preferredEquipments
             ->map(fn($e) => [
                 'equipment_id' => $e->equipment_id,
@@ -79,7 +74,7 @@ class GymRecommendationController extends Controller
             ])
             ->values();
 
-        $gymsWithFeatures = FitRank::getGymFeatures($user, $gyms, $mode);
+        [$gymsWithFeatures, $weightsUsed] = FitRank::getGymFeatures($user, $gyms, $mode);
 
         return response()->json([
             'user' => [
@@ -89,10 +84,10 @@ class GymRecommendationController extends Controller
                 'plan_type' => $preferences->plan_type,
                 'mode'      => $mode,
 
-                // ✅ breakdown data
                 'preferred_equipments' => $preferredEquipments,
                 'preferred_amenities'  => $preferredAmenities,
             ],
+            'weights_used' => $weightsUsed,
             'gyms' => $gymsWithFeatures,
         ]);
     }

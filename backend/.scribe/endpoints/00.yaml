@@ -1,0 +1,4549 @@
+name: Endpoints
+description: ''
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/settings/public
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":{"app_name":"ExerSearchesss","logo_url":"\/storage\/settings\/logos\/3aVLb6T01eQbsR9PCDhJusKFwjzFKMjDROfcC1Hc.png","user_logo_url":"\/storage\/settings\/user-logos\/VgD0O5xG3FSrvyz4nqSDDkZRMgVQ84FjoiMFNzYv.png","favicon_url":null,"contact_phone":"0917 000 0000","contact_email":null,"support_email":null,"address":null,"facebook_url":"facebook.com","instagram_url":null,"tiktok_url":null,"website_url":null}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/auth/login
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address.'
+        required: true
+        example: gbailey@example.net
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: ''
+        required: true
+        example: '|]|{+-'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      email: gbailey@example.net
+      password: '|]|{+-'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/auth/register
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address.'
+        required: true
+        example: zbailey@example.net
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'Must be at least 6 characters.'
+        required: true
+        example: '-0pBNvYgxw'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      email: zbailey@example.net
+      password: '-0pBNvYgxw'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/gyms
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"gym_id":2,"name":"Metro Flex Gym","description":"Budget-friendly gym near Ortigas with limited equipment","owner_id":1,"owner":{"owner_id":1,"name":"Juan Dela Cruz","email":"juan@test.com","role":"owner","profile_photo_url":null,"contact_number":null,"company_name":null,"verified":false,"created_at":"2026-01-04T16:55:21.235102Z"},"address":"Shaw Blvd, Mandaluyong City, Philippines","latitude":"14.582500","longitude":"121.046000","daily_price":"120.00","monthly_price":"1200.00","annual_price":"12000.00","opening_time":"2026-02-14T06:00:00.000000Z","closing_time":"2026-02-14T22:00:00.000000Z","gym_type":"General","contact_number":"09171234567","email":"metroflex@gmail.com","website":"https:\/\/metroflexgym.com","facebook_page":"https:\/\/facebook.com\/metroflexgym","instagram_page":"https:\/\/instagram.com\/metroflexgym","main_image_url":"https:\/\/example.com\/metroflex_main.jpg","gallery_urls":["https:\/\/example.com\/metroflex1.jpg","https:\/\/example.com\/metroflex2.jpg"],"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-01-15T19:08:58.743606Z","updated_at":"2026-01-15T19:08:58.743606Z","equipments":[],"amenities":[{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z","pivot":{"gym_id":2,"amenity_id":3,"id":5,"availability_status":true,"notes":null,"image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png"}},{"amenity_id":2,"name":"WiFi","description":"Free high-speed internet","image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:58:05.000000Z","pivot":{"gym_id":2,"amenity_id":2,"id":4,"availability_status":true,"notes":null,"image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png"}}]},{"gym_id":18,"name":"Metro Muscles Gym 3.0","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.561706","longitude":"121.094294","daily_price":"150.00","monthly_price":"1200.00","annual_price":"12000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]},{"gym_id":1,"name":"Dhen Gym Update","description":"Gym for Me","owner_id":3,"owner":{"owner_id":3,"name":"Dhen Owner","email":"dhenowner@gmail.com","role":"owner","profile_photo_url":"https:\/\/i.imghippo.com\/files\/oOX7632mQM.webp","contact_number":null,"company_name":null,"verified":false,"created_at":"2026-01-11T17:05:03.977444Z"},"address":"Maybunga, Pasig Second District, Pasig, Eastern Manila District, Metro Manila, 1607, Philippines","latitude":"14.575584","longitude":"121.082146","daily_price":"150.00","monthly_price":"900.00","annual_price":null,"opening_time":"2026-02-14T00:00:00.000000Z","closing_time":"2026-02-14T00:00:00.000000Z","gym_type":"Strength","contact_number":"09981234567","email":"contact@testgym.com","website":null,"facebook_page":null,"instagram_page":null,"main_image_url":"\/storage\/gyms\/covers\/s2j6yUtikSWF1mf89bzjOQcAbpBvrb76xFromNZP.webp","gallery_urls":["\/storage\/gyms\/gallery\/6nH8lIysSZ7Vhgtg7WGgKUO03HZu4bsFKG1jcgXj.jpg","\/storage\/gyms\/gallery\/izDLZPrI5BxECNUPPh24oN58jN3NRyGGV2a3k5Kf.webp"],"has_personal_trainers":true,"has_classes":true,"is_24_hours":false,"is_airconditioned":false,"created_at":"2025-12-16T15:22:24.096072Z","updated_at":"2026-02-08T20:16:14.000000Z","equipments":[],"amenities":[{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z","pivot":{"gym_id":1,"amenity_id":3,"id":3,"availability_status":true,"notes":"Male and female lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png"}},{"amenity_id":2,"name":"WiFi","description":"Free high-speed internet","image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:58:05.000000Z","pivot":{"gym_id":1,"amenity_id":2,"id":2,"availability_status":true,"notes":"High-speed fiber","image_url":"https:\/\/example.com\/wifi.jpg"}},{"amenity_id":1,"name":"Saunas","description":"Dry sauna available","image_url":"\/storage\/amenities\/covers\/DLoXDS9MotiZZ1uIS4oN7Kd9aVa20oVjhcGKcRTy.jpg","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-02-08T15:24:26.000000Z","pivot":{"gym_id":1,"amenity_id":1,"id":1,"availability_status":true,"notes":"Available all day","image_url":"https:\/\/example.com\/sauna.jpg"}}]},{"gym_id":12,"name":"Pasig Fitness Gym","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.572398","longitude":"121.083310","daily_price":"80.00","monthly_price":"900.00","annual_price":"9000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]},{"gym_id":19,"name":"Uplift Fitness Gym","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.557172","longitude":"121.080645","daily_price":"50.00","monthly_price":"700.00","annual_price":"7000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]},{"gym_id":13,"name":"J''s Fitness Gym","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.545176","longitude":"121.100223","daily_price":"80.00","monthly_price":"900.00","annual_price":"9000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]},{"gym_id":14,"name":"Metro Muscles Fitness Center","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.559856","longitude":"121.083430","daily_price":"150.00","monthly_price":"1200.00","annual_price":"12000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]},{"gym_id":15,"name":"Metro Muscle Gym 2.0","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.550754","longitude":"121.079740","daily_price":"150.00","monthly_price":"1200.00","annual_price":"12000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]},{"gym_id":16,"name":"Jl Fitness Gym","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.544883","longitude":"121.100678","daily_price":"60.00","monthly_price":"800.00","annual_price":"8000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]},{"gym_id":17,"name":"Anytime Fitness Buting Pasig","description":null,"owner_id":null,"owner":null,"address":"Pasig City Philippines","latitude":"14.553940","longitude":"121.068273","daily_price":"120.00","monthly_price":"1000.00","annual_price":"10000.00","opening_time":null,"closing_time":null,"gym_type":"General","contact_number":null,"email":null,"website":null,"facebook_page":null,"instagram_page":null,"main_image_url":null,"gallery_urls":null,"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-02-07T13:09:03.950457Z","updated_at":"2026-02-11T19:52:53.625176Z","equipments":[],"amenities":[]}],"links":{"first":"http:\/\/exersearch.test\/api\/v1\/gyms?page=1","last":"http:\/\/exersearch.test\/api\/v1\/gyms?page=4","prev":null,"next":"http:\/\/exersearch.test\/api\/v1\/gyms?page=2"},"meta":{"current_page":1,"from":1,"last_page":4,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"http:\/\/exersearch.test\/api\/v1\/gyms?page=1","label":"1","page":1,"active":true},{"url":"http:\/\/exersearch.test\/api\/v1\/gyms?page=2","label":"2","page":2,"active":false},{"url":"http:\/\/exersearch.test\/api\/v1\/gyms?page=3","label":"3","page":3,"active":false},{"url":"http:\/\/exersearch.test\/api\/v1\/gyms?page=4","label":"4","page":4,"active":false},{"url":"http:\/\/exersearch.test\/api\/v1\/gyms?page=2","label":"Next &raquo;","page":2,"active":false}],"path":"http:\/\/exersearch.test\/api\/v1\/gyms","per_page":10,"to":10,"total":36}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/gyms/{gym}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym:
+        custom: []
+        name: gym
+        description: 'The gym.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":{"gym_id":2,"name":"Metro Flex Gym","description":"Budget-friendly gym near Ortigas with limited equipment","owner_id":1,"owner":{"owner_id":1,"name":"Juan Dela Cruz","email":"juan@test.com","role":"owner","profile_photo_url":null,"contact_number":null,"company_name":null,"verified":false,"created_at":"2026-01-04T16:55:21.235102Z"},"address":"Shaw Blvd, Mandaluyong City, Philippines","latitude":"14.582500","longitude":"121.046000","daily_price":"120.00","monthly_price":"1200.00","annual_price":"12000.00","opening_time":"2026-02-14T06:00:00.000000Z","closing_time":"2026-02-14T22:00:00.000000Z","gym_type":"General","contact_number":"09171234567","email":"metroflex@gmail.com","website":"https:\/\/metroflexgym.com","facebook_page":"https:\/\/facebook.com\/metroflexgym","instagram_page":"https:\/\/instagram.com\/metroflexgym","main_image_url":"https:\/\/example.com\/metroflex_main.jpg","gallery_urls":["https:\/\/example.com\/metroflex1.jpg","https:\/\/example.com\/metroflex2.jpg"],"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-01-15T19:08:58.743606Z","updated_at":"2026-01-15T19:08:58.743606Z","equipments":[],"amenities":[{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z","pivot":{"gym_id":2,"amenity_id":3,"id":5,"availability_status":true,"notes":null,"image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png"}},{"amenity_id":2,"name":"WiFi","description":"Free high-speed internet","image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:58:05.000000Z","pivot":{"gym_id":2,"amenity_id":2,"id":4,"availability_status":true,"notes":null,"image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png"}}]}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/gyms/{gym}/equipments'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym:
+        custom: []
+        name: gym
+        description: 'The gym.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[],"links":{"first":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/equipments?page=1","last":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/equipments?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":null,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/equipments?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/equipments","per_page":10,"to":null,"total":0}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/gyms/{gym}/equipments/{equipment}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym:
+        custom: []
+        name: gym
+        description: 'The gym.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      equipment:
+        custom: []
+        name: equipment
+        description: 'The equipment.'
+        required: true
+        example: 6
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym: 2
+      equipment: 6
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 404
+        content: |-
+          {
+              "message": "No query results for model [App\\Models\\Equipment]."
+          }
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/gyms/{gym}/amenities'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym:
+        custom: []
+        name: gym
+        description: 'The gym.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z","pivot":{"gym_id":2,"amenity_id":3,"id":5,"availability_status":true,"notes":null,"image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png"}},{"amenity_id":2,"name":"WiFi","description":"Free high-speed internet","image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:58:05.000000Z","pivot":{"gym_id":2,"amenity_id":2,"id":4,"availability_status":true,"notes":null,"image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png"}}],"links":{"first":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/amenities?page=1","last":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/amenities?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/amenities?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"http:\/\/exersearch.test\/api\/v1\/gyms\/2\/amenities","per_page":10,"to":2,"total":2}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/gyms/{gym}/amenities/{amenity}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym:
+        custom: []
+        name: gym
+        description: 'The gym.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      amenity:
+        custom: []
+        name: amenity
+        description: 'The amenity.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym: 2
+      amenity: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z","pivot":{"gym_id":2,"amenity_id":3,"id":5,"availability_status":true,"notes":null,"image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png"}}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/equipments
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '[{"equipment_id":6,"name":"Stationary Bike machines","description":"Low-impact cycling machine for cardio and endurance","image_url":"https:\/\/i.imghippo.com\/files\/oOX7632mQM.webp","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-18 05:34:29.392267","difficulty":"Beginner","target_muscle_group":"quads, hamstrings, calves, glutes","category":"cardio"},{"equipment_id":10,"name":"leg extension machine","description":"Isolates knee extension movement","image_url":"https:\/\/i.imghippo.com\/files\/xnlZ2845zcY.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"quads","category":"machine"},{"equipment_id":7,"name":"seated dip machine","description":"Push-down dip movement using body support","image_url":"https:\/\/i.imghippo.com\/files\/SBaJ8071YjE.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-18 05:34:29.392267","difficulty":"Beginner","target_muscle_group":"triceps, chest, front delts","category":"machine"},{"equipment_id":8,"name":"smith machine","description":"Guided barbell machine for controlled lifts","image_url":"https:\/\/i.imghippo.com\/files\/fVVS2516ryE.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"quads, hamstrings, calves, chest, shoulders, triceps","category":"machine"},{"equipment_id":9,"name":"leg press machine","description":"Press weight away using legs while seated","image_url":"https:\/\/i.imghippo.com\/files\/cCu3155ng.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"quads, hamstrings, calves, glutes","category":"machine"},{"equipment_id":11,"name":"hamstring curl machine","description":"Targets back of the thighs with curling motion","image_url":"https:\/\/i.imghippo.com\/files\/Wdm9570LEA.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"hamstrings","category":"machine"},{"equipment_id":12,"name":"hack squat machine","description":"Squat variation with back support","image_url":"https:\/\/i.imghippo.com\/files\/yZF5773kdY.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"quads, hamstrings, calves, glutes","category":"machine"},{"equipment_id":13,"name":"calf raise machine","description":"Raises heels under resistance","image_url":"https:\/\/i.imghippo.com\/files\/MLD4812vI.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"calves","category":"machine"},{"equipment_id":14,"name":"flat chest press machine","description":"Horizontal pressing movement","image_url":"https:\/\/i.imghippo.com\/files\/jlN7767HxY.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"chest, triceps, front delts","category":"machine"},{"equipment_id":29,"name":"abs crunch machine","description":"Controlled crunch motion","image_url":"https:\/\/i.imghippo.com\/files\/Rkvr1371CE.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"abs","category":"machine"},{"equipment_id":30,"name":"stair master machine","description":"Step-climbing cardio","image_url":"https:\/\/i.imghippo.com\/files\/ABbl9384kg.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"quads, glutes, calves","category":"cardio"},{"equipment_id":31,"name":"lateral raise machine","description":"Side shoulder raise","image_url":"https:\/\/i.imghippo.com\/files\/NOGV6401k.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"side delts","category":"machine"},{"equipment_id":32,"name":"shoulder press machine","description":"Overhead pressing movement","image_url":"https:\/\/i.imghippo.com\/files\/eAxC5924SI.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"shoulders, triceps","category":"machine"},{"equipment_id":33,"name":"weightlifting bar","description":"Standard bar used for heavy compound lifts  ","image_url":"https:\/\/i.imghippo.com\/files\/tC9963rAM.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"full body","category":"free_weight"},{"equipment_id":34,"name":"stability ball","description":"Inflatable ball for balance and core training  ","image_url":"https:\/\/i.imghippo.com\/files\/wza9269Gww.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"core, abs, lower back","category":"accessory"},{"equipment_id":35,"name":"resistance band","description":"  Elastic band used for resistance exercises","image_url":"https:\/\/i.imghippo.com\/files\/CTt7221rtc.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"full body","category":"accessory"},{"equipment_id":36,"name":"olympic plates","description":"Weighted plates used with barbells  ","image_url":"https:\/\/i.imghippo.com\/files\/JaM3730PHE.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"full body","category":"free_weight"},{"equipment_id":37,"name":"medicine ball","description":"Weighted ball for throws and core work  ","image_url":"https:\/\/i.imghippo.com\/files\/ABjk8609APk.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"core, full body","category":"accessory"},{"equipment_id":38,"name":"kettlebell","description":"Compact weight for dynamic lifts  ","image_url":"https:\/\/i.imghippo.com\/files\/tKMj3600Pk.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"glutes, legs, shoulders, core","category":"free_weight"},{"equipment_id":39,"name":"free weights \/ dumbell","description":"Handheld weights for strength training  ","image_url":"https:\/\/i.imghippo.com\/files\/PfI8388upY.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"full body","category":"free_weight"},{"equipment_id":40,"name":"crossover machine","description":"Dual pulley machine for flys and cable work  ","image_url":"https:\/\/i.imghippo.com\/files\/nUn2039ow.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"chest, shoulders, arms","category":"machine"},{"equipment_id":41,"name":"adjustable bench","description":"Adjustable bench for flat, incline, and decline exercises  ","image_url":"https:\/\/i.imghippo.com\/files\/pbs1567aV.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"full body","category":"free_weight"},{"equipment_id":42,"name":"barbell","description":"Long bar used for compound lifts  ","image_url":"https:\/\/i.imghippo.com\/files\/lLZ8268nM.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"full body","category":"free_weight"},{"equipment_id":43,"name":"aerobic step","description":"Platform used for cardio and step training  ","image_url":"https:\/\/i.imghippo.com\/files\/kpAY3294KW.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"legs, glutes, calves","category":"cardio"},{"equipment_id":44,"name":"ab roller","description":"Rolling device for core activation  ","image_url":"https:\/\/i.imghippo.com\/files\/hdyS1316do.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"abs, core","category":"accessory"},{"equipment_id":15,"name":"incline chest press machine","description":"Upward pressing motion","image_url":"https:\/\/i.imghippo.com\/files\/PUEY6751kXQ.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"upper chest, triceps, front delts","category":"machine"},{"equipment_id":16,"name":"unilateral smith machine","description":"Single-arm or single-leg smith exercises","image_url":"https:\/\/i.imghippo.com\/files\/WVN4624Kfk.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"chest, shoulders, triceps","category":"machine"},{"equipment_id":17,"name":"chest fly machine","description":"Arm-opening fly movement","image_url":"https:\/\/i.imghippo.com\/files\/MSrP1839Kp.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"chest","category":"machine"},{"equipment_id":18,"name":"peck deck machine","description":"Chest fly with seated support","image_url":"https:\/\/i.imghippo.com\/files\/DiW1940nw.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"chest, rear delts","category":"machine"},{"equipment_id":19,"name":"seated chest press machine","description":"Pressing motion with back support","image_url":"https:\/\/i.imghippo.com\/files\/ODyv1034ZZ.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"chest, triceps, front delts","category":"machine"},{"equipment_id":20,"name":"bicep curl machine","description":"Curl motion isolating biceps","image_url":"https:\/\/i.imghippo.com\/files\/Yu5153aU.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"biceps","category":"machine"},{"equipment_id":21,"name":"chest supported t-bar row machine","description":"Rowing movement for back thickness","image_url":"https:\/\/i.imghippo.com\/files\/bYPX9134us.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"upper back, traps, rhomboids, rear delts, lats","category":"machine"},{"equipment_id":22,"name":"back extension machine","description":"Controls spinal extension","image_url":"https:\/\/i.imghippo.com\/files\/Lfri9706Gs.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"lower back, glutes","category":"machine"},{"equipment_id":23,"name":"lat pulldown machine","description":"Vertical pulling motion","image_url":"https:\/\/i.imghippo.com\/files\/GLxJ4246KHA.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"lats, biceps, upper back","category":"machine"},{"equipment_id":24,"name":"attachments (for lat pulldown machine)","description":"Various grip handles","image_url":"https:\/\/i.imghippo.com\/files\/Zotf7104qsQ.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"lats, biceps, upper back","category":"accessory"},{"equipment_id":25,"name":"attachments 2 (for lat pulldown machine)","description":"Neutral & wide grips","image_url":"https:\/\/i.imghippo.com\/files\/Ast4142w.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"upper back, lats","category":"accessory"},{"equipment_id":26,"name":"attachments (for tricep machine)","description":"Tricep bars & ropes","image_url":"https:\/\/i.imghippo.com\/files\/MFrg5921xvE.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"triceps","category":"accessory"},{"equipment_id":27,"name":"assisted pullups\/dips machine","description":"Assists bodyweight movements","image_url":"https:\/\/i.imghippo.com\/files\/CueZ9649IZU.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Beginner","target_muscle_group":"lats, chest, triceps, shoulders","category":"machine"},{"equipment_id":28,"name":"abs swing machine","description":"Hanging knee\/leg raise motion","image_url":"https:\/\/i.imghippo.com\/files\/Lepr9091pOc.jpg","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-23 01:54:46.242133","difficulty":"Intermediate","target_muscle_group":"abs, hip flexors","category":"machine"}]'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/equipments/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the equipment.'
+        required: true
+        example: 6
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 6
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"equipment_id":6,"name":"Stationary Bike machines","description":"Low-impact cycling machine for cardio and endurance","image_url":"https:\/\/i.imghippo.com\/files\/oOX7632mQM.webp","created_at":"2026-01-18 05:34:29.392267","updated_at":"2026-01-18 05:34:29.392267","difficulty":"Beginner","target_muscle_group":"quads, hamstrings, calves, glutes","category":"cardio"}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/amenities
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '[{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z"},{"amenity_id":2,"name":"WiFi","description":"Free high-speed internet","image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:58:05.000000Z"},{"amenity_id":30,"name":"Locker Room","description":"Secure area for storing personal belongings","image_url":"https:\/\/i.imghippo.com\/files\/FKiW6942Hc.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":31,"name":"Shower","description":"Clean shower facilities available after workouts","image_url":"https:\/\/i.imghippo.com\/files\/xGB2372go.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":32,"name":"Free weights area","description":"Space equipped with dumbbells and barbells for basic strength training","image_url":"https:\/\/i.imghippo.com\/files\/sTW6564pYQ.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":33,"name":"Cardio equipment area","description":"Area with treadmills, bikes, or similar machines for cardiovascular workouts","image_url":"https:\/\/i.imghippo.com\/files\/XUO2615WdE.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":34,"name":"Well-lit and ventilated workout space","description":"Bright and airy workout area for a comfortable exercise experience","image_url":"https:\/\/i.imghippo.com\/files\/fdH7389EEo.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":35,"name":"Drinking water \/ water refill station","description":"Accessible water station for hydration during and after workouts","image_url":"https:\/\/i.imghippo.com\/files\/jHY5334e.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":36,"name":"Clean towels (free or for rent)","description":"Towels available to keep members clean and comfortable","image_url":"https:\/\/i.imghippo.com\/files\/uqJ1015hw.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":37,"name":"Beginner workout guides","description":"Easy-to-follow guides to help beginners perform workouts correctly","image_url":"https:\/\/i.imghippo.com\/files\/lWIp5585EN.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":38,"name":"Group fitness classes (HIIT, yoga, Zumba, etc.)","description":"Instructor-led classes suitable for all fitness levels","image_url":"https:\/\/i.imghippo.com\/files\/frLb8721QA.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":39,"name":"Stretching & warm-up area","description":"Dedicated space for stretching, warm-ups, and cool-downs","image_url":"https:\/\/i.imghippo.com\/files\/xcZK3470gM.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":40,"name":"Spacious, well-ventilated workout floors","description":"Open workout floors designed for safe and comfortable movement","image_url":"https:\/\/i.imghippo.com\/files\/GRv1152JiE.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":41,"name":"Sauna or steam room","description":"Heat therapy area to help relax muscles after workouts","image_url":"https:\/\/i.imghippo.com\/files\/aETl1746Si.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":42,"name":"Functional training zone","description":"Area for bodyweight exercises and functional movements","image_url":"https:\/\/i.imghippo.com\/files\/PyNR6716tD.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":43,"name":"Recovery & massage chairs","description":"Chairs designed to help relax muscles and reduce soreness","image_url":"https:\/\/i.imghippo.com\/files\/jjZN7416jU.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":44,"name":"Protein shakes \/ supplement bar","description":"Station offering protein drinks and basic fitness supplements","image_url":"https:\/\/i.imghippo.com\/files\/ODM7375GkE.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":45,"name":"Free Wi-Fi","description":"Internet access available for members inside the gym","image_url":"https:\/\/i.imghippo.com\/files\/FyPD1364cU.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":46,"name":"Beginner-friendly equipment layout","description":"Simple and organized equipment layout ideal for first-time gym users","image_url":"https:\/\/i.imghippo.com\/files\/OXxp5508Hto.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":47,"name":"Parking or bike racks","description":"Designated parking spaces or racks for bicycles","image_url":"https:\/\/i.imghippo.com\/files\/hSry5800wY.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":48,"name":"Boxing \/ MMA area","description":"Training area for boxing and mixed martial arts workouts","image_url":"https:\/\/i.imghippo.com\/files\/X5561QRU.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":49,"name":"Mirrors for proper form checking","description":"Mirrors provided to help members monitor and correct exercise form","image_url":"https:\/\/i.imghippo.com\/files\/twz5370EW.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":50,"name":"Basic strength machines area","description":"Area with beginner-friendly machines for safe strength training","image_url":"https:\/\/i.imghippo.com\/files\/Cb6028OFU.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":51,"name":"attachments area","description":"Storage space for cable attachments and workout accessories","image_url":"https:\/\/i.imghippo.com\/files\/gSr6843FRw.jpg","created_at":"2026-02-07T13:12:07.386785Z","updated_at":"2026-02-07T13:12:07.386785Z"},{"amenity_id":1,"name":"Saunas","description":"Dry sauna available","image_url":"\/storage\/amenities\/covers\/DLoXDS9MotiZZ1uIS4oN7Kd9aVa20oVjhcGKcRTy.jpg","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-02-08T15:24:26.000000Z"}]'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/amenities/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the amenity.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z"}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/gym-equipments
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '[]'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/gym-amenities
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '[{"id":1,"gym_id":1,"amenity_id":1,"availability_status":true,"notes":"Available all day","image_url":"https:\/\/example.com\/sauna.jpg","gym":{"gym_id":1,"name":"Dhen Gym Update","description":"Gym for Me","owner_id":3,"address":"Maybunga, Pasig Second District, Pasig, Eastern Manila District, Metro Manila, 1607, Philippines","latitude":"14.575584","longitude":"121.082146","daily_price":"150.00","monthly_price":"900.00","annual_price":null,"opening_time":"00:00","closing_time":"00:00","gym_type":"Strength","contact_number":"09981234567","email":"contact@testgym.com","website":null,"facebook_page":null,"instagram_page":null,"main_image_url":"\/storage\/gyms\/covers\/s2j6yUtikSWF1mf89bzjOQcAbpBvrb76xFromNZP.webp","gallery_urls":["\/storage\/gyms\/gallery\/6nH8lIysSZ7Vhgtg7WGgKUO03HZu4bsFKG1jcgXj.jpg","\/storage\/gyms\/gallery\/izDLZPrI5BxECNUPPh24oN58jN3NRyGGV2a3k5Kf.webp"],"has_personal_trainers":true,"has_classes":true,"is_24_hours":false,"is_airconditioned":false,"created_at":"2025-12-16T15:22:24.096072Z","updated_at":"2026-02-08T20:16:14.000000Z"},"amenity":{"amenity_id":1,"name":"Saunas","description":"Dry sauna available","image_url":"\/storage\/amenities\/covers\/DLoXDS9MotiZZ1uIS4oN7Kd9aVa20oVjhcGKcRTy.jpg","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-02-08T15:24:26.000000Z"}},{"id":2,"gym_id":1,"amenity_id":2,"availability_status":true,"notes":"High-speed fiber","image_url":"https:\/\/example.com\/wifi.jpg","gym":{"gym_id":1,"name":"Dhen Gym Update","description":"Gym for Me","owner_id":3,"address":"Maybunga, Pasig Second District, Pasig, Eastern Manila District, Metro Manila, 1607, Philippines","latitude":"14.575584","longitude":"121.082146","daily_price":"150.00","monthly_price":"900.00","annual_price":null,"opening_time":"00:00","closing_time":"00:00","gym_type":"Strength","contact_number":"09981234567","email":"contact@testgym.com","website":null,"facebook_page":null,"instagram_page":null,"main_image_url":"\/storage\/gyms\/covers\/s2j6yUtikSWF1mf89bzjOQcAbpBvrb76xFromNZP.webp","gallery_urls":["\/storage\/gyms\/gallery\/6nH8lIysSZ7Vhgtg7WGgKUO03HZu4bsFKG1jcgXj.jpg","\/storage\/gyms\/gallery\/izDLZPrI5BxECNUPPh24oN58jN3NRyGGV2a3k5Kf.webp"],"has_personal_trainers":true,"has_classes":true,"is_24_hours":false,"is_airconditioned":false,"created_at":"2025-12-16T15:22:24.096072Z","updated_at":"2026-02-08T20:16:14.000000Z"},"amenity":{"amenity_id":2,"name":"WiFi","description":"Free high-speed internet","image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:58:05.000000Z"}},{"id":3,"gym_id":1,"amenity_id":3,"availability_status":true,"notes":"Male and female lockers","image_url":null,"gym":{"gym_id":1,"name":"Dhen Gym Update","description":"Gym for Me","owner_id":3,"address":"Maybunga, Pasig Second District, Pasig, Eastern Manila District, Metro Manila, 1607, Philippines","latitude":"14.575584","longitude":"121.082146","daily_price":"150.00","monthly_price":"900.00","annual_price":null,"opening_time":"00:00","closing_time":"00:00","gym_type":"Strength","contact_number":"09981234567","email":"contact@testgym.com","website":null,"facebook_page":null,"instagram_page":null,"main_image_url":"\/storage\/gyms\/covers\/s2j6yUtikSWF1mf89bzjOQcAbpBvrb76xFromNZP.webp","gallery_urls":["\/storage\/gyms\/gallery\/6nH8lIysSZ7Vhgtg7WGgKUO03HZu4bsFKG1jcgXj.jpg","\/storage\/gyms\/gallery\/izDLZPrI5BxECNUPPh24oN58jN3NRyGGV2a3k5Kf.webp"],"has_personal_trainers":true,"has_classes":true,"is_24_hours":false,"is_airconditioned":false,"created_at":"2025-12-16T15:22:24.096072Z","updated_at":"2026-02-08T20:16:14.000000Z"},"amenity":{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z"}},{"id":4,"gym_id":2,"amenity_id":2,"availability_status":true,"notes":null,"image_url":null,"gym":{"gym_id":2,"name":"Metro Flex Gym","description":"Budget-friendly gym near Ortigas with limited equipment","owner_id":1,"address":"Shaw Blvd, Mandaluyong City, Philippines","latitude":"14.582500","longitude":"121.046000","daily_price":"120.00","monthly_price":"1200.00","annual_price":"12000.00","opening_time":"06:00","closing_time":"22:00","gym_type":"General","contact_number":"09171234567","email":"metroflex@gmail.com","website":"https:\/\/metroflexgym.com","facebook_page":"https:\/\/facebook.com\/metroflexgym","instagram_page":"https:\/\/instagram.com\/metroflexgym","main_image_url":"https:\/\/example.com\/metroflex_main.jpg","gallery_urls":["https:\/\/example.com\/metroflex1.jpg","https:\/\/example.com\/metroflex2.jpg"],"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-01-15T19:08:58.743606Z","updated_at":"2026-01-15T19:08:58.743606Z"},"amenity":{"amenity_id":2,"name":"WiFi","description":"Free high-speed internet","image_url":"\/storage\/amenities\/covers\/nu8Qv7oLhSzkQCIBFJsYtibaG1pbtK50oDTqtww1.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:58:05.000000Z"}},{"id":5,"gym_id":2,"amenity_id":3,"availability_status":true,"notes":null,"image_url":null,"gym":{"gym_id":2,"name":"Metro Flex Gym","description":"Budget-friendly gym near Ortigas with limited equipment","owner_id":1,"address":"Shaw Blvd, Mandaluyong City, Philippines","latitude":"14.582500","longitude":"121.046000","daily_price":"120.00","monthly_price":"1200.00","annual_price":"12000.00","opening_time":"06:00","closing_time":"22:00","gym_type":"General","contact_number":"09171234567","email":"metroflex@gmail.com","website":"https:\/\/metroflexgym.com","facebook_page":"https:\/\/facebook.com\/metroflexgym","instagram_page":"https:\/\/instagram.com\/metroflexgym","main_image_url":"https:\/\/example.com\/metroflex_main.jpg","gallery_urls":["https:\/\/example.com\/metroflex1.jpg","https:\/\/example.com\/metroflex2.jpg"],"has_personal_trainers":false,"has_classes":false,"is_24_hours":false,"is_airconditioned":true,"created_at":"2026-01-15T19:08:58.743606Z","updated_at":"2026-01-15T19:08:58.743606Z"},"amenity":{"amenity_id":3,"name":"Locker Rooms","description":"Secure lockers","image_url":"\/storage\/amenities\/covers\/hdWL0KR8c1LtvKrQ30SbGcVse6p88Z9QLS9gRX1l.png","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-01-23T15:57:49.000000Z"}}]'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/gym-amenities/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the gym amenity.'
+        required: true
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 1
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"id":1,"gym_id":1,"amenity_id":1,"availability_status":true,"notes":"Available all day","image_url":"https:\/\/example.com\/sauna.jpg","gym":{"gym_id":1,"name":"Dhen Gym Update","description":"Gym for Me","owner_id":3,"address":"Maybunga, Pasig Second District, Pasig, Eastern Manila District, Metro Manila, 1607, Philippines","latitude":"14.575584","longitude":"121.082146","daily_price":"150.00","monthly_price":"900.00","annual_price":null,"opening_time":"00:00","closing_time":"00:00","gym_type":"Strength","contact_number":"09981234567","email":"contact@testgym.com","website":null,"facebook_page":null,"instagram_page":null,"main_image_url":"\/storage\/gyms\/covers\/s2j6yUtikSWF1mf89bzjOQcAbpBvrb76xFromNZP.webp","gallery_urls":["\/storage\/gyms\/gallery\/6nH8lIysSZ7Vhgtg7WGgKUO03HZu4bsFKG1jcgXj.jpg","\/storage\/gyms\/gallery\/izDLZPrI5BxECNUPPh24oN58jN3NRyGGV2a3k5Kf.webp"],"has_personal_trainers":true,"has_classes":true,"is_24_hours":false,"is_airconditioned":false,"created_at":"2025-12-16T15:22:24.096072Z","updated_at":"2026-02-08T20:16:14.000000Z"},"amenity":{"amenity_id":1,"name":"Saunas","description":"Dry sauna available","image_url":"\/storage\/amenities\/covers\/DLoXDS9MotiZZ1uIS4oN7Kd9aVa20oVjhcGKcRTy.jpg","created_at":"2025-12-18T01:29:25.035916Z","updated_at":"2026-02-08T15:24:26.000000Z"}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/me
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/me/avatar
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: multipart/form-data
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      photo:
+        custom: []
+        name: photo
+        description: 'Must be a file. Must be an image. Must not be greater than 2048 kilobytes.'
+        required: true
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters: []
+    fileParameters:
+      photo: null
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: api/v1/me/avatar
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/media/upload
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: multipart/form-data
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      type:
+        custom: []
+        name: type
+        description: ''
+        required: true
+        example: equipments
+        type: string
+        enumValues:
+          - equipments
+          - amenities
+          - gyms
+          - settings
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      kind:
+        custom: []
+        name: kind
+        description: ''
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      file:
+        custom: []
+        name: file
+        description: 'Must be a file. Must be an image. Must not be greater than 5120 kilobytes.'
+        required: true
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      type: equipments
+      kind: architecto
+    fileParameters:
+      file: null
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: api/v1/media/delete
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      url:
+        custom: []
+        name: url
+        description: ''
+        required: true
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/gyms/recommend
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/gym-interactions
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: |-
+        POST /api/v1/gym-interactions
+        Body: { gym_id, event, source?, session_id?, meta? }
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      gym_id:
+        custom: []
+        name: gym_id
+        description: 'The <code>gym_id</code> of an existing record in the gyms table.'
+        required: true
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      event:
+        custom: []
+        name: event
+        description: 'Must not be greater than 30 characters.'
+        required: true
+        example: 'n'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      source:
+        custom: []
+        name: source
+        description: 'Must not be greater than 30 characters.'
+        required: false
+        example: g
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      session_id:
+        custom: []
+        name: session_id
+        description: 'Must not be greater than 64 characters.'
+        required: false
+        example: z
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      meta:
+        custom: []
+        name: meta
+        description: ''
+        required: false
+        example: null
+        type: object
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      gym_id: 16
+      event: 'n'
+      source: g
+      session_id: z
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/owner-applications
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      gym_name:
+        custom: []
+        name: gym_name
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      address:
+        custom: []
+        name: address
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      latitude:
+        custom: []
+        name: latitude
+        description: 'Must be between -90 and 90.'
+        required: true
+        example: -89
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      longitude:
+        custom: []
+        name: longitude
+        description: 'Must be between -180 and 180.'
+        required: true
+        example: -180
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      document_path:
+        custom: []
+        name: document_path
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: z
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      gym_name: b
+      address: architecto
+      latitude: -89
+      longitude: -180
+      document_path: z
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/owner-applications/me
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/user/preferences
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/user/preferences
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/user/preferred-equipments
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/user/preferred-equipments
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      equipment_ids:
+        custom: []
+        name: equipment_ids
+        description: 'The <code>equipment_id</code> of an existing record in the equipments table.'
+        required: false
+        example: null
+        type: 'string[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/user/preferred-amenities
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/user/preferred-amenities
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      amenity_ids:
+        custom: []
+        name: amenity_ids
+        description: 'The <code>amenity_id</code> of an existing record in the amenities table.'
+        required: false
+        example: null
+        type: 'string[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/user/profile
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: api/v1/user/profile
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      age:
+        custom: []
+        name: age
+        description: 'Must be at least 1.'
+        required: false
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      weight:
+        custom: []
+        name: weight
+        description: 'Must be at least 0.01.'
+        required: false
+        example: 39
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      height:
+        custom: []
+        name: height
+        description: 'Must be at least 0.01.'
+        required: false
+        example: 84
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address:
+        custom: []
+        name: address
+        description: ''
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      latitude:
+        custom: []
+        name: latitude
+        description: 'Must be between -90 and 90.'
+        required: false
+        example: -89
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      longitude:
+        custom: []
+        name: longitude
+        description: 'Must be between -180 and 180.'
+        required: false
+        example: -180
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      age: 16
+      weight: 39
+      height: 84
+      address: architecto
+      latitude: -89
+      longitude: -180
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/user/saved-gyms
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: |-
+        GET /api/v1/user/saved-gyms
+        Returns saved gyms for the logged-in user (with basic gym details).
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/user/saved-gyms
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: |-
+        POST /api/v1/user/saved-gyms
+        Body: { gym_id }
+        Saves the gym (idempotent), and logs interaction event='save'.
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      gym_id:
+        custom: []
+        name: gym_id
+        description: 'The <code>gym_id</code> of an existing record in the gyms table.'
+        required: true
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      source:
+        custom: []
+        name: source
+        description: 'Must not be greater than 30 characters.'
+        required: false
+        example: 'n'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      session_id:
+        custom: []
+        name: session_id
+        description: 'optional passthrough. Must not be greater than 64 characters.'
+        required: false
+        example: g
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      gym_id: 16
+      source: 'n'
+      session_id: g
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/user/saved-gyms/{gym_id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: |-
+        DELETE /api/v1/user/saved-gyms/{gym_id}
+        Unsaves the gym and logs interaction event='unsave'.
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym_id:
+        custom: []
+        name: gym_id
+        description: 'The ID of the gym.'
+        required: true
+        example: '564'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym_id: '564'
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/settings
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: api/v1/admin/settings
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      app_name:
+        custom: []
+        name: app_name
+        description: 'Must not be greater than 120 characters.'
+        required: false
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      logo_url:
+        custom: []
+        name: logo_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      user_logo_url:
+        custom: []
+        name: user_logo_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      favicon_url:
+        custom: []
+        name: favicon_url
+        description: '✅ NEW.'
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      contact_phone:
+        custom: []
+        name: contact_phone
+        description: 'Must not be greater than 50 characters.'
+        required: false
+        example: i
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      contact_email:
+        custom: []
+        name: contact_email
+        description: 'Must be a valid email address. Must not be greater than 120 characters.'
+        required: false
+        example: mya96@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      support_email:
+        custom: []
+        name: support_email
+        description: 'Must be a valid email address. Must not be greater than 120 characters.'
+        required: false
+        example: gilbert32@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address:
+        custom: []
+        name: address
+        description: ''
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      facebook_url:
+        custom: []
+        name: facebook_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      instagram_url:
+        custom: []
+        name: instagram_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      tiktok_url:
+        custom: []
+        name: tiktok_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      website_url:
+        custom: []
+        name: website_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      maintenance_mode:
+        custom: []
+        name: maintenance_mode
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      signup_enabled:
+        custom: []
+        name: signup_enabled
+        description: ''
+        required: false
+        example: false
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      owner_application_enabled:
+        custom: []
+        name: owner_application_enabled
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      extras:
+        custom: []
+        name: extras
+        description: 'allow object/associative array.'
+        required: false
+        example: null
+        type: object
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      app_name: b
+      logo_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      user_logo_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      favicon_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      contact_phone: i
+      contact_email: mya96@example.com
+      support_email: gilbert32@example.com
+      address: architecto
+      facebook_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      instagram_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      tiktok_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      website_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      maintenance_mode: true
+      signup_enabled: false
+      owner_application_enabled: true
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/profile
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: api/v1/admin/profile
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      permission_level:
+        custom: []
+        name: permission_level
+        description: ''
+        required: false
+        example: limited
+        type: string
+        enumValues:
+          - full
+          - limited
+          - readonly
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      notes:
+        custom: []
+        name: notes
+        description: ''
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      avatar_url:
+        custom: []
+        name: avatar_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      permission_level: limited
+      notes: architecto
+      avatar_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/admins
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/admin/admins/{user_user_id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      user_user_id:
+        custom: []
+        name: user_user_id
+        description: 'The ID of the user user.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      user_user_id: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/admin/admins
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address. Must not be greater than 255 characters.'
+        required: true
+        example: zbailey@example.net
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'Must be at least 8 characters.'
+        required: true
+        example: '-0pBNvYgxw'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      role:
+        custom: []
+        name: role
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      permission_level:
+        custom: []
+        name: permission_level
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      notes:
+        custom: []
+        name: notes
+        description: ''
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      avatar_url:
+        custom: []
+        name: avatar_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      email: zbailey@example.net
+      password: '-0pBNvYgxw'
+      role: architecto
+      notes: architecto
+      avatar_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: 'api/v1/admin/admins/{user_user_id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      user_user_id:
+        custom: []
+        name: user_user_id
+        description: 'The ID of the user user.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      user_user_id: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address. Must not be greater than 255 characters.'
+        required: false
+        example: zbailey@example.net
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'Must be at least 8 characters.'
+        required: false
+        example: '-0pBNvYgxw'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      role:
+        custom: []
+        name: role
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      permission_level:
+        custom: []
+        name: permission_level
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      notes:
+        custom: []
+        name: notes
+        description: ''
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      avatar_url:
+        custom: []
+        name: avatar_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      email: zbailey@example.net
+      password: '-0pBNvYgxw'
+      notes: architecto
+      avatar_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/admin/admins/{user_user_id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      user_user_id:
+        custom: []
+        name: user_user_id
+        description: 'The ID of the user user.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      user_user_id: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/equipments
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 100 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Eius et animi quos velit et.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      category:
+        custom: []
+        name: category
+        description: 'EquipmentController.php (store + update).'
+        required: false
+        example: machine
+        type: string
+        enumValues:
+          - machine
+          - free_weight
+          - cardio
+          - accessory
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      difficulty:
+        custom: []
+        name: difficulty
+        description: ''
+        required: false
+        example: Beginner
+        type: string
+        enumValues:
+          - Beginner
+          - Intermediate
+          - Advanced
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      image_url:
+        custom: []
+        name: image_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      target_muscle_group:
+        custom: []
+        name: target_muscle_group
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: i
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      description: 'Eius et animi quos velit et.'
+      category: machine
+      difficulty: Beginner
+      image_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      target_muscle_group: i
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+      - PATCH
+    uri: 'api/v1/equipments/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the equipment.'
+        required: true
+        example: 6
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 6
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Eius et animi quos velit et.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      category:
+        custom: []
+        name: category
+        description: 'EquipmentController.php (store + update).'
+        required: false
+        example: accessory
+        type: string
+        enumValues:
+          - machine
+          - free_weight
+          - cardio
+          - accessory
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      difficulty:
+        custom: []
+        name: difficulty
+        description: ''
+        required: false
+        example: Advanced
+        type: string
+        enumValues:
+          - Beginner
+          - Intermediate
+          - Advanced
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      image_url:
+        custom: []
+        name: image_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      target_muscle_group:
+        custom: []
+        name: target_muscle_group
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: i
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      description: 'Eius et animi quos velit et.'
+      category: accessory
+      difficulty: Advanced
+      image_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      target_muscle_group: i
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/equipments/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the equipment.'
+        required: true
+        example: 6
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 6
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/equipments/import-csv
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: multipart/form-data
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      file:
+        custom: []
+        name: file
+        description: 'Must be a file. Must not be greater than 10240 kilobytes.'
+        required: true
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters: []
+    fileParameters:
+      file: null
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/amenities
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Eius et animi quos velit et.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      image_url:
+        custom: []
+        name: image_url
+        description: 'Must not be greater than 2048 characters.'
+        required: false
+        example: 'http://www.ernser.org/harum-mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      description: 'Eius et animi quos velit et.'
+      image_url: 'http://www.ernser.org/harum-mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo.html'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+      - PATCH
+    uri: 'api/v1/amenities/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the amenity.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Eius et animi quos velit et.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      image_url:
+        custom: []
+        name: image_url
+        description: 'Must not be greater than 2048 characters.'
+        required: false
+        example: 'http://www.ernser.org/harum-mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      description: 'Eius et animi quos velit et.'
+      image_url: 'http://www.ernser.org/harum-mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo.html'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/amenities/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the amenity.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/gyms/map
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      south:
+        custom: []
+        name: south
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      west:
+        custom: []
+        name: west
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      north:
+        custom: []
+        name: north
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      east:
+        custom: []
+        name: east
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      south: 4326.41688
+      west: 4326.41688
+      north: 4326.41688
+      east: 4326.41688
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/owner-applications/map
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      south:
+        custom: []
+        name: south
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      west:
+        custom: []
+        name: west
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      north:
+        custom: []
+        name: north
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      east:
+        custom: []
+        name: east
+        description: ''
+        required: true
+        example: 4326.41688
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      status:
+        custom: []
+        name: status
+        description: ''
+        required: false
+        example: pending
+        type: string
+        enumValues:
+          - pending
+          - approved
+          - rejected
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      south: 4326.41688
+      west: 4326.41688
+      north: 4326.41688
+      east: 4326.41688
+      status: pending
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/gyms
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Eius et animi quos velit et.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address:
+        custom: []
+        name: address
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      latitude:
+        custom: []
+        name: latitude
+        description: 'Must be between -90 and 90.'
+        required: false
+        example: -89
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      longitude:
+        custom: []
+        name: longitude
+        description: 'Must be between -180 and 180.'
+        required: false
+        example: -180
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      daily_price:
+        custom: []
+        name: daily_price
+        description: 'Must be at least 0.'
+        required: false
+        example: 12
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      monthly_price:
+        custom: []
+        name: monthly_price
+        description: 'Must be at least 0.'
+        required: true
+        example: 77
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      annual_price:
+        custom: []
+        name: annual_price
+        description: 'Must be at least 0.'
+        required: false
+        example: 8
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      opening_time:
+        custom: []
+        name: opening_time
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      closing_time:
+        custom: []
+        name: closing_time
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      gym_type:
+        custom: []
+        name: gym_type
+        description: 'Must not be greater than 50 characters.'
+        required: false
+        example: 'y'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      contact_number:
+        custom: []
+        name: contact_number
+        description: 'Must not be greater than 20 characters.'
+        required: false
+        example: vdljnikhwaykcmyu
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address. Must not be greater than 255 characters.'
+        required: false
+        example: hirthe.theo@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      website:
+        custom: []
+        name: website
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: q
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      facebook_page:
+        custom: []
+        name: facebook_page
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: w
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      instagram_page:
+        custom: []
+        name: instagram_page
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: r
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      main_image_url:
+        custom: []
+        name: main_image_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      gallery_urls:
+        custom: []
+        name: gallery_urls
+        description: ''
+        required: false
+        example:
+          - architecto
+        type: 'string[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      has_personal_trainers:
+        custom: []
+        name: has_personal_trainers
+        description: ''
+        required: false
+        example: false
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      has_classes:
+        custom: []
+        name: has_classes
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      is_24_hours:
+        custom: []
+        name: is_24_hours
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      is_airconditioned:
+        custom: []
+        name: is_airconditioned
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      description: 'Eius et animi quos velit et.'
+      address: architecto
+      latitude: -89
+      longitude: -180
+      daily_price: 12
+      monthly_price: 77
+      annual_price: 8
+      gym_type: 'y'
+      contact_number: vdljnikhwaykcmyu
+      email: hirthe.theo@example.com
+      website: q
+      facebook_page: w
+      instagram_page: r
+      main_image_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      gallery_urls:
+        - architecto
+      has_personal_trainers: false
+      has_classes: true
+      is_24_hours: true
+      is_airconditioned: true
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+      - PATCH
+    uri: 'api/v1/gyms/{gym}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym:
+        custom: []
+        name: gym
+        description: 'The gym.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 255 characters.'
+        required: true
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Eius et animi quos velit et.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address:
+        custom: []
+        name: address
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      latitude:
+        custom: []
+        name: latitude
+        description: 'Must be between -90 and 90.'
+        required: false
+        example: -89
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      longitude:
+        custom: []
+        name: longitude
+        description: 'Must be between -180 and 180.'
+        required: false
+        example: -180
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      contact_number:
+        custom: []
+        name: contact_number
+        description: 'Must not be greater than 20 characters.'
+        required: false
+        example: zmiyvdljnikhwayk
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address. Must not be greater than 255 characters.'
+        required: false
+        example: lyric80@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      website:
+        custom: []
+        name: website
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: p
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      facebook_page:
+        custom: []
+        name: facebook_page
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: w
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      instagram_page:
+        custom: []
+        name: instagram_page
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: l
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      daily_price:
+        custom: []
+        name: daily_price
+        description: 'Must be at least 0.'
+        required: false
+        example: 34
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      monthly_price:
+        custom: []
+        name: monthly_price
+        description: 'Must be at least 0.'
+        required: true
+        example: 3
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      annual_price:
+        custom: []
+        name: annual_price
+        description: 'Must be at least 0.'
+        required: false
+        example: 22
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      opening_time:
+        custom: []
+        name: opening_time
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      closing_time:
+        custom: []
+        name: closing_time
+        description: ''
+        required: false
+        example: null
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      gym_type:
+        custom: []
+        name: gym_type
+        description: 'Must not be greater than 50 characters.'
+        required: false
+        example: r
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      main_image_url:
+        custom: []
+        name: main_image_url
+        description: ''
+        required: false
+        example: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      gallery_urls:
+        custom: []
+        name: gallery_urls
+        description: ''
+        required: false
+        example:
+          - architecto
+        type: 'string[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      has_personal_trainers:
+        custom: []
+        name: has_personal_trainers
+        description: ''
+        required: false
+        example: false
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      has_classes:
+        custom: []
+        name: has_classes
+        description: ''
+        required: false
+        example: false
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      is_24_hours:
+        custom: []
+        name: is_24_hours
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      is_airconditioned:
+        custom: []
+        name: is_airconditioned
+        description: ''
+        required: false
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: b
+      description: 'Eius et animi quos velit et.'
+      address: architecto
+      latitude: -89
+      longitude: -180
+      contact_number: zmiyvdljnikhwayk
+      email: lyric80@example.com
+      website: p
+      facebook_page: w
+      instagram_page: l
+      daily_price: 34
+      monthly_price: 3
+      annual_price: 22
+      gym_type: r
+      main_image_url: 'http://www.bailey.biz/quos-velit-et-fugiat-sunt-nihil-accusantium-harum.html'
+      gallery_urls:
+        - architecto
+      has_personal_trainers: false
+      has_classes: false
+      is_24_hours: true
+      is_airconditioned: true
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/gyms/{gym}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      gym:
+        custom: []
+        name: gym
+        description: 'The gym.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      gym: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/owner-applications
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/admin/owner-applications/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the owner application.'
+        required: true
+        example: '564'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: '564'
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PATCH
+    uri: 'api/v1/admin/owner-applications/{id}/approve'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the owner application.'
+        required: true
+        example: '564'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: '564'
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PATCH
+    uri: 'api/v1/admin/owner-applications/{id}/reject'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the owner application.'
+        required: true
+        example: '564'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: '564'
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/users
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/admin/users/{user}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      user:
+        custom: []
+        name: user
+        description: 'The user.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      user: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/admin/users/{user}/preferences'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      user:
+        custom: []
+        name: user
+        description: 'The user.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      user: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: 'api/v1/admin/users/{user}/preferences'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      user:
+        custom: []
+        name: user
+        description: 'The user.'
+        required: true
+        example: 3
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      user: 3
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      goal:
+        custom: []
+        name: goal
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      activity_level:
+        custom: []
+        name: activity_level
+        description: 'Must not be greater than 50 characters.'
+        required: false
+        example: 'n'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      budget:
+        custom: []
+        name: budget
+        description: 'Must be at least 0.'
+        required: false
+        example: 84
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      preferred_amenities:
+        custom: []
+        name: preferred_amenities
+        description: ''
+        required: false
+        example:
+          - 16
+        type: 'integer[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      preferred_equipments:
+        custom: []
+        name: preferred_equipments
+        description: ''
+        required: false
+        example:
+          - 16
+        type: 'integer[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      goal: b
+      activity_level: 'n'
+      budget: 84
+      preferred_amenities:
+        - 16
+      preferred_equipments:
+        - 16
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/admin/owners
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: |-
+        GET /api/v1/admin/owners
+        Lists owners for admin dashboard
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/admin/owners/{owner}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'GET /api/v1/admin/owners/{owner}'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      owner:
+        custom: []
+        name: owner
+        description: 'The owner.'
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      owner: architecto
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/admin/owners/{owner}/gyms'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'GET /api/v1/admin/owners/{owner}/gyms'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      owner:
+        custom: []
+        name: owner
+        description: 'The owner.'
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      owner: architecto
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"message":"Unauthenticated."}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: 'http://localhost:5173'
+          access-control-allow-credentials: 'true'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null

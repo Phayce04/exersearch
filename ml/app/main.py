@@ -50,3 +50,6 @@ def get_weights(req: WeightRequest):
             pass
 
     return WeightResponse(weights=DEFAULT_WEIGHTS, source="default")
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "ml-weights"}
