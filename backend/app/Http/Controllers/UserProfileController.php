@@ -53,20 +53,25 @@ class UserProfileController extends Controller
             'address' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'gender' => ['nullable', 'string', 'in:male,female,other'],
         ]);
 
-        // ✅ Only update fields that were ACTUALLY sent in the request
-        // This prevents wiping age/height/weight when you only send address/lat/lng.
         $update = [
             'updated_at' => now(),
-            'created_at' => DB::raw('COALESCE(created_at, NOW())'),
         ];
 
-        foreach (['age', 'weight', 'height', 'address', 'latitude', 'longitude'] as $k) {
+        foreach (['age', 'weight', 'height', 'address', 'latitude', 'longitude', 'gender'] as $k) {
             if ($request->has($k)) {
-                // if key exists but null, allow clearing intentionally
-                $update[$k] = $data[$k] ?? null;
+                $update[$k] = $data[$k] ?? null; 
             }
+        }
+
+        $exists = DB::table('user_profiles')
+            ->where('user_id', $user->user_id)
+            ->exists();
+
+        if (!$exists) {
+            $update['created_at'] = now();
         }
 
         DB::table('user_profiles')->updateOrInsert(

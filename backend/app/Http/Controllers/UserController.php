@@ -22,7 +22,7 @@ class UserController extends Controller
 
         return UserResource::collection(
             User::where('role', 'user')
-                ->with(['preference', 'preferredEquipments', 'preferredAmenities', 'profile'])
+                ->with(['preference', 'preferredEquipments', 'preferredAmenities', 'userProfile']) // ✅ changed
                 ->paginate(10)
         );
     }
@@ -36,12 +36,11 @@ class UserController extends Controller
         $me = $request->user();
         if (!$me) abort(401, 'Unauthenticated');
 
-        $user = User::with(['preference', 'preferredEquipments', 'preferredAmenities', 'profile'])
+        $user = User::with(['preference', 'preferredEquipments', 'preferredAmenities', 'userProfile']) // ✅ changed
             ->findOrFail($me->user_id);
 
         return new UserResource($user);
     }
-
 
     public function preferences(Request $request, $user_id)
     {
@@ -56,13 +55,13 @@ class UserController extends Controller
                 'user_id' => $user->user_id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'onboarded_at' => $user->onboarded_at, // ✅ added
             ],
             'preferences' => $user->preference,
             'preferred_equipments' => $user->preferredEquipments,
             'preferred_amenities' => $user->preferredAmenities,
         ]);
     }
-
 
     public function updatePreferences(Request $request, $user_id)
     {
@@ -108,6 +107,28 @@ class UserController extends Controller
         return response()->json([
             'message' => 'Preferences updated successfully',
             'user' => $user->load(['preference', 'preferredAmenities', 'preferredEquipments']),
+        ]);
+    }
+
+    /**
+     * ✅ NEW: Mark onboarding as completed (only for role=user)
+     * Call this AFTER your onboarding wizard saves profile/preferences.
+     */
+    public function markOnboarded(Request $request)
+    {
+        $me = $request->user();
+        if (!$me) abort(401, 'Unauthenticated');
+
+        if ($me->role !== 'user') {
+            return response()->json(['message' => 'Only gym users can complete onboarding.'], 403);
+        }
+
+        $me->onboarded_at = now();
+        $me->save();
+
+        return response()->json([
+            'message' => 'Onboarding completed.',
+            'onboarded_at' => $me->onboarded_at,
         ]);
     }
 }

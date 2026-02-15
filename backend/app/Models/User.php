@@ -24,7 +24,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // user | owner | admin | superadmin (admin handled via middleware)
+        'role', // user | owner | admin | superadmin
+        // 'onboarded_at', // ✅ optional (not required if you set it manually)
     ];
 
     /*
@@ -45,6 +46,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'onboarded_at' => 'datetime', // ✅ ADDED
     ];
 
     /*
@@ -143,7 +145,8 @@ class User extends Authenticatable
     {
         return $this->role === 'superadmin';
     }
-        public function savedGyms()
+
+    public function savedGyms()
     {
         return $this->hasMany(
             \App\Models\SavedGym::class,
@@ -157,11 +160,11 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(
             \App\Models\Gym::class,
-            'saved_gyms',     
-            'user_id',      
-            'gym_id',      
-            'user_id',       
-            'gym_id'         
+            'saved_gyms',
+            'user_id',
+            'gym_id',
+            'user_id',
+            'gym_id'
         )->withTimestamps();
     }
 }

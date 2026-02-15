@@ -29,8 +29,12 @@ use App\Http\Controllers\SavedGymController;
 
 use App\Http\Controllers\AdminAdminController;
 
+// ✅ NEW: for onboarding complete endpoint
+use App\Http\Controllers\UserController;
+
 Route::prefix('v1')->group(function () {
-Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
+
+    Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
 
     // AUTH
     Route::post('/auth/login', [UserAuthController::class, 'login']);
@@ -82,15 +86,19 @@ Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
 
         Route::get('/user/profile', [UserProfileController::class, 'show']);
         Route::put('/user/profile', [UserProfileController::class, 'update']);
+
+        Route::post('/user/onboarding/complete', [UserController::class, 'markOnboarded']);
+
         Route::get('/user/saved-gyms', [SavedGymController::class, 'index']);
         Route::post('/user/saved-gyms', [SavedGymController::class, 'store']);
         Route::delete('/user/saved-gyms/{gym_id}', [SavedGymController::class, 'destroy'])->whereNumber('gym_id');
 
-
         // ADMIN (protected by your 'admin' middleware)
         Route::middleware('admin')->group(function () {
-        Route::get('/admin/settings', [AdminAppSettingsController::class, 'show']);
-    Route::put('/admin/settings', [AdminAppSettingsController::class, 'update']);
+
+            Route::get('/admin/settings', [AdminAppSettingsController::class, 'show']);
+            Route::put('/admin/settings', [AdminAppSettingsController::class, 'update']);
+
             Route::get('/admin/profile', [AdminProfileController::class, 'show']);
             Route::put('/admin/profile', [AdminProfileController::class, 'update']);
 

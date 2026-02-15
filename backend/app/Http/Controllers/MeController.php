@@ -10,15 +10,12 @@ class MeController extends Controller
     {
         $user = $request->user();
 
-        // ✅ Prevent 500 if not authenticated
         if (!$user) {
             return response()->json([
                 'message' => 'Unauthenticated.',
             ], 401);
         }
 
-        // ✅ Load role-specific profile
-        // also include 'admin' if you use that role
         switch ($user->role) {
             case 'admin':
             case 'superadmin':
@@ -30,7 +27,6 @@ class MeController extends Controller
                 break;
 
             case 'user':
-                // IMPORTANT: make sure this relation exists in User model (see note below)
                 $user->load('userProfile');
                 break;
         }
@@ -41,7 +37,8 @@ class MeController extends Controller
             'email'   => $user->email,
             'role'    => $user->role,
 
-            // ✅ allow admin too, not only superadmin
+            'onboarded_at' => $user->onboarded_at,
+
             'admin_profile' => in_array($user->role, ['admin', 'superadmin']) && $user->adminProfile ? [
                 'admin_profile_id' => $user->adminProfile->admin_profile_id,
                 'permission_level' => $user->adminProfile->permission_level,
@@ -64,7 +61,6 @@ class MeController extends Controller
                 'updated_at'        => $user->ownerProfile->updated_at,
             ] : null,
 
-            // ✅ include profile_photo_url if your user_profiles has it
             'user_profile' => $user->role === 'user' && $user->userProfile ? [
                 'profile_id' => $user->userProfile->profile_id,
                 'age'        => $user->userProfile->age,
@@ -73,6 +69,7 @@ class MeController extends Controller
                 'address'    => $user->userProfile->address,
                 'latitude'   => $user->userProfile->latitude,
                 'longitude'  => $user->userProfile->longitude,
+                'gender'     => $user->userProfile->gender ?? null,
                 'profile_photo_url' => $user->userProfile->profile_photo_url ?? null,
                 'created_at' => $user->userProfile->created_at,
                 'updated_at' => $user->userProfile->updated_at,

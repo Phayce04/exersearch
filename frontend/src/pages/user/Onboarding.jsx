@@ -1,332 +1,406 @@
 /**
- * Location Autocomplete: Using Photon API (Free, No API Key Required)
- * Photon is a free geocoding API by Komoot - perfect for location suggestions
+ * Location Autocomplete: Photon API (Free, No API Key Required)
  * Docs: https://photon.komoot.io/
- * 
- * INSTALLATION REQUIRED:
- * npm install lucide-react
+ *
+ * INSTALL:
+ * npm install lucide-react axios leaflet react-leaflet
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Flame, Dumbbell, Activity, Zap, 
-  Sprout, Award, Trophy,
-  User, Users, UserCircle,
-  MapPin, Loader2,
-  Droplets, Lock, Wifi, Car, Waves, Wind,
-  HeartPulse, Weight, Cog, Box, Target, Scan,
-  Sunrise, Sun, Moon,
-  UtensilsCrossed, Leaf, Salad, Church, Milk, Wheat
-} from 'lucide-react';
-import './Onboardingstyle.css';
+import React, { useState, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  Flame,
+  Dumbbell,
+  Activity,
+  Zap,
+  Sprout,
+  Award,
+  Trophy,
+  User,
+  Users,
+  UserCircle,
+  MapPin,
+  Loader2,
+  Droplets,
+  Lock,
+  Wifi,
+  Car,
+  HeartPulse,
+  Weight,
+  Cog,
+  Target,
+  Scan,
+  Sunrise,
+  Sun,
+  Moon,
+  UtensilsCrossed,
+  Leaf,
+  Salad,
+  Church,
+  Milk,
+  Wheat,
+  Navigation, // ✅ current location icon
+  Search, // ✅ search icon
+} from "lucide-react";
+import "./Onboardingstyle.css";
+
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet marker icon paths
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+function ClickToPick({ onPick }) {
+  useMapEvents({
+    click(e) {
+      onPick(e.latlng);
+    },
+  });
+  return null;
+}
+
+function FlyToLocation({ center }) {
+  const map = useMapEvents({});
+  // react-leaflet doesn't expose map easily without hook,
+  // but useMapEvents gives access to map instance.
+  // We'll just setView when center changes by using a key prop on MapContainer (below),
+  // so this component is intentionally empty.
+  return null;
+}
 
 export default function Onboarding() {
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Form data state
+  const [mapOpen, setMapOpen] = useState(false);
+  const pasigCenter = useMemo(() => ({ lat: 14.5547, lng: 121.0437 }), []);
+
+  // Map search state
+  const [mapSearch, setMapSearch] = useState("");
+  const [mapSearchLoading, setMapSearchLoading] = useState(false);
+  const [mapSearchError, setMapSearchError] = useState("");
+  const [mapCenter, setMapCenter] = useState(pasigCenter);
+  const [mapKey, setMapKey] = useState(0); // force remount to jump center
+
   const [formData, setFormData] = useState({
-    fitnessGoal: '',
-    age: '',
-    gender: '',
-    height: '',
-    weight: '',
-    fitnessLevel: '',
-    location: '',
-    gymBudget: '',
+    fitnessGoal: "",
+    fitnessLevel: "",
+    age: "",
+    gender: "",
+    height: "",
+    weight: "",
+    location: "",
+    latitude: null,
+    longitude: null,
+
+    gymBudget: "",
+
     amenities: [],
     equipment: [],
-    workoutDays: '',
-    workoutTime: '',
-    foodBudget: '',
+
+    workoutDays: "",
+    workoutTime: "",
+    foodBudget: "",
     dietaryRestrictions: [],
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
   });
 
-  // Password validation state
-  const [passwordValidation, setPasswordValidation] = useState({
-    minLength: false,
-    hasUpper: false,
-    hasLower: false,
-    hasNumber: false,
-    passwordsMatch: false
-  });
-
-  // Location suggestions state
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
-  // Fetch location suggestions from Photon API
+  const AGE_MIN = 13;
+  const AGE_MAX = 90;
+  const WEIGHT_MIN = 30;
+  const WEIGHT_MAX = 250;
+  const HEIGHT_MIN = 120;
+  const HEIGHT_MAX = 230;
+
+  // ✅ readable values (no underscores)
+  const questions = [
+    {
+      id: "fitnessGoal",
+      type: "single-choice",
+      question: "What's your main goal?",
+      options: [
+        { value: "Lose Weight", icon: Flame, label: "Lose Weight" },
+        { value: "Build Muscle", icon: Dumbbell, label: "Build Muscle" },
+        { value: "Stay Fit", icon: Activity, label: "Stay Fit" },
+        { value: "Get Athletic", icon: Zap, label: "Get Athletic" },
+      ],
+    },
+    {
+      id: "fitnessLevel",
+      type: "single-choice",
+      question: "Current fitness level?",
+      options: [
+        { value: "Beginner", icon: Sprout, label: "Beginner" },
+        { value: "Intermediate", icon: Award, label: "Intermediate" },
+        { value: "Advanced", icon: Trophy, label: "Advanced" },
+      ],
+    },
+    {
+      id: "age",
+      type: "input",
+      question: "How old are you?",
+      inputType: "number",
+      placeholder: "25",
+      unit: "years",
+      min: AGE_MIN,
+      max: AGE_MAX,
+    },
+    {
+      id: "gender",
+      type: "single-choice",
+      question: "Gender?",
+      options: [
+        { value: "male", icon: User, label: "Male" },
+        { value: "female", icon: Users, label: "Female" },
+        { value: "other", icon: UserCircle, label: "Other" },
+      ],
+    },
+    {
+      id: "height",
+      type: "input",
+      question: "Your height?",
+      inputType: "number",
+      placeholder: "170",
+      unit: "cm",
+      min: HEIGHT_MIN,
+      max: HEIGHT_MAX,
+    },
+    {
+      id: "weight",
+      type: "input",
+      question: "Current weight?",
+      inputType: "number",
+      placeholder: "70",
+      unit: "kg",
+      min: WEIGHT_MIN,
+      max: WEIGHT_MAX,
+    },
+    {
+      id: "location",
+      type: "input-autocomplete",
+      question: "Where are you in Pasig?",
+      inputType: "text",
+      placeholder: "Start typing your location...",
+    },
+    {
+      id: "gymBudget",
+      type: "single-choice",
+      question: "Monthly gym budget?",
+      options: [
+        { value: "500", label: "₱500" },
+        { value: "1000", label: "₱1,000" },
+        { value: "1500", label: "₱1,500" },
+        { value: "2000", label: "₱2,000" },
+        { value: "2500", label: "₱2,500+" },
+      ],
+    },
+    {
+      id: "amenities",
+      type: "multi-choice",
+      question: "Gym amenities needed?",
+      options: [
+        { value: 31, icon: Droplets, label: "Shower" },
+        { value: 30, icon: Lock, label: "Locker Room" },
+        { value: 45, icon: Wifi, label: "Free Wi-Fi" },
+        { value: 41, icon: Flame, label: "Sauna / Steam" },
+        { value: 47, icon: Car, label: "Parking" },
+      ],
+    },
+    {
+      id: "equipment",
+      type: "multi-choice",
+      question: "Equipment you use?",
+      options: [
+        { value: 6, icon: HeartPulse, label: "Cardio (Bike)" },
+        { value: 39, icon: Weight, label: "Free Weights" },
+        { value: 8, icon: Cog, label: "Machines (Smith)" },
+        { value: 35, icon: Target, label: "Functional (Bands)" },
+        { value: 44, icon: Scan, label: "Core (Ab Roller)" },
+      ],
+    },
+    {
+      id: "workoutDays",
+      type: "single-choice",
+      question: "Training days per week?",
+      options: [
+        { value: "3", label: "3 days" },
+        { value: "4", label: "4 days" },
+        { value: "5", label: "5 days" },
+        { value: "6", label: "6 days" },
+        { value: "7", label: "Every day" },
+      ],
+    },
+    {
+      id: "workoutTime",
+      type: "single-choice",
+      question: "Preferred workout time?",
+      options: [
+        { value: "morning", icon: Sunrise, label: "Morning" },
+        { value: "afternoon", icon: Sun, label: "Afternoon" },
+        { value: "evening", icon: Moon, label: "Evening" },
+      ],
+    },
+    {
+      id: "foodBudget",
+      type: "single-choice",
+      question: "Daily food budget?",
+      options: [
+        { value: "200", label: "₱200" },
+        { value: "300", label: "₱300" },
+        { value: "500", label: "₱500" },
+        { value: "1000", label: "₱1000+" },
+      ],
+    },
+    {
+      id: "dietaryRestrictions",
+      type: "multi-choice",
+      question: "Dietary restrictions?",
+      options: [
+        { value: "None", icon: UtensilsCrossed, label: "None" },
+        { value: "Vegan", icon: Leaf, label: "Vegan" },
+        { value: "Vegetarian", icon: Salad, label: "Vegetarian" },
+        { value: "Halal", icon: Church, label: "Halal" },
+        { value: "Lactose", icon: Milk, label: "Lactose Free" },
+        { value: "Gluten", icon: Wheat, label: "Gluten Free" },
+      ],
+    },
+  ];
+
+  const currentQ = questions[currentQuestion];
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const isLastQuestion = currentQuestion === questions.length - 1;
+
   const fetchLocationSuggestions = async (query) => {
     if (query.length < 3) {
       setLocationSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
     try {
       const response = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lon=121.0437&lat=14.5547`
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(
+          query
+        )}&limit=5&lon=${pasigCenter.lng}&lat=${pasigCenter.lat}`
       );
       const data = await response.json();
-      
-      const suggestions = data.features.map(feature => ({
-        name: feature.properties.name || '',
-        city: feature.properties.city || feature.properties.county || '',
-        display: `${feature.properties.name || ''}, ${feature.properties.city || feature.properties.county || ''}`.replace(/^, |, $/g, '')
-      }));
-      
+
+      const suggestions = (data.features || []).map((feature) => {
+        const name = feature.properties?.name || "";
+        const city =
+          feature.properties?.city || feature.properties?.county || "";
+        const display = `${name}, ${city}`.replace(/^, |, $/g, "");
+        const coords = feature.geometry?.coordinates; // [lon, lat]
+
+        return {
+          display,
+          latitude: Array.isArray(coords) ? coords[1] : null,
+          longitude: Array.isArray(coords) ? coords[0] : null,
+        };
+      });
+
       setLocationSuggestions(suggestions);
       setShowSuggestions(true);
     } catch (error) {
-      console.error('Error fetching locations:', error);
+      console.error("Error fetching locations:", error);
     }
   };
 
-  // Validate password
-  useEffect(() => {
-    const pwd = formData.password;
-    const confirmPwd = formData.confirmPassword;
-
-    setPasswordValidation({
-      minLength: pwd.length >= 8,
-      hasUpper: /[A-Z]/.test(pwd),
-      hasLower: /[a-z]/.test(pwd),
-      hasNumber: /[0-9]/.test(pwd),
-      passwordsMatch: pwd.length > 0 && pwd === confirmPwd
-    });
-  }, [formData.password, formData.confirmPassword]);
-
-  const questions = [
-    {
-      id: 'fitnessGoal',
-      type: 'single-choice',
-      question: "What's your main goal?",
-      options: [
-        { value: 'lose_weight', icon: Flame, label: 'Lose Weight' },
-        { value: 'build_muscle', icon: Dumbbell, label: 'Build Muscle' },
-        { value: 'stay_fit', icon: Activity, label: 'Stay Fit' },
-        { value: 'athletic', icon: Zap, label: 'Get Athletic' }
-      ]
-    },
-    {
-      id: 'fitnessLevel',
-      type: 'single-choice',
-      question: "Current fitness level?",
-      options: [
-        { value: 'beginner', icon: Sprout, label: 'Beginner' },
-        { value: 'intermediate', icon: Award, label: 'Intermediate' },
-        { value: 'advanced', icon: Trophy, label: 'Advanced' }
-      ]
-    },
-    {
-      id: 'age',
-      type: 'input',
-      question: "How old are you?",
-      inputType: 'number',
-      placeholder: '25',
-      unit: 'years'
-    },
-    {
-      id: 'gender',
-      type: 'single-choice',
-      question: "Gender?",
-      options: [
-        { value: 'male', icon: User, label: 'Male' },
-        { value: 'female', icon: Users, label: 'Female' },
-        { value: 'other', icon: UserCircle, label: 'Other' }
-      ]
-    },
-    {
-      id: 'height',
-      type: 'input',
-      question: "Your height?",
-      inputType: 'number',
-      placeholder: '170',
-      unit: 'cm'
-    },
-    {
-      id: 'weight',
-      type: 'input',
-      question: "Current weight?",
-      inputType: 'number',
-      placeholder: '70',
-      unit: 'kg'
-    },
-    {
-      id: 'location',
-      type: 'input-autocomplete',
-      question: "Where are you in Pasig?",
-      inputType: 'text',
-      placeholder: 'Start typing your location...'
-    },
-    {
-      id: 'gymBudget',
-      type: 'single-choice',
-      question: "Daily gym budget?",
-      options: [
-        { value: '50', label: '₱50 below' },
-        { value: '100', label: '₱100' },
-        { value: '150', label: '₱150' },
-        { value: '200', label: '₱200' },
-        { value: '500', label: '₱500+' }
-      ]
-    },
-    {
-      id: 'amenities',
-      type: 'multi-choice',
-      question: "Gym amenities needed?",
-      options: [
-        { value: 'AC', icon: Wind, label: 'AC' },
-        { value: 'Shower', icon: Droplets, label: 'Shower' },
-        { value: 'Locker', icon: Lock, label: 'Locker' },
-        { value: 'WiFi', icon: Wifi, label: 'WiFi' },
-        { value: 'Pool', icon: Waves, label: 'Pool' },
-        { value: 'Sauna', icon: Flame, label: 'Sauna' },
-        { value: 'Parking', icon: Car, label: 'Parking' }
-      ]
-    },
-    {
-      id: 'equipment',
-      type: 'multi-choice',
-      question: "Equipment you use?",
-      options: [
-        { value: 'Cardio', icon: HeartPulse, label: 'Cardio' },
-        { value: 'Weights', icon: Weight, label: 'Weights' },
-        { value: 'Machines', icon: Cog, label: 'Machines' },
-        { value: 'Functional', icon: Target, label: 'Functional' },
-        { value: 'Boxing', icon: Box, label: 'Boxing' },
-        { value: 'Yoga', icon: Scan, label: 'Yoga' }
-      ]
-    },
-    {
-      id: 'workoutDays',
-      type: 'single-choice',
-      question: "Training days per week?",
-      options: [
-        { value: '3', label: '3 days' },
-        { value: '4', label: '4 days' },
-        { value: '5', label: '5 days' },
-        { value: '6', label: '6 days' },
-        { value: '7', label: 'Every day' }
-      ]
-    },
-    {
-      id: 'workoutTime',
-      type: 'single-choice',
-      question: "Preferred workout time?",
-      options: [
-        { value: 'morning', icon: Sunrise, label: 'Morning' },
-        { value: 'afternoon', icon: Sun, label: 'Afternoon' },
-        { value: 'evening', icon: Moon, label: 'Evening' }
-      ]
-    },
-    {
-      id: 'foodBudget',
-      type: 'single-choice',
-      question: "Daily food budget?",
-      options: [
-        { value: '200', label: '₱200' },
-        { value: '300', label: '₱300' },
-        { value: '500', label: '₱500' },
-        { value: '1000', label: '₱1000+' }
-      ]
-    },
-    {
-      id: 'dietaryRestrictions',
-      type: 'multi-choice',
-      question: "Dietary restrictions?",
-      options: [
-        { value: 'None', icon: UtensilsCrossed, label: 'None' },
-        { value: 'Vegan', icon: Leaf, label: 'Vegan' },
-        { value: 'Vegetarian', icon: Salad, label: 'Vegetarian' },
-        { value: 'Halal', icon: Church, label: 'Halal' },
-        { value: 'Lactose', icon: Milk, label: 'Lactose Free' },
-        { value: 'Gluten', icon: Wheat, label: 'Gluten Free' }
-      ]
-    },
-    {
-      id: 'name',
-      type: 'input',
-      question: "What's your name?",
-      inputType: 'text',
-      placeholder: 'Juan Dela Cruz'
-    },
-    {
-      id: 'email',
-      type: 'input',
-      question: "Your email?",
-      inputType: 'email',
-      placeholder: 'juan@email.com'
-    },
-    {
-      id: 'password',
-      type: 'input-password',
-      question: "Create a password",
-      inputType: 'password',
-      placeholder: 'Enter password'
-    },
-    {
-      id: 'confirmPassword',
-      type: 'input-password-confirm',
-      question: "Confirm password",
-      inputType: 'password',
-      placeholder: 'Re-enter password'
-    }
-  ];
-
   const handleSingleChoice = (questionId, value) => {
-    setFormData(prev => ({ ...prev, [questionId]: value }));
-    
-    // Auto-advance to next question after a brief delay
-    setTimeout(() => {
-      nextQuestion();
-    }, 300);
+    setFormData((prev) => ({ ...prev, [questionId]: value }));
+    setTimeout(() => nextQuestion(), 300);
   };
 
   const handleMultiChoice = (questionId, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [questionId]: prev[questionId].includes(value)
-        ? prev[questionId].filter(item => item !== value)
-        : [...prev[questionId], value]
+        ? prev[questionId].filter((item) => item !== value)
+        : [...prev[questionId], value],
     }));
   };
 
   const handleInputChange = (questionId, value) => {
-    setFormData(prev => ({ ...prev, [questionId]: value }));
-    
-    // If it's location input, fetch suggestions
-    if (questionId === 'location') {
-      // Debounce the API call
-      if (inputRef.current) {
-        clearTimeout(inputRef.current);
+    setFormData((prev) => {
+      const next = { ...prev, [questionId]: value };
+      if (questionId === "location") {
+        next.latitude = null;
+        next.longitude = null;
       }
-      inputRef.current = setTimeout(() => {
-        fetchLocationSuggestions(value);
-      }, 300);
+      return next;
+    });
+
+    if (questionId === "location") {
+      if (inputRef.current) clearTimeout(inputRef.current);
+      inputRef.current = setTimeout(() => fetchLocationSuggestions(value), 300);
     }
   };
 
   const handleLocationSelect = (suggestion) => {
-    setFormData(prev => ({ ...prev, location: suggestion.display }));
+    setFormData((prev) => ({
+      ...prev,
+      location: suggestion.display,
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude,
+    }));
     setShowSuggestions(false);
     setLocationSuggestions([]);
   };
 
-  // Get user's current location using browser geolocation
-  const getCurrentLocation = () => {
+  const reverseGeocode = async (lat, lon) => {
+    try {
+      const res = await fetch(
+        `https://photon.komoot.io/reverse?lon=${lon}&lat=${lat}`
+      );
+      const data = await res.json();
+      const place = data.features?.[0]?.properties;
+      if (!place) return null;
+      const locationName = `${place.name || ""}, ${
+        place.city || place.county || ""
+      }`.replace(/^, |, $/g, "");
+      return locationName || null;
+    } catch (e) {
+      console.error("Reverse geocode error:", e);
+      return null;
+    }
+  };
+
+  // ✅ This WILL ask permission (browser prompt) if not already granted.
+  // We also check permission state to give nicer messages.
+  const requestCurrentLocation = async () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser');
+      alert("Geolocation is not supported by your browser");
       return;
+    }
+
+    try {
+      if (navigator.permissions?.query) {
+        const p = await navigator.permissions.query({ name: "geolocation" });
+        if (p.state === "denied") {
+          alert(
+            "Location permission is blocked in your browser settings. Please enable it and try again."
+          );
+          return;
+        }
+      }
+    } catch {
+      // ignore
     }
 
     setIsGettingLocation(true);
@@ -334,49 +408,68 @@ export default function Onboarding() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
-        // Reverse geocode using Photon API
-        try {
-          const response = await fetch(
-            `https://photon.komoot.io/reverse?lon=${longitude}&lat=${latitude}`
+        const name = await reverseGeocode(latitude, longitude);
+
+        setFormData((prev) => ({
+          ...prev,
+          location: name || prev.location,
+          latitude,
+          longitude,
+        }));
+
+        if (!name) {
+          alert(
+            "We saved your coordinates, but couldn't detect a readable address. You can type it manually."
           );
-          const data = await response.json();
-          
-          if (data.features && data.features.length > 0) {
-            const place = data.features[0].properties;
-            const locationName = `${place.name || ''}, ${place.city || place.county || ''}`.replace(/^, |, $/g, '');
-            setFormData(prev => ({ ...prev, location: locationName }));
-          }
-        } catch (error) {
-          console.error('Error reverse geocoding:', error);
-          alert('Could not get location name. Please type it manually.');
-        } finally {
-          setIsGettingLocation(false);
         }
+
+        setIsGettingLocation(false);
       },
       (error) => {
         setIsGettingLocation(false);
-        console.error('Geolocation error:', error);
-        
+        console.error("Geolocation error:", error);
+
         if (error.code === error.PERMISSION_DENIED) {
-          alert('Location access denied. Please enable location permissions and try again.');
+          alert(
+            "Location access denied. Please allow location access when prompted, then try again."
+          );
         } else {
-          alert('Could not get your location. Please type it manually.');
+          alert("Could not get your location. Please type it manually.");
         }
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
+  };
+
+  const geocodeIfMissing = async () => {
+    if (!formData.location) return { latitude: null, longitude: null };
+    if (formData.latitude != null && formData.longitude != null) {
+      return { latitude: formData.latitude, longitude: formData.longitude };
+    }
+
+    try {
+      const res = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(
+          formData.location
+        )}&limit=1&lon=${pasigCenter.lng}&lat=${pasigCenter.lat}`
+      );
+      const data = await res.json();
+      const coords = data.features?.[0]?.geometry?.coordinates; // [lon, lat]
+      if (Array.isArray(coords) && coords.length === 2) {
+        return { latitude: coords[1], longitude: coords[0] };
+      }
+      return { latitude: null, longitude: null };
+    } catch (e) {
+      console.error("Geocode error:", e);
+      return { latitude: null, longitude: null };
+    }
   };
 
   const nextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
       setIsTransitioning(true);
       setTimeout(() => {
-        setCurrentQuestion(currentQuestion + 1);
+        setCurrentQuestion((q) => q + 1);
         setIsTransitioning(false);
       }, 300);
     }
@@ -386,60 +479,243 @@ export default function Onboarding() {
     if (currentQuestion > 0) {
       setIsTransitioning(true);
       setTimeout(() => {
-        setCurrentQuestion(currentQuestion - 1);
+        setCurrentQuestion((q) => q - 1);
         setIsTransitioning(false);
       }, 300);
     }
   };
 
+  const numberInRange = (val, min, max) => {
+    if (val === "" || val == null) return false;
+    const n = Number(val);
+    if (!Number.isFinite(n)) return false;
+    return n >= min && n <= max;
+  };
+
+  const inputError = useMemo(() => {
+    if (currentQ.type !== "input") return "";
+    if (currentQ.id === "age") {
+      if (formData.age === "") return "";
+      return numberInRange(formData.age, AGE_MIN, AGE_MAX)
+        ? ""
+        : `Age must be between ${AGE_MIN} and ${AGE_MAX}.`;
+    }
+    if (currentQ.id === "weight") {
+      if (formData.weight === "") return "";
+      return numberInRange(formData.weight, WEIGHT_MIN, WEIGHT_MAX)
+        ? ""
+        : `Weight must be between ${WEIGHT_MIN} and ${WEIGHT_MAX} kg.`;
+    }
+    if (currentQ.id === "height") {
+      if (formData.height === "") return "";
+      return numberInRange(formData.height, HEIGHT_MIN, HEIGHT_MAX)
+        ? ""
+        : `Height must be between ${HEIGHT_MIN} and ${HEIGHT_MAX} cm.`;
+    }
+    return "";
+  }, [currentQ, formData]);
+
+  const canContinue = useMemo(() => {
+    if (submitting) return false;
+
+    if (currentQ.type === "input") {
+      const v = formData[currentQ.id];
+      if (!v) return false;
+
+      if (currentQ.id === "age") return numberInRange(v, AGE_MIN, AGE_MAX);
+      if (currentQ.id === "weight")
+        return numberInRange(v, WEIGHT_MIN, WEIGHT_MAX);
+      if (currentQ.id === "height")
+        return numberInRange(v, HEIGHT_MIN, HEIGHT_MAX);
+
+      return String(v).trim().length > 0;
+    }
+
+    if (currentQ.type === "input-autocomplete") return !!formData.location;
+    if (currentQ.type === "single-choice") return !!formData[currentQ.id];
+    if (currentQ.type === "multi-choice")
+      return (
+        Array.isArray(formData[currentQ.id]) && formData[currentQ.id].length > 0
+      );
+
+    return true;
+  }, [currentQ, formData, submitting]);
+
   const handleSubmit = async () => {
-    // Validate password before submitting
-    const allValid = Object.values(passwordValidation).every(v => v);
-    if (!allValid) {
-      alert('Please ensure your password meets all requirements and passwords match.');
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login first.");
+      navigate("/login");
       return;
     }
 
-    console.log('Form submitted:', formData);
-    // TODO: Send to backend API
-    // await axios.post('/api/register', formData);
-    
-    // Show success screen
-    setShowSuccess(true);
+    setSubmitting(true);
+
+    const { latitude, longitude } = await geocodeIfMissing();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const profilePayload = {
+      age: formData.age ? Number(formData.age) : null,
+      height: formData.height ? Number(formData.height) : null,
+      weight: formData.weight ? Number(formData.weight) : null,
+      address: formData.location || null,
+      latitude,
+      longitude,
+      gender: formData.gender || null,
+    };
+
+    const prefPayload = {
+      goal: formData.fitnessGoal || null, // ✅ readable now
+      activity_level: formData.fitnessLevel || null, // ✅ readable now
+      budget: formData.gymBudget ? Number(formData.gymBudget) : null,
+      workout_days: formData.workoutDays ? Number(formData.workoutDays) : null,
+      workout_time: formData.workoutTime || null,
+      food_budget: formData.foodBudget ? Number(formData.foodBudget) : null,
+      dietary_restrictions: Array.isArray(formData.dietaryRestrictions)
+        ? formData.dietaryRestrictions
+        : [],
+    };
+
+    try {
+      await axios.put(
+        "https://exersearch.test/api/v1/user/profile",
+        profilePayload,
+        { headers, withCredentials: true }
+      );
+
+      await axios.post(
+        "https://exersearch.test/api/v1/user/preferences",
+        prefPayload,
+        { headers, withCredentials: true }
+      );
+
+      await axios.post(
+        "https://exersearch.test/api/v1/user/preferred-amenities",
+        { amenity_ids: formData.amenities },
+        { headers, withCredentials: true }
+      );
+
+      await axios.post(
+        "https://exersearch.test/api/v1/user/preferred-equipments",
+        { equipment_ids: formData.equipment },
+        { headers, withCredentials: true }
+      );
+
+      await axios.post(
+        "https://exersearch.test/api/v1/user/onboarding/complete",
+        {},
+        { headers, withCredentials: true }
+      );
+
+      if ((latitude == null || longitude == null) && formData.location) {
+        alert(
+          "Saved your address, but we could not determine latitude/longitude. You can update it later in profile."
+        );
+      }
+
+      setShowSuccess(true);
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message ||
+        (error?.response?.data
+          ? JSON.stringify(error.response.data, null, 2)
+          : null) ||
+        error?.message ||
+        "Server error saving onboarding";
+      alert(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleRedirectToLogin = () => {
-    navigate('/login'); // Change to your login route
-  };
+  const handleRedirectToHome = () => navigate("/home");
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && questions[currentQuestion].type.includes('input')) {
-      const value = formData[questions[currentQuestion].id];
-      if (value && value.trim()) {
-        if (currentQuestion === questions.length - 1) {
-          handleSubmit();
-        } else {
-          nextQuestion();
-        }
+    if (e.key === "Enter" && currentQ.type.includes("input")) {
+      if (!canContinue) return;
+      if (isLastQuestion) handleSubmit();
+      else nextQuestion();
+    }
+  };
+
+  const handlePickLatLng = async ({ lat, lng }) => {
+    const name = await reverseGeocode(lat, lng);
+    setFormData((prev) => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      location: name || prev.location,
+    }));
+    setMapCenter({ lat, lng });
+    setMapKey((k) => k + 1);
+  };
+
+  const openMapPicker = () => {
+    setMapSearch("");
+    setMapSearchError("");
+    setMapSearchLoading(false);
+
+    const initial =
+      formData.latitude != null && formData.longitude != null
+        ? { lat: formData.latitude, lng: formData.longitude }
+        : pasigCenter;
+
+    setMapCenter(initial);
+    setMapKey((k) => k + 1);
+    setMapOpen(true);
+  };
+
+  const closeMapPicker = () => setMapOpen(false);
+
+  const handleMapSearch = async () => {
+    const q = mapSearch.trim();
+    if (!q) return;
+
+    setMapSearchLoading(true);
+    setMapSearchError("");
+
+    try {
+      const res = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(
+          q
+        )}&limit=1&lon=${pasigCenter.lng}&lat=${pasigCenter.lat}`
+      );
+      const data = await res.json();
+      const feature = data.features?.[0];
+      const coords = feature?.geometry?.coordinates; // [lon, lat]
+      const props = feature?.properties;
+
+      if (!Array.isArray(coords) || coords.length !== 2) {
+        setMapSearchError("No results found. Try a more specific place.");
+        return;
       }
+
+      const lat = coords[1];
+      const lng = coords[0];
+
+      const name =
+        `${props?.name || ""}, ${props?.city || props?.county || ""}`.replace(
+          /^, |, $/g,
+          ""
+        ) || null;
+
+      setFormData((prev) => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        location: name || prev.location,
+      }));
+
+      setMapCenter({ lat, lng });
+      setMapKey((k) => k + 1);
+    } catch (e) {
+      console.error("Map search error:", e);
+      setMapSearchError("Search failed. Please try again.");
+    } finally {
+      setMapSearchLoading(false);
     }
   };
 
-  const canProceedPassword = () => {
-    if (currentQ.type === 'input-password') {
-      return formData.password.length > 0;
-    }
-    if (currentQ.type === 'input-password-confirm') {
-      return Object.values(passwordValidation).every(v => v);
-    }
-    return true;
-  };
-
-  const currentQ = questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
-  const isLastQuestion = currentQuestion === questions.length - 1;
-
-  // Success Screen
   if (showSuccess) {
     return (
       <div className="success-screen">
@@ -447,8 +723,8 @@ export default function Onboarding() {
           <div className="success-icon">✓</div>
           <h1>You're All Set!</h1>
           <p>Your personalized fitness plan is ready</p>
-          <button className="success-btn" onClick={handleRedirectToLogin}>
-            Go to Login
+          <button className="success-btn" onClick={handleRedirectToHome}>
+            Go to Home
           </button>
         </div>
       </div>
@@ -457,17 +733,15 @@ export default function Onboarding() {
 
   return (
     <div className="onboarding-minimal">
-      {/* Progress Bar */}
       <div className="progress-dots">
         <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Top Controls */}
       <div className="top-controls">
-        <button 
+        <button
           className="back-btn"
           onClick={prevQuestion}
-          disabled={currentQuestion === 0}
+          disabled={currentQuestion === 0 || submitting}
         >
           ←
         </button>
@@ -476,21 +750,19 @@ export default function Onboarding() {
         </span>
       </div>
 
-      {/* Question Container */}
-      <div className={`question-container ${isTransitioning ? 'transitioning' : ''}`}>
+      <div className={`question-container ${isTransitioning ? "transitioning" : ""}`}>
         <div className="question-content">
           <h1 className="question-title">{currentQ.question}</h1>
 
-          {/* Single Choice */}
-          {currentQ.type === 'single-choice' && (
+          {currentQ.type === "single-choice" && (
             <div className="choices-container">
-              {currentQ.options.map(option => {
+              {currentQ.options.map((option) => {
                 const IconComponent = option.icon;
                 return (
                   <div
                     key={option.value}
-                    className={`choice-card ${formData[currentQ.id] === option.value ? 'selected' : ''}`}
-                    onClick={() => handleSingleChoice(currentQ.id, option.value)}
+                    className={`choice-card ${formData[currentQ.id] === option.value ? "selected" : ""}`}
+                    onClick={() => !submitting && handleSingleChoice(currentQ.id, option.value)}
                   >
                     {IconComponent && (
                       <div className="choice-icon">
@@ -504,17 +776,18 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Multi Choice */}
-          {currentQ.type === 'multi-choice' && (
+          {currentQ.type === "multi-choice" && (
             <>
               <div className="choices-container multi">
-                {currentQ.options.map(option => {
+                {currentQ.options.map((option) => {
                   const IconComponent = option.icon;
                   return (
                     <div
                       key={option.value}
-                      className={`choice-card multi ${formData[currentQ.id].includes(option.value) ? 'selected' : ''}`}
-                      onClick={() => handleMultiChoice(currentQ.id, option.value)}
+                      className={`choice-card multi ${
+                        formData[currentQ.id].includes(option.value) ? "selected" : ""
+                      }`}
+                      onClick={() => !submitting && handleMultiChoice(currentQ.id, option.value)}
                     >
                       {IconComponent && (
                         <div className="choice-icon">
@@ -523,48 +796,59 @@ export default function Onboarding() {
                       )}
                       <span className="choice-label">{option.label}</span>
                       <div className="checkbox">
-                        {formData[currentQ.id].includes(option.value) && '✓'}
+                        {formData[currentQ.id].includes(option.value) && "✓"}
                       </div>
                     </div>
                   );
                 })}
               </div>
-              {formData[currentQ.id].length > 0 && (
-                <button className="continue-btn" onClick={nextQuestion}>
+
+              {!isLastQuestion ? (
+                <button className="continue-btn" onClick={nextQuestion} disabled={!canContinue}>
                   Continue
+                </button>
+              ) : (
+                <button className="continue-btn" onClick={handleSubmit} disabled={!canContinue}>
+                  {submitting ? "Saving..." : "Finish"}
                 </button>
               )}
             </>
           )}
 
-          {/* Regular Input */}
-          {currentQ.type === 'input' && (
+          {currentQ.type === "input" && (
             <>
               <div className="input-wrapper">
                 <input
                   type={currentQ.inputType}
                   placeholder={currentQ.placeholder}
                   value={formData[currentQ.id]}
+                  min={currentQ.min}
+                  max={currentQ.max}
                   onChange={(e) => handleInputChange(currentQ.id, e.target.value)}
                   onKeyPress={handleKeyPress}
                   autoFocus
-                  className={`input-field ${currentQ.unit ? 'has-unit' : ''}`}
+                  className={`input-field ${currentQ.unit ? "has-unit" : ""}`}
+                  disabled={submitting}
                 />
                 {currentQ.unit && <span className="input-unit">{currentQ.unit}</span>}
               </div>
-              {formData[currentQ.id] && (
-                <button className="continue-btn" onClick={nextQuestion}>
-                  Continue
-                </button>
+
+              {inputError && (
+                <div style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
+                  {inputError}
+                </div>
               )}
+
+              <button className="continue-btn" onClick={nextQuestion} disabled={!canContinue}>
+                Continue
+              </button>
             </>
           )}
 
-          {/* Location Autocomplete Input */}
-          {currentQ.type === 'input-autocomplete' && (
+          {currentQ.type === "input-autocomplete" && (
             <>
               <div className="location-input-container">
-                <div className="input-wrapper">
+                <div className="input-wrapper" style={{ width: "100%" }}>
                   <input
                     type="text"
                     placeholder={currentQ.placeholder}
@@ -573,14 +857,16 @@ export default function Onboarding() {
                     onKeyPress={handleKeyPress}
                     autoFocus
                     className="input-field"
+                    disabled={submitting}
                   />
+
                   {showSuggestions && locationSuggestions.length > 0 && (
                     <div className="location-suggestions">
                       {locationSuggestions.map((suggestion, index) => (
                         <div
                           key={index}
                           className="location-suggestion"
-                          onClick={() => handleLocationSelect(suggestion)}
+                          onClick={() => !submitting && handleLocationSelect(suggestion)}
                         >
                           {suggestion.display}
                         </div>
@@ -588,97 +874,222 @@ export default function Onboarding() {
                     </div>
                   )}
                 </div>
-                <button 
-                  className={`get-location-btn ${isGettingLocation ? 'loading' : ''}`}
-                  onClick={getCurrentLocation}
-                  disabled={isGettingLocation}
-                  title="Get my current location"
+
+                {/* ✅ different icons now */}
+                <button
+                  className={`get-location-btn ${isGettingLocation ? "loading" : ""}`}
+                  onClick={requestCurrentLocation}
+                  disabled={isGettingLocation || submitting}
+                  title="Use my current location"
                 >
                   {isGettingLocation ? (
                     <Loader2 size={24} className="spin-icon" />
                   ) : (
-                    <MapPin size={24} />
+                    <Navigation size={24} />
                   )}
                 </button>
-              </div>
-              {formData[currentQ.id] && (
-                <button className="continue-btn" onClick={nextQuestion}>
-                  Continue
-                </button>
-              )}
-            </>
-          )}
 
-          {/* Password Input */}
-          {currentQ.type === 'input-password' && (
-            <>
-              <div className="input-wrapper">
-                <input
-                  type={currentQ.inputType}
-                  placeholder={currentQ.placeholder}
-                  value={formData[currentQ.id]}
-                  onChange={(e) => handleInputChange(currentQ.id, e.target.value)}
-                  autoFocus
-                  className="input-field"
-                />
+                <button
+                  className="get-location-btn"
+                  onClick={openMapPicker}
+                  disabled={submitting}
+                  title="Pick location on map"
+                  style={{ marginLeft: 10 }}
+                >
+                  <MapPin size={24} />
+                </button>
               </div>
-              
-              {formData.password && (
-                <div className="password-requirements">
-                  <div className={`requirement ${passwordValidation.minLength ? 'valid' : ''}`}>
-                    {passwordValidation.minLength ? '✓' : '○'} At least 8 characters
-                  </div>
-                  <div className={`requirement ${passwordValidation.hasUpper ? 'valid' : ''}`}>
-                    {passwordValidation.hasUpper ? '✓' : '○'} One uppercase letter
-                  </div>
-                  <div className={`requirement ${passwordValidation.hasLower ? 'valid' : ''}`}>
-                    {passwordValidation.hasLower ? '✓' : '○'} One lowercase letter
-                  </div>
-                  <div className={`requirement ${passwordValidation.hasNumber ? 'valid' : ''}`}>
-                    {passwordValidation.hasNumber ? '✓' : '○'} One number
-                  </div>
+
+              {!!formData.latitude && !!formData.longitude && (
+                <div style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
+                  Pin: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
                 </div>
               )}
 
-              {canProceedPassword() && (
-                <button className="continue-btn" onClick={nextQuestion}>
-                  Continue
-                </button>
-              )}
-            </>
-          )}
-
-          {/* Confirm Password Input */}
-          {currentQ.type === 'input-password-confirm' && (
-            <>
-              <div className="input-wrapper">
-                <input
-                  type={currentQ.inputType}
-                  placeholder={currentQ.placeholder}
-                  value={formData[currentQ.id]}
-                  onChange={(e) => handleInputChange(currentQ.id, e.target.value)}
-                  autoFocus
-                  className="input-field"
-                />
-              </div>
-
-              {formData.confirmPassword && (
-                <div className="password-requirements">
-                  <div className={`requirement ${passwordValidation.passwordsMatch ? 'valid' : 'invalid'}`}>
-                    {passwordValidation.passwordsMatch ? '✓' : '✗'} Passwords match
-                  </div>
-                </div>
-              )}
-
-              {canProceedPassword() && (
-                <button className="continue-btn" onClick={handleSubmit}>
-                  Create Account
-                </button>
-              )}
+              <button className="continue-btn" onClick={nextQuestion} disabled={!canContinue}>
+                Continue
+              </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Map Picker Modal */}
+      {mapOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={closeMapPicker}
+        >
+          <div
+            style={{
+              width: "min(920px, 100%)",
+              height: "min(680px, 100%)",
+              background: "#111",
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 20px 80px rgba(0,0,0,0.45)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top bar */}
+            <div
+              style={{
+                padding: "12px 14px",
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "rgba(255,255,255,0.06)",
+              }}
+            >
+              <div style={{ fontWeight: 800 }}>Pick your location</div>
+
+              <button
+                onClick={closeMapPicker}
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  color: "#fff",
+                  borderRadius: 10,
+                  padding: "6px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+
+            {/* ✅ Search bar */}
+            <div
+              style={{
+                padding: 12,
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                background: "rgba(255,255,255,0.04)",
+              }}
+            >
+              <div style={{ position: "relative", flex: 1 }}>
+                <input
+                  value={mapSearch}
+                  onChange={(e) => setMapSearch(e.target.value)}
+                  placeholder="Search a place (e.g., Ortigas, Pasig City Hall, Kapitolyo)"
+                  style={{
+                    width: "100%",
+                    padding: "12px 12px 12px 40px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.16)",
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#fff",
+                    outline: "none",
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleMapSearch();
+                  }}
+                />
+                <Search
+                  size={18}
+                  style={{
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    opacity: 0.8,
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={handleMapSearch}
+                disabled={mapSearchLoading || !mapSearch.trim()}
+                style={{
+                  background: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  cursor: mapSearchLoading ? "not-allowed" : "pointer",
+                  fontWeight: 800,
+                  opacity: mapSearchLoading ? 0.7 : 1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {mapSearchLoading ? "Searching..." : "Search"}
+              </button>
+            </div>
+
+            {mapSearchError && (
+              <div style={{ padding: "0 12px 10px", fontSize: 13, opacity: 0.9 }}>
+                {mapSearchError}
+              </div>
+            )}
+
+            {/* Map */}
+            <div style={{ flex: 1 }}>
+              <MapContainer
+                key={mapKey}
+                center={[mapCenter.lat, mapCenter.lng]}
+                zoom={14}
+                style={{ width: "100%", height: "100%" }}
+              >
+                <TileLayer
+                  attribution='&copy; OpenStreetMap contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+
+                <ClickToPick
+                  onPick={async (latlng) => {
+                    await handlePickLatLng(latlng);
+                  }}
+                />
+
+                <Marker position={[mapCenter.lat, mapCenter.lng]} />
+                <FlyToLocation center={mapCenter} />
+              </MapContainer>
+            </div>
+
+            {/* Bottom bar */}
+            <div
+              style={{
+                padding: 12,
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "rgba(255,255,255,0.06)",
+              }}
+            >
+              <div style={{ fontSize: 13, opacity: 0.9 }}>
+                Tip: Search first, then click the map to drop the pin.
+              </div>
+
+              <button
+                onClick={closeMapPicker}
+                style={{
+                  background: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                }}
+              >
+                Use this location
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

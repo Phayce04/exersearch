@@ -18,7 +18,19 @@ class UserProfile extends Model
         'address',
         'latitude',
         'longitude',
+
+        // ✅ NEW
+        'gender',
+
         'profile_photo_url',
+    ];
+
+    protected $casts = [
+        'age' => 'integer',
+        'weight' => 'float',
+        'height' => 'float',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function user()
