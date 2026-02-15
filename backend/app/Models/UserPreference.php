@@ -19,13 +19,20 @@ class UserPreference extends Model
         'workout_time',
         'food_budget',
         'dietary_restrictions',
+        'workout_level',
+        'session_minutes',
+        'workout_place',
+        'preferred_style',
+        'injuries',
     ];
 
     protected $casts = [
         'budget' => 'float',
         'food_budget' => 'float',
         'workout_days' => 'integer',
-        'dietary_restrictions' => 'array', 
+        'session_minutes' => 'integer',
+        'dietary_restrictions' => 'array',
+        'injuries' => 'array',
     ];
 
     public function user()

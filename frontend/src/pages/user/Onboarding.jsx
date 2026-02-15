@@ -40,8 +40,14 @@ import {
   Church,
   Milk,
   Wheat,
-  Navigation, // ✅ current location icon
-  Search, // ✅ search icon
+  Navigation,
+  Search,
+  Clock,
+  Home,
+  Building2,
+  Layers,
+  ShieldAlert,
+  BadgeAlert,
 } from "lucide-react";
 import "./Onboardingstyle.css";
 
@@ -49,7 +55,6 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Fix Leaflet marker icon paths
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -68,11 +73,7 @@ function ClickToPick({ onPick }) {
 }
 
 function FlyToLocation({ center }) {
-  const map = useMapEvents({});
-  // react-leaflet doesn't expose map easily without hook,
-  // but useMapEvents gives access to map instance.
-  // We'll just setView when center changes by using a key prop on MapContainer (below),
-  // so this component is intentionally empty.
+  useMapEvents({});
   return null;
 }
 
@@ -87,12 +88,11 @@ export default function Onboarding() {
   const [mapOpen, setMapOpen] = useState(false);
   const pasigCenter = useMemo(() => ({ lat: 14.5547, lng: 121.0437 }), []);
 
-  // Map search state
   const [mapSearch, setMapSearch] = useState("");
   const [mapSearchLoading, setMapSearchLoading] = useState(false);
   const [mapSearchError, setMapSearchError] = useState("");
   const [mapCenter, setMapCenter] = useState(pasigCenter);
-  const [mapKey, setMapKey] = useState(0); // force remount to jump center
+  const [mapKey, setMapKey] = useState(0);
 
   const [formData, setFormData] = useState({
     fitnessGoal: "",
@@ -112,6 +112,12 @@ export default function Onboarding() {
 
     workoutDays: "",
     workoutTime: "",
+
+    sessionMinutes: "",
+    workoutPlace: "",
+    preferredStyle: "",
+    injuries: [],
+
     foodBudget: "",
     dietaryRestrictions: [],
   });
@@ -128,17 +134,16 @@ export default function Onboarding() {
   const HEIGHT_MIN = 120;
   const HEIGHT_MAX = 230;
 
-  // ✅ readable values (no underscores)
   const questions = [
     {
       id: "fitnessGoal",
       type: "single-choice",
       question: "What's your main goal?",
       options: [
-        { value: "Lose Weight", icon: Flame, label: "Lose Weight" },
-        { value: "Build Muscle", icon: Dumbbell, label: "Build Muscle" },
-        { value: "Stay Fit", icon: Activity, label: "Stay Fit" },
-        { value: "Get Athletic", icon: Zap, label: "Get Athletic" },
+        { value: "lose_fat", icon: Flame, label: "Lose Fat" },
+        { value: "build_muscle", icon: Dumbbell, label: "Build Muscle" },
+        { value: "endurance", icon: Activity, label: "Endurance" },
+        { value: "strength", icon: Zap, label: "Strength" },
       ],
     },
     {
@@ -146,9 +151,9 @@ export default function Onboarding() {
       type: "single-choice",
       question: "Current fitness level?",
       options: [
-        { value: "Beginner", icon: Sprout, label: "Beginner" },
-        { value: "Intermediate", icon: Award, label: "Intermediate" },
-        { value: "Advanced", icon: Trophy, label: "Advanced" },
+        { value: "beginner", icon: Sprout, label: "Beginner" },
+        { value: "intermediate", icon: Award, label: "Intermediate" },
+        { value: "advanced", icon: Trophy, label: "Advanced" },
       ],
     },
     {
@@ -247,6 +252,52 @@ export default function Onboarding() {
       ],
     },
     {
+      id: "sessionMinutes",
+      type: "single-choice",
+      question: "Minutes per workout session?",
+      options: [
+        { value: "20", icon: Clock, label: "20 min" },
+        { value: "30", icon: Clock, label: "30 min" },
+        { value: "45", icon: Clock, label: "45 min" },
+        { value: "60", icon: Clock, label: "60 min" },
+        { value: "90", icon: Clock, label: "90+ min" },
+      ],
+    },
+    {
+      id: "workoutPlace",
+      type: "single-choice",
+      question: "Where do you usually train?",
+      options: [
+        { value: "home", icon: Home, label: "Home" },
+        { value: "gym", icon: Building2, label: "Gym" },
+        { value: "both", icon: Layers, label: "Both" },
+      ],
+    },
+    {
+      id: "preferredStyle",
+      type: "single-choice",
+      question: "Preferred workout style?",
+      options: [
+        { value: "strength", icon: Dumbbell, label: "Strength" },
+        { value: "hypertrophy", icon: Trophy, label: "Muscle/Hypertrophy" },
+        { value: "endurance", icon: Activity, label: "Endurance" },
+        { value: "hiit", icon: Zap, label: "HIIT" },
+        { value: "mixed", icon: Target, label: "Mixed" },
+      ],
+    },
+    {
+      id: "injuries",
+      type: "multi-choice",
+      question: "Any injuries or areas to be careful with?",
+      options: [
+        { value: "none", icon: ShieldAlert, label: "None" },
+        { value: "knee", icon: BadgeAlert, label: "Knee" },
+        { value: "lower_back", icon: BadgeAlert, label: "Lower back" },
+        { value: "shoulder", icon: BadgeAlert, label: "Shoulder" },
+        { value: "wrist", icon: BadgeAlert, label: "Wrist" },
+      ],
+    },
+    {
       id: "workoutTime",
       type: "single-choice",
       question: "Preferred workout time?",
@@ -306,7 +357,7 @@ export default function Onboarding() {
         const city =
           feature.properties?.city || feature.properties?.county || "";
         const display = `${name}, ${city}`.replace(/^, |, $/g, "");
-        const coords = feature.geometry?.coordinates; // [lon, lat]
+        const coords = feature.geometry?.coordinates;
 
         return {
           display,
@@ -328,12 +379,25 @@ export default function Onboarding() {
   };
 
   const handleMultiChoice = (questionId, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [questionId]: prev[questionId].includes(value)
-        ? prev[questionId].filter((item) => item !== value)
-        : [...prev[questionId], value],
-    }));
+    setFormData((prev) => {
+      const current = Array.isArray(prev[questionId]) ? prev[questionId] : [];
+
+      if (questionId === "injuries") {
+        if (value === "none") return { ...prev, injuries: ["none"] };
+        const filtered = current.filter((x) => x !== "none");
+        const next = filtered.includes(value)
+          ? filtered.filter((x) => x !== value)
+          : [...filtered, value];
+        return { ...prev, injuries: next };
+      }
+
+      return {
+        ...prev,
+        [questionId]: current.includes(value)
+          ? current.filter((item) => item !== value)
+          : [...current, value],
+      };
+    });
   };
 
   const handleInputChange = (questionId, value) => {
@@ -381,8 +445,6 @@ export default function Onboarding() {
     }
   };
 
-  // ✅ This WILL ask permission (browser prompt) if not already granted.
-  // We also check permission state to give nicer messages.
   const requestCurrentLocation = async () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -399,9 +461,7 @@ export default function Onboarding() {
           return;
         }
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
 
     setIsGettingLocation(true);
 
@@ -454,7 +514,7 @@ export default function Onboarding() {
         )}&limit=1&lon=${pasigCenter.lng}&lat=${pasigCenter.lat}`
       );
       const data = await res.json();
-      const coords = data.features?.[0]?.geometry?.coordinates; // [lon, lat]
+      const coords = data.features?.[0]?.geometry?.coordinates;
       if (Array.isArray(coords) && coords.length === 2) {
         return { latitude: coords[1], longitude: coords[0] };
       }
@@ -533,10 +593,11 @@ export default function Onboarding() {
 
     if (currentQ.type === "input-autocomplete") return !!formData.location;
     if (currentQ.type === "single-choice") return !!formData[currentQ.id];
-    if (currentQ.type === "multi-choice")
-      return (
-        Array.isArray(formData[currentQ.id]) && formData[currentQ.id].length > 0
-      );
+
+    if (currentQ.type === "multi-choice") {
+      const arr = formData[currentQ.id];
+      return Array.isArray(arr) && arr.length > 0;
+    }
 
     return true;
   }, [currentQ, formData, submitting]);
@@ -564,12 +625,26 @@ export default function Onboarding() {
       gender: formData.gender || null,
     };
 
+    const injuriesPayload =
+      Array.isArray(formData.injuries) && formData.injuries.length
+        ? formData.injuries.includes("none")
+          ? []
+          : formData.injuries
+        : [];
+
     const prefPayload = {
-      goal: formData.fitnessGoal || null, // ✅ readable now
-      activity_level: formData.fitnessLevel || null, // ✅ readable now
+      goal: formData.fitnessGoal || null,
+      activity_level: formData.fitnessLevel || null,
+      workout_level: formData.fitnessLevel || null,
       budget: formData.gymBudget ? Number(formData.gymBudget) : null,
       workout_days: formData.workoutDays ? Number(formData.workoutDays) : null,
       workout_time: formData.workoutTime || null,
+      session_minutes: formData.sessionMinutes
+        ? Number(formData.sessionMinutes)
+        : null,
+      workout_place: formData.workoutPlace || null,
+      preferred_style: formData.preferredStyle || null,
+      injuries: injuriesPayload,
       food_budget: formData.foodBudget ? Number(formData.foodBudget) : null,
       dietary_restrictions: Array.isArray(formData.dietaryRestrictions)
         ? formData.dietaryRestrictions
@@ -682,7 +757,7 @@ export default function Onboarding() {
       );
       const data = await res.json();
       const feature = data.features?.[0];
-      const coords = feature?.geometry?.coordinates; // [lon, lat]
+      const coords = feature?.geometry?.coordinates;
       const props = feature?.properties;
 
       if (!Array.isArray(coords) || coords.length !== 2) {
@@ -750,7 +825,11 @@ export default function Onboarding() {
         </span>
       </div>
 
-      <div className={`question-container ${isTransitioning ? "transitioning" : ""}`}>
+      <div
+        className={`question-container ${
+          isTransitioning ? "transitioning" : ""
+        }`}
+      >
         <div className="question-content">
           <h1 className="question-title">{currentQ.question}</h1>
 
@@ -761,8 +840,13 @@ export default function Onboarding() {
                 return (
                   <div
                     key={option.value}
-                    className={`choice-card ${formData[currentQ.id] === option.value ? "selected" : ""}`}
-                    onClick={() => !submitting && handleSingleChoice(currentQ.id, option.value)}
+                    className={`choice-card ${
+                      formData[currentQ.id] === option.value ? "selected" : ""
+                    }`}
+                    onClick={() =>
+                      !submitting &&
+                      handleSingleChoice(currentQ.id, option.value)
+                    }
                   >
                     {IconComponent && (
                       <div className="choice-icon">
@@ -785,9 +869,13 @@ export default function Onboarding() {
                     <div
                       key={option.value}
                       className={`choice-card multi ${
-                        formData[currentQ.id].includes(option.value) ? "selected" : ""
+                        formData[currentQ.id].includes(option.value)
+                          ? "selected"
+                          : ""
                       }`}
-                      onClick={() => !submitting && handleMultiChoice(currentQ.id, option.value)}
+                      onClick={() =>
+                        !submitting && handleMultiChoice(currentQ.id, option.value)
+                      }
                     >
                       {IconComponent && (
                         <div className="choice-icon">
@@ -804,11 +892,19 @@ export default function Onboarding() {
               </div>
 
               {!isLastQuestion ? (
-                <button className="continue-btn" onClick={nextQuestion} disabled={!canContinue}>
+                <button
+                  className="continue-btn"
+                  onClick={nextQuestion}
+                  disabled={!canContinue}
+                >
                   Continue
                 </button>
               ) : (
-                <button className="continue-btn" onClick={handleSubmit} disabled={!canContinue}>
+                <button
+                  className="continue-btn"
+                  onClick={handleSubmit}
+                  disabled={!canContinue}
+                >
                   {submitting ? "Saving..." : "Finish"}
                 </button>
               )}
@@ -830,7 +926,9 @@ export default function Onboarding() {
                   className={`input-field ${currentQ.unit ? "has-unit" : ""}`}
                   disabled={submitting}
                 />
-                {currentQ.unit && <span className="input-unit">{currentQ.unit}</span>}
+                {currentQ.unit && (
+                  <span className="input-unit">{currentQ.unit}</span>
+                )}
               </div>
 
               {inputError && (
@@ -839,7 +937,11 @@ export default function Onboarding() {
                 </div>
               )}
 
-              <button className="continue-btn" onClick={nextQuestion} disabled={!canContinue}>
+              <button
+                className="continue-btn"
+                onClick={nextQuestion}
+                disabled={!canContinue}
+              >
                 Continue
               </button>
             </>
@@ -853,7 +955,9 @@ export default function Onboarding() {
                     type="text"
                     placeholder={currentQ.placeholder}
                     value={formData[currentQ.id]}
-                    onChange={(e) => handleInputChange(currentQ.id, e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(currentQ.id, e.target.value)
+                    }
                     onKeyPress={handleKeyPress}
                     autoFocus
                     className="input-field"
@@ -866,7 +970,9 @@ export default function Onboarding() {
                         <div
                           key={index}
                           className="location-suggestion"
-                          onClick={() => !submitting && handleLocationSelect(suggestion)}
+                          onClick={() =>
+                            !submitting && handleLocationSelect(suggestion)
+                          }
                         >
                           {suggestion.display}
                         </div>
@@ -875,9 +981,10 @@ export default function Onboarding() {
                   )}
                 </div>
 
-                {/* ✅ different icons now */}
                 <button
-                  className={`get-location-btn ${isGettingLocation ? "loading" : ""}`}
+                  className={`get-location-btn ${
+                    isGettingLocation ? "loading" : ""
+                  }`}
                   onClick={requestCurrentLocation}
                   disabled={isGettingLocation || submitting}
                   title="Use my current location"
@@ -902,11 +1009,16 @@ export default function Onboarding() {
 
               {!!formData.latitude && !!formData.longitude && (
                 <div style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
-                  Pin: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                  Pin: {formData.latitude.toFixed(6)},{" "}
+                  {formData.longitude.toFixed(6)}
                 </div>
               )}
 
-              <button className="continue-btn" onClick={nextQuestion} disabled={!canContinue}>
+              <button
+                className="continue-btn"
+                onClick={nextQuestion}
+                disabled={!canContinue}
+              >
                 Continue
               </button>
             </>
@@ -914,7 +1026,6 @@ export default function Onboarding() {
         </div>
       </div>
 
-      {/* Map Picker Modal */}
       {mapOpen && (
         <div
           style={{
@@ -942,7 +1053,6 @@ export default function Onboarding() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top bar */}
             <div
               style={{
                 padding: "12px 14px",
@@ -970,7 +1080,6 @@ export default function Onboarding() {
               </button>
             </div>
 
-            {/* ✅ Search bar */}
             <div
               style={{
                 padding: 12,
@@ -1034,7 +1143,6 @@ export default function Onboarding() {
               </div>
             )}
 
-            {/* Map */}
             <div style={{ flex: 1 }}>
               <MapContainer
                 key={mapKey}
@@ -1043,7 +1151,7 @@ export default function Onboarding() {
                 style={{ width: "100%", height: "100%" }}
               >
                 <TileLayer
-                  attribution='&copy; OpenStreetMap contributors'
+                  attribution="&copy; OpenStreetMap contributors"
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
@@ -1058,7 +1166,6 @@ export default function Onboarding() {
               </MapContainer>
             </div>
 
-            {/* Bottom bar */}
             <div
               style={{
                 padding: 12,
