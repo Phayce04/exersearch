@@ -30,6 +30,7 @@ import Maintenance from "./pages/Maintenance";
 import AdminSettings from "./pages/admin/AdminSettings";
 import GymDetails from "./pages/user/GymDetails";
 import SavedGyms from "./pages/user/SavedGyms";
+import WorkoutWeek from "./pages/user/WorkoutWeek";
 
 import AdminExercises from "./pages/admin/AdminExercises";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
@@ -73,6 +74,8 @@ function App() {
         <Route path="gym/:id" element={<GymDetails />} />
         <Route path="gym-results" element={<GymResultsMatching />} />
         <Route path="saved-gyms" element={<SavedGyms />} />
+                <Route path="workout" element={<WorkoutWeek />} />
+
       </Route>
 
       <Route path="/owner" element={<OwnerLayout />}>

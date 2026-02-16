@@ -1,0 +1,474 @@
+/* workoutWeek.css */
+
+/* ✅ Montserrat like your SavedGyms.css */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap");
+
+:root {
+  --brand: #ff8c00;
+
+  --bg: #f9fafb;
+  --panel: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: rgba(17, 24, 39, 0.10);
+
+  --landing: #cfc3a7;
+}
+
+.ww {
+  min-height: 100vh;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* ✅ shared centered container (header content + body content) */
+.ww-container {
+  max-width: 1200px;
+  width: min(1200px, calc(100% - 3rem));
+  margin: 0 auto;
+}
+
+/* ===========================
+   LANDING
+   =========================== */
+
+.ww-landing {
+  height: 100vh;
+  width: 100%;
+  background: var(--landing);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.ww-landing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.10);
+  pointer-events: none;
+}
+
+.ww-landing-inner {
+  position: relative;
+  z-index: 1;
+  padding: 24px;
+}
+
+.ww-landing-title {
+  margin: 0 0 22px;
+  color: #ffffff;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: clamp(34px, 4vw, 60px);
+  line-height: 1.15;
+  text-shadow: 0 6px 0 rgba(0, 0, 0, 0.14), 0 10px 18px rgba(0, 0, 0, 0.14);
+}
+
+.ww-landing-btn {
+  border: 2px solid var(--brand);
+  background: rgba(255, 140, 0, 0.10);
+  color: #ffffff;
+  padding: 14px 44px;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ww-landing-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 140, 0, 0.18);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.ww-landing-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ww-landing-error {
+  margin-top: 14px;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.94);
+  color: #8d0b0b;
+  border: 1px solid rgba(200, 0, 0, 0.18);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+/* ===========================
+   PAGE (✅ remove background)
+   =========================== */
+
+.ww-page {
+  background: #ffffff; /* ✅ no fancy bg */
+  min-height: 100vh;
+}
+
+/* ✅ full-width gradient header strip */
+.ww-headerbar {
+  width: 100%;
+  background: linear-gradient(135deg, #d35400 0%, #ff8c00 100%);
+  padding: 34px 0 22px;
+}
+
+/* header content inside container */
+.ww-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  color: #fff;
+}
+
+.ww-title {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 900;
+  color: #fff;
+}
+
+.ww-meta {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ww-muted {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.ww-pill {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.ww-header-error {
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+/* body spacing below header */
+.ww-body {
+  padding: 26px 0 70px;
+  background: #ffffff;
+}
+
+/* ===========================
+   GRID
+   =========================== */
+
+.ww-grid-wrap {
+  display: grid;
+  gap: 14px;
+}
+
+.ww-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.ww-grid-top {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ww-grid-bottom {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .ww-grid-top,
+  .ww-grid-bottom {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .ww-grid-top,
+  .ww-grid-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===========================
+   CARDS (same as before)
+   =========================== */
+
+.ww-card {
+  border: 2px solid #e5e7eb;
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 320px;
+  min-width: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.ww-card:hover {
+  transform: translateY(-3px);
+  border-color: #ff8c00;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.10);
+}
+
+.ww-card-head {
+  position: relative;
+  overflow: hidden;
+}
+
+.ww-card-headbg {
+  position: absolute;
+  inset: 0;
+  height: 128px;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(211, 84, 0, 0.38), rgba(255, 140, 0, 0.18));
+  clip-path: polygon(0 0, 100% 0, 100% 56%, 0 100%);
+  transform: translateY(-10px);
+  opacity: 1;
+  transition: transform 0.28s ease, filter 0.28s ease;
+}
+
+.ww-card:hover .ww-card-headbg {
+  transform: translateY(-2px);
+  filter: saturate(1.08) contrast(1.02);
+}
+
+.ww-card-top {
+  padding: 16px 16px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  position: relative;
+  z-index: 1;
+}
+
+.ww-card-day {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.ww-card-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 140, 0, 0.35);
+  background: rgba(255, 140, 0, 0.10);
+  font-weight: 900;
+}
+
+.ww-card-chip-num {
+  font-weight: 900;
+  font-size: 13px;
+  color: #111827;
+}
+
+.ww-card-chip-label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #111827;
+  opacity: 0.9;
+}
+
+.ww-card-body {
+  padding: 12px 16px 14px;
+  min-width: 0;
+}
+
+.ww-divider {
+  height: 1px;
+  background: rgba(17, 24, 39, 0.10);
+  margin: 10px 0;
+}
+
+.ww-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ww-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dashed rgba(17, 24, 39, 0.12);
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  position: relative;
+  transition: background 0.18s ease, padding-left 0.18s ease;
+}
+
+.ww-list li:last-child {
+  border-bottom: none;
+}
+
+.ww-list li span {
+  color: #111827;
+  font-weight: 900;
+}
+
+.ww-list li:hover {
+  background: rgba(255, 140, 0, 0.08);
+  padding-left: 10px;
+}
+
+.ww-list li:hover::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 6px;
+  background: var(--brand);
+  opacity: 0.95;
+}
+
+.ww-ex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ww-ex-sets {
+  flex: 0 0 auto;
+  min-width: 44px;
+  color: var(--brand) !important;
+  font-weight: 900 !important;
+}
+
+.ww-ex-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #111827;
+}
+
+.ww-card.is-rest .ww-card-headbg {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.10), rgba(17, 24, 39, 0.04));
+}
+
+/* ===========================
+   BUTTONS
+   =========================== */
+
+.ww-btn {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.ww-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.ww-btn-ghost {
+  padding: 0.85rem 1.2rem;
+  background: #fff;
+  color: #ff8c00;
+  border: 2px solid #ff8c00;
+  border-radius: 10px;
+}
+
+.ww-btn-ghost:hover:not(:disabled) {
+  background: #fff5e6;
+  transform: translateY(-1px);
+}
+
+.ww-btn-card {
+  width: calc(100% - 20px);
+  margin: 0 10px 12px;
+  background: #ff8c00;
+  border: 2px solid #ff8c00;
+  color: #fff;
+}
+
+.ww-btn-card:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #e67e00;
+  border-color: #e67e00;
+}
+
+.ww-btn-card.is-rest {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+.ww-btn-card.is-rest:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+/* ===========================
+   FOOTER
+   =========================== */
+
+.ww-footer {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.ww-footer-btn {
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  color: #111827;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ww-footer-btn:hover {
+  border-color: #ff8c00;
+  background: #fff5e6;
+}
+
+/* accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .ww-card,
+  .ww-card * {
+    transition: none !important;
+  }
+}
