@@ -23,7 +23,7 @@ export default function Header() {
   return (
     <>
       {/* Fixed Logo - Always visible, never moves */}
-      <div className="top-logo">
+      <div className={`top-logo ${isScrolled ? 'scrolled' : ''}`}>
         <Link to="/">
           <img src={logo} alt="ExerSearch Logo" />
         </Link>
