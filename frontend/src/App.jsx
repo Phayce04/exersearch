@@ -7,7 +7,6 @@ import UserHome from "./pages/user/Home";
 import Profile from "./pages/user/Profile";
 import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
-import Recommendations from "./pages/Recommendations";
 
 import AdminLayout from "./pages/admin/AdminLayout";
 import UserLayout from "./pages/user/UserLayout";
@@ -23,7 +22,6 @@ import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
 import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
 import AdminProfile from "./pages/admin/Profile";
 import GymResults from "./pages/user/GymResults";
-import GymResultsVert from "./pages/user/GymResultMatching";
 import GymDetailAdmin from "./pages/admin/GymDetails";
 import AdminAdmins from "./pages/admin/AdminAdmins";
 import Onboarding from "./pages/user/Onboarding";
@@ -33,6 +31,10 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import GymDetails from "./pages/user/GymDetails";
 import SavedGyms from "./pages/user/SavedGyms";
 
+import AdminExercises from "./pages/admin/AdminExercises";
+import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
+import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
+import AdminTemplateItems from "./pages/admin/AdminTemplateItems";// 
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -58,35 +60,28 @@ function App() {
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
 
-      {/* testroute for design */}
       <Route path="/onboarding" element={<Onboarding />} />
-    <Route path="/test-find-gyms" element={<FindGyms />} />
+      <Route path="/test-find-gyms" element={<FindGyms />} />
       <Route path="/test-gym-results" element={<GymResults />} />
 
-
-      {/* Standalone profile page */}
       <Route path="/profile" element={<Profile />} />
 
-      {/* User */}
       <Route path="/home" element={<UserLayout />}>
         <Route index element={<UserHome />} />
         <Route path="profile" element={<Profile />} />
         <Route path="find-gyms" element={<FindGyms />} />
         <Route path="gym/:id" element={<GymDetails />} />
         <Route path="gym-results" element={<GymResultsMatching />} />
-
-        {/* ✅ Saved Gyms */}
         <Route path="saved-gyms" element={<SavedGyms />} />
       </Route>
 
-      {/* Owner */}
       <Route path="/owner" element={<OwnerLayout />}>
         <Route path="dashboard" element={<OwnerDashboard />} />
       </Route>
 
-      {/* Admin */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
+
         <Route path="equipments" element={<AdminEquipments />} />
         <Route path="amenities" element={<AdminAmenities />} />
         <Route path="gyms" element={<AdminGyms />} />
@@ -97,6 +92,10 @@ function App() {
         <Route path="profile" element={<AdminProfile />} />
         <Route path="gyms/:gymId" element={<GymDetailAdmin />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="exercises" element={<AdminExercises />} />
+  <Route path="workout-templates" element={<AdminWorkoutTemplates />} />
+        <Route path="template-days" element={<AdminTemplateDays />} />
+        <Route path="template-items" element={<AdminTemplateItems />} /> 
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

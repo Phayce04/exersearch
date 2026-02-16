@@ -28,13 +28,17 @@ use App\Http\Controllers\AppSettingsPublicController;
 use App\Http\Controllers\SavedGymController;
 
 use App\Http\Controllers\AdminAdminController;
-
 use App\Http\Controllers\UserController;
 
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\WorkoutTemplateController;
 use App\Http\Controllers\WorkoutTemplateDayController;
 use App\Http\Controllers\WorkoutTemplateDayExerciseController;
+
+// ✅ NEW (User plan instance controllers)
+use App\Http\Controllers\UserWorkoutPlanController;
+use App\Http\Controllers\UserWorkoutPlanDayController;
+use App\Http\Controllers\UserWorkoutPlanDayExerciseController;
 
 Route::prefix('v1')->group(function () {
 
@@ -100,6 +104,34 @@ Route::prefix('v1')->group(function () {
         Route::get('/workout-templates', [WorkoutTemplateController::class, 'index']);
         Route::get('/workout-templates/{id}', [WorkoutTemplateController::class, 'show'])->whereNumber('id');
 
+        // =========================================================
+        // ✅ USER WORKOUT PLANS (Instances) - NOT ADMIN
+        // =========================================================
+
+        // Generate user plan from preferences + existing templates
+        Route::post('/user/workout-plans/generate', [UserWorkoutPlanController::class, 'generate']);
+
+        // CRUD: Plans
+        Route::get('/user/workout-plans', [UserWorkoutPlanController::class, 'index']);
+        Route::get('/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'show'])->whereNumber('id');
+        Route::post('/user/workout-plans', [UserWorkoutPlanController::class, 'store']);
+        Route::match(['put', 'patch'], '/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'update'])->whereNumber('id');
+        Route::delete('/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'destroy'])->whereNumber('id');
+
+        // CRUD: Plan Days
+        Route::get('/user/workout-plan-days', [UserWorkoutPlanDayController::class, 'index']);
+        Route::get('/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'show'])->whereNumber('id');
+        Route::post('/user/workout-plan-days', [UserWorkoutPlanDayController::class, 'store']);
+        Route::match(['put', 'patch'], '/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'update'])->whereNumber('id');
+        Route::delete('/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'destroy'])->whereNumber('id');
+
+        // CRUD: Plan Day Exercises
+        Route::get('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'index']);
+        Route::get('/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'show'])->whereNumber('id');
+        Route::post('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'store']);
+        Route::match(['put', 'patch'], '/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'update'])->whereNumber('id');
+        Route::delete('/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'destroy'])->whereNumber('id');
+
         Route::middleware('admin')->group(function () {
 
             Route::get('/admin/settings', [AdminAppSettingsController::class, 'show']);
@@ -145,19 +177,25 @@ Route::prefix('v1')->group(function () {
             Route::get('/admin/owners/{owner}/gyms', [AdminOwnerController::class, 'gyms']);
 
             Route::post('/exercises', [ExerciseController::class, 'store']);
-            Route::put('/exercises/{id}', [ExerciseController::class, 'update'])->whereNumber('id');
+            Route::match(['put', 'patch'], '/exercises/{id}', [ExerciseController::class, 'update'])->whereNumber('id');
             Route::delete('/exercises/{id}', [ExerciseController::class, 'destroy'])->whereNumber('id');
 
             Route::post('/workout-templates', [WorkoutTemplateController::class, 'store']);
-            Route::put('/workout-templates/{id}', [WorkoutTemplateController::class, 'update'])->whereNumber('id');
+            Route::match(['put', 'patch'], '/workout-templates/{id}', [WorkoutTemplateController::class, 'update'])->whereNumber('id');
             Route::delete('/workout-templates/{id}', [WorkoutTemplateController::class, 'destroy'])->whereNumber('id');
 
+            // ✅ Workout Template Days (Admin)
+            Route::get('/workout-template-days', [WorkoutTemplateDayController::class, 'index']);
+            Route::get('/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'show'])->whereNumber('id');
             Route::post('/workout-template-days', [WorkoutTemplateDayController::class, 'store']);
-            Route::put('/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'update'])->whereNumber('id');
+            Route::match(['put', 'patch'], '/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'update'])->whereNumber('id');
             Route::delete('/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'destroy'])->whereNumber('id');
 
+            // ✅ Workout Template Day Exercises (Admin)
+            Route::get('/workout-template-day-exercises', [WorkoutTemplateDayExerciseController::class, 'index']);
+            Route::get('/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'show'])->whereNumber('id');
             Route::post('/workout-template-day-exercises', [WorkoutTemplateDayExerciseController::class, 'store']);
-            Route::put('/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'update'])->whereNumber('id');
+            Route::match(['put', 'patch'], '/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'update'])->whereNumber('id');
             Route::delete('/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'destroy'])->whereNumber('id');
         });
     });

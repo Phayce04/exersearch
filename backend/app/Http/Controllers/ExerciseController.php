@@ -29,9 +29,8 @@ class ExerciseController extends Controller
             $query->where('equipment', $equipment);
         }
 
-        return response()->json([
-            'data' => $query->orderBy('name')->paginate(20),
-        ]);
+        // ✅ IMPORTANT: return paginator directly so frontend useApiList works
+        return $query->orderBy('name')->paginate(20);
     }
 
     public function show($id)

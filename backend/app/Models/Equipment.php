@@ -14,6 +14,7 @@ class Equipment extends Model
     public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = false;
+
     protected $fillable = [
         'name',
         'category',
@@ -49,4 +50,13 @@ class Equipment extends Model
         ]);
     }
 
+    public function exercises()
+    {
+        return $this->belongsToMany(
+            Exercise::class,
+            'exercise_equipments',
+            'equipment_id',
+            'exercise_id'
+        );
+    }
 }

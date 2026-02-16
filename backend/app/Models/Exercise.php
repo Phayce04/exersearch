@@ -24,4 +24,14 @@ class Exercise extends Model
         'secondary_muscles' => 'array',
         'instructions' => 'array',
     ];
+
+    public function equipments()
+    {
+        return $this->belongsToMany(
+            Equipment::class,
+            'exercise_equipments',
+            'exercise_id',
+            'equipment_id'
+        );
+    }
 }

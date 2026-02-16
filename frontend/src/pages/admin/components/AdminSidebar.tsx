@@ -11,7 +11,6 @@ import { Diamond } from "./icons/Diamond";
 import { Service } from "./icons/Service";
 import { Typography } from "./components/Typography";
 
-// Icons
 import { MapPin } from "./icons/MapPin";
 import { Dumbbell } from "./icons/Dumbbell";
 import { Users } from "./icons/Users";
@@ -112,7 +111,6 @@ const AdminSidebar: React.FC<Props> = ({
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          {/* Brand */}
           <div
             onClick={() => setCollapsed((v) => !v)}
             style={{
@@ -142,7 +140,6 @@ const AdminSidebar: React.FC<Props> = ({
             </div>
 
             <Menu menuItemStyles={menuItemStyles}>
-              {/* Dashboard */}
               <MenuItem
                 icon={<BarChart />}
                 onClick={() => go("/admin/dashboard")}
@@ -155,7 +152,6 @@ const AdminSidebar: React.FC<Props> = ({
                 Dashboard
               </MenuItem>
 
-              {/* Applications */}
               <MenuItem
                 icon={<Service />}
                 onClick={() => go("/admin/applications")}
@@ -168,7 +164,6 @@ const AdminSidebar: React.FC<Props> = ({
                 Owner Applications
               </MenuItem>
 
-              {/* Manage Data */}
               <SubMenu label="Manage Data" icon={<Diamond />}>
                 <MenuItem
                   icon={<Dumbbell />}
@@ -206,6 +201,55 @@ const AdminSidebar: React.FC<Props> = ({
                   Amenities
                 </MenuItem>
 
+                {/* ✅ NEW: Workout System (short labels) */}
+                <MenuItem
+                  icon={<Dumbbell />}
+                  onClick={() => go("/admin/exercises")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/exercises"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Exercises
+                </MenuItem>
+
+                <MenuItem
+                  icon={<Book />}
+                  onClick={() => go("/admin/workout-templates")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/workout-templates"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Templates
+                </MenuItem>
+
+                <MenuItem
+                  icon={<Book />}
+                  onClick={() => go("/admin/template-days")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/template-days"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Template Days
+                </MenuItem>
+
+                <MenuItem
+                  icon={<Book />}
+                  onClick={() => go("/admin/template-items")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/template-items"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Template Items
+                </MenuItem>
+
                 <MenuItem
                   icon={<Users />}
                   onClick={() => go("/admin/users")}
@@ -218,7 +262,6 @@ const AdminSidebar: React.FC<Props> = ({
                   Users
                 </MenuItem>
 
-                {/* ADMINS */}
                 <MenuItem
                   icon={<Users />}
                   onClick={() => go("/admin/admins")}
@@ -232,7 +275,6 @@ const AdminSidebar: React.FC<Props> = ({
                 </MenuItem>
               </SubMenu>
 
-              {/* ✅ NEW: SUPERADMIN */}
               <div style={{ padding: "0 24px", marginTop: 24, marginBottom: 8 }}>
                 <Typography
                   variant="body2"
@@ -273,7 +315,6 @@ const AdminSidebar: React.FC<Props> = ({
                 </MenuItem>
               </SubMenu>
 
-              {/* Extra */}
               <div style={{ padding: "0 24px", marginTop: 24, marginBottom: 8 }}>
                 <Typography
                   variant="body2"
@@ -314,7 +355,6 @@ const AdminSidebar: React.FC<Props> = ({
             </Menu>
           </div>
 
-          {/* Mobile footer */}
           {broken && (
             <div
               style={{
