@@ -6,12 +6,24 @@
   top: 10px;
   left: 24px;
   z-index: 1001; /* Always on top */
+  transition: filter 0.3s ease;
 }
 
 .top-logo img {
   height: 50px;
   width: auto;
   cursor: pointer;
+  transition: filter 0.3s ease;
+}
+
+/* Logo is white when at rest (on orange hero background) */
+.top-logo img {
+  filter: brightness(0) invert(1); /* Makes it white */
+}
+
+/* Logo turns to original color when scrolled (on white header) */
+.top-logo.scrolled img {
+  filter: none; /* Returns to original orange color */
 }
 
 /* HEADER - SCROLL ANIMATION */
