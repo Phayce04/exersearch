@@ -27,18 +27,17 @@ export default function HeaderUser() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // fallback user if context is slow
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(false);
-
   const [userLogoUrl, setUserLogoUrl] = useState("");
 
   const containerRef = useRef(null);
   const token = localStorage.getItem(TOKEN_KEY);
-
   const effectiveUser = user || me;
 
+  // ===============================
   // fetch /me if needed
+  // ===============================
   useEffect(() => {
     let mounted = true;
 
@@ -63,16 +62,15 @@ export default function HeaderUser() {
     return () => (mounted = false);
   }, [user, me, token]);
 
-  // Fetch user-side logo from settings
+  // ===============================
+  // Public settings (user_logo_url)
+  // ===============================
   useEffect(() => {
     let mounted = true;
 
     async function loadUserLogo() {
       try {
-        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-
-        const res = await axios.get(`${API_BASE}/api/v1/admin/settings`, {
-          headers,
+        const res = await axios.get(`${API_BASE}/api/v1/settings/public`, {
           withCredentials: true,
         });
 
@@ -88,9 +86,11 @@ export default function HeaderUser() {
 
     loadUserLogo();
     return () => (mounted = false);
-  }, [token]);
+  }, []);
 
+  // ===============================
   // avatar resolver
+  // ===============================
   const avatarSrc = useMemo(() => {
     const u = effectiveUser;
     if (!u) return FALLBACK_AVATAR;
@@ -110,13 +110,12 @@ export default function HeaderUser() {
 
     if (!raw) return FALLBACK_AVATAR;
     if (raw.startsWith("http")) return raw;
-    return `${API_BASE}${raw}`;
+    return toAbsUrl(raw);
   }, [effectiveUser]);
 
   const displayName = effectiveUser?.name || (meLoading ? "Loading..." : "User");
   const displayEmail = effectiveUser?.email || "";
 
-  // logout handler
   const handleLogout = useCallback(
     (e) => {
       if (e?.preventDefault) e.preventDefault();
@@ -128,7 +127,6 @@ export default function HeaderUser() {
     [logout, navigate]
   );
 
-  // click outside dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -143,19 +141,54 @@ export default function HeaderUser() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [profileDropdown]);
 
+  // ===============================
   // scroll effect
+  // ===============================
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.pageYOffset > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const appLogo = userLogoUrl || fallbackLogo;
+
   return (
     <>
+      {/* ✅ SHOW ONLY AFTER SCROLL */}
+      {isScrolled && (
+        <div className="top-logo scrolled">
+          <div
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setProfileDropdown(false);
+              navigate("/home");
+            }}
+          >
+            <img
+              src={appLogo}
+              alt="ExerSearch Logo"
+              onError={(e) => {
+                e.currentTarget.src = fallbackLogo;
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Main Header */}
       <header className={`header ${isScrolled ? "header--scrolled" : ""}`}>
-        <div className="logo">
+        <div
+          className="logo"
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setProfileDropdown(false);
+            navigate("/home");
+          }}
+          style={{ cursor: "pointer" }}
+        >
           <img
-            src={userLogoUrl || fallbackLogo}
+            src={appLogo}
             alt="ExerSearch"
             onError={(e) => {
               e.currentTarget.src = fallbackLogo;
@@ -163,16 +196,19 @@ export default function HeaderUser() {
           />
         </div>
 
-        {/* DESKTOP NAV */}
         <nav className="nav-links">
-          <Link to="/home">DASHBOARD</Link>
+          <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>
+            SAVED GYMS
+          </Link>
 
-          {/* ✅ changed "MY GYMS" to Saved Gyms */}
-          <Link to="/home/saved-gyms">SAVED GYMS</Link>
+          <Link to="/home/find-gyms" onClick={() => setMobileMenuOpen(false)}>
+            FIND GYMS
+          </Link>
 
-          <Link to="/home/find-gyms">FIND GYMS</Link>
+          <Link to="/home/workout" onClick={() => setMobileMenuOpen(false)}>
+            WORKOUT PLAN
+          </Link>
 
-          {/* PROFILE */}
           <div className="profile-container" ref={containerRef}>
             <button
               className="profile-btn"
@@ -210,12 +246,15 @@ export default function HeaderUser() {
                 My Profile
               </Link>
 
-              {/* ✅ also add saved gyms inside dropdown (optional but nice) */}
               <Link
                 to="/home/saved-gyms"
                 onClick={() => setProfileDropdown(false)}
               >
                 Saved Gyms
+              </Link>
+
+              <Link to="/home/workout" onClick={() => setProfileDropdown(false)}>
+                Workout Plan
               </Link>
 
               <Link to="/home/settings" onClick={() => setProfileDropdown(false)}>
@@ -229,7 +268,6 @@ export default function HeaderUser() {
           </div>
         </nav>
 
-        {/* HAMBURGER */}
         <div className="hamburger" onClick={() => setMobileMenuOpen((p) => !p)}>
           <span />
           <span />
@@ -237,19 +275,21 @@ export default function HeaderUser() {
         </div>
       </header>
 
-      {/* MOBILE MENU */}
       <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
         <Link to="/home" onClick={() => setMobileMenuOpen(false)}>
           DASHBOARD
         </Link>
 
-        {/* ✅ changed "MY GYMS" to Saved Gyms */}
         <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>
           SAVED GYMS
         </Link>
 
         <Link to="/home/find-gyms" onClick={() => setMobileMenuOpen(false)}>
           FIND GYMS
+        </Link>
+
+        <Link to="/home/workout" onClick={() => setMobileMenuOpen(false)}>
+          WORKOUT PLAN
         </Link>
 
         <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>

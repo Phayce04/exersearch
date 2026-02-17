@@ -1,9 +1,15 @@
 // WorkoutWeek.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import "./workoutWeek.css";
 import {
   generateUserWorkoutPlan,
   getUserWorkoutPlan,
+  getUserPreferences,
+  saveUserPreferences,
+  getUserPreferredEquipments,
+  saveUserPreferredEquipments,
+  getEquipments,
 } from "../../utils/workoutPlanApi";
 
 const BRAND = "#ff8c00";
@@ -18,9 +24,30 @@ const WEEK = [
   { weekday: 7, name: "Sunday" },
 ];
 
-function titleCase(s = "") {
+// ✅ your unique goals (no redundancy)
+const GOAL_OPTIONS = ["build_muscle", "lose_fat", "strength", "endurance"];
+
+// ✅ unique muscles from your templates list
+const MUSCLE_OPTIONS = [
+  "quads",
+  "chest",
+  "back",
+  "core",
+  "hamstrings",
+  "shoulders",
+  "triceps",
+  "biceps",
+  "calves",
+  "legs",
+  "glutes",
+  "cardio",
+];
+
+function prettyLabel(s = "") {
   return String(s)
+    .trim()
     .replace(/_/g, " ")
+    .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -36,6 +63,25 @@ export default function WorkoutWeek() {
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [error, setError] = useState("");
+
+  // ✅ Recalibrate modal state
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [prefsLoading, setPrefsLoading] = useState(false);
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefsError, setPrefsError] = useState("");
+
+  const [prefs, setPrefs] = useState({
+    goal: "",
+    workout_days: 3,
+    workout_level: "intermediate",
+    session_minutes: 45,
+    workout_place: "gym", // home | gym | both
+    preferred_style: "mixed", // strength | hypertrophy | endurance | hiit | mixed
+    injuries: [], // ✅ will store injured MUSCLES now (e.g. ["back","shoulders"])
+  });
+
+  const [equipmentOptions, setEquipmentOptions] = useState([]);
+  const [preferredEquipmentIds, setPreferredEquipmentIds] = useState([]);
 
   const weekDays = useMemo(() => {
     const apiDays = plan?.days || [];
@@ -68,12 +114,12 @@ export default function WorkoutWeek() {
   const topRow = weekDays.slice(0, 4);
   const bottomRow = weekDays.slice(4, 7);
 
-  async function handleGenerate() {
+  async function handleGenerate(overrides = {}) {
     setError("");
     setLoadingGenerate(true);
 
     try {
-      const res = await generateUserWorkoutPlan({});
+      const res = await generateUserWorkoutPlan(overrides);
       const newPlan = res?.data || null;
 
       if (!newPlan?.user_plan_id) {
@@ -109,6 +155,91 @@ export default function WorkoutWeek() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePlanId]);
 
+  async function openRecalibrate() {
+    setShowPrefs(true);
+    setPrefsError("");
+    setPrefsLoading(true);
+
+    try {
+      const [prefRes, prefEqRes, eqRes] = await Promise.all([
+        getUserPreferences(),
+        getUserPreferredEquipments(),
+        getEquipments({ per_page: 2000 }),
+      ]);
+
+      const p = prefRes?.data || null;
+      const preferredEquipments = prefEqRes?.data || [];
+
+      const eqPayload = eqRes?.data ?? eqRes ?? [];
+      const allEquipments = Array.isArray(eqPayload)
+        ? eqPayload
+        : Array.isArray(eqPayload?.data)
+        ? eqPayload.data
+        : Array.isArray(eqPayload?.items)
+        ? eqPayload.items
+        : [];
+
+      setPrefs({
+        goal: p?.goal ?? "",
+        workout_days: Number(p?.workout_days ?? 3),
+        workout_level: p?.workout_level ?? "intermediate",
+        session_minutes: Number(p?.session_minutes ?? 45),
+        workout_place: p?.workout_place ?? "gym",
+        preferred_style: p?.preferred_style ?? "mixed",
+        injuries: Array.isArray(p?.injuries) ? p.injuries : [],
+      });
+
+      setPreferredEquipmentIds(
+        (preferredEquipments || [])
+          .map((e) => Number(e?.equipment_id))
+          .filter(Boolean)
+      );
+
+      setEquipmentOptions(allEquipments);
+    } catch (e) {
+      setPrefsError(e?.message || "Failed to load preferences.");
+    } finally {
+      setPrefsLoading(false);
+    }
+  }
+
+  async function saveAndRecalibrate() {
+    setPrefsError("");
+    setPrefsSaving(true);
+
+    try {
+      await saveUserPreferences({
+        goal: prefs.goal || null,
+        workout_days: Number(prefs.workout_days),
+        workout_level: prefs.workout_level,
+        session_minutes: Number(prefs.session_minutes),
+        workout_place: prefs.workout_place,
+        preferred_style: prefs.preferred_style || null,
+        injuries: prefs.injuries || [], // ✅ now muscle strings
+      });
+
+      await saveUserPreferredEquipments(
+        preferredEquipmentIds.map(Number).filter(Boolean)
+      );
+
+      setShowPrefs(false);
+
+      await handleGenerate({
+        goal: prefs.goal || undefined,
+        workout_days: Number(prefs.workout_days),
+        workout_level: prefs.workout_level,
+        session_minutes: Number(prefs.session_minutes),
+        workout_place: prefs.workout_place,
+        preferred_style: prefs.preferred_style || undefined,
+        injuries: prefs.injuries || [],
+      });
+    } catch (e) {
+      setPrefsError(e?.message || "Failed to save preferences.");
+    } finally {
+      setPrefsSaving(false);
+    }
+  }
+
   const hasPlan = !!plan;
 
   return (
@@ -117,17 +248,25 @@ export default function WorkoutWeek() {
         <section className="ww-landing">
           <div className="ww-landing-inner">
             <h1 className="ww-landing-title">
-              FIND YOUR WORKOUT  <br />
+              FIND YOUR WORKOUT <br />
               PLAN
             </h1>
 
             <button
               className="ww-landing-btn"
-              onClick={handleGenerate}
+              onClick={() => handleGenerate({})}
               disabled={loadingGenerate}
               type="button"
             >
               {loadingGenerate ? "Generating..." : "Generate Plan"}
+            </button>
+
+            <button
+              className="ww-landing-btn ww-landing-btn-secondary"
+              onClick={openRecalibrate}
+              type="button"
+            >
+              Recalibrate Preferences
             </button>
 
             {error ? <div className="ww-landing-error">{error}</div> : null}
@@ -135,7 +274,6 @@ export default function WorkoutWeek() {
         </section>
       ) : (
         <div className="ww-page">
-          {/* ✅ FULL-WIDTH HEADER BAR */}
           <div className="ww-headerbar">
             <div className="ww-container">
               <header className="ww-header">
@@ -147,15 +285,16 @@ export default function WorkoutWeek() {
 
                     {plan?.template && (
                       <span className="ww-pill">
-                        {titleCase(plan.template.goal)} •{" "}
-                        {titleCase(plan.template.split_type)} •{" "}
+                        {prettyLabel(plan.template.goal)} •{" "}
+                        {prettyLabel(plan.template.split_type)} •{" "}
                         {plan.template.days_per_week} days/week
                       </span>
                     )}
 
                     {plan?.start_date && (
                       <span className="ww-muted">
-                        Start: <b>{new Date(plan.start_date).toDateString()}</b>
+                        Start:{" "}
+                        <b>{new Date(plan.start_date).toDateString()}</b>
                       </span>
                     )}
                   </div>
@@ -164,12 +303,22 @@ export default function WorkoutWeek() {
                 <div className="ww-header-right">
                   <button
                     className="ww-btn ww-btn-ghost"
-                    onClick={handleGenerate}
+                    onClick={() => handleGenerate({})}
                     disabled={loadingGenerate}
                     type="button"
                     title="Generate a fresh plan"
                   >
                     {loadingGenerate ? "Generating..." : "Regenerate"}
+                  </button>
+
+                  <button
+                    className="ww-btn"
+                    onClick={openRecalibrate}
+                    type="button"
+                    title="Edit preferences + preferred equipment"
+                    style={{ marginLeft: 10 }}
+                  >
+                    Recalibrate Preferences
                   </button>
                 </div>
               </header>
@@ -178,7 +327,6 @@ export default function WorkoutWeek() {
             </div>
           </div>
 
-          {/* ✅ CONTENT CONTAINER (centered) */}
           <div className="ww-container ww-body">
             <section className="ww-grid-wrap">
               <div className="ww-grid ww-grid-top">
@@ -206,16 +354,33 @@ export default function WorkoutWeek() {
           </div>
         </div>
       )}
+
+      {/* ✅ Modal via Portal */}
+      {showPrefs
+        ? createPortal(
+            <PreferencesModal
+              loading={prefsLoading}
+              saving={prefsSaving}
+              error={prefsError}
+              prefs={prefs}
+              setPrefs={setPrefs}
+              equipmentOptions={equipmentOptions}
+              preferredEquipmentIds={preferredEquipmentIds}
+              setPreferredEquipmentIds={setPreferredEquipmentIds}
+              onClose={() => setShowPrefs(false)}
+              onSave={saveAndRecalibrate}
+            />,
+            document.body
+          )
+        : null}
     </div>
   );
 }
 
 function DayCard({ day }) {
   const isRest = !!day.is_rest || (day.exercises?.length ?? 0) === 0;
-  const focusLabel = titleCase(isRest ? "rest" : day.focus);
+  const focusLabel = prettyLabel(isRest ? "rest" : day.focus);
   const setsTotal = countSets(day);
-
-  // ✅ show 6, no "+ more"
   const list = (day.exercises || []).slice(0, 6);
 
   return (
@@ -286,12 +451,294 @@ function DayCard({ day }) {
           alert(
             isRest
               ? `${day.weekday_name}: Rest day`
-              : `${day.weekday_name}: ${titleCase(day.focus)} day`
+              : `${day.weekday_name}: ${prettyLabel(day.focus)} day`
           );
         }}
       >
         {isRest ? "Rest Day" : "View Details"}
       </button>
     </article>
+  );
+}
+
+/* ------------------------------------------------------------------
+ * ✅ Preferences Modal
+ * ------------------------------------------------------------------ */
+
+function PreferencesModal({
+  loading,
+  saving,
+  error,
+  prefs,
+  setPrefs,
+  equipmentOptions,
+  preferredEquipmentIds,
+  setPreferredEquipmentIds,
+  onClose,
+  onSave,
+}) {
+  const [injuryPick, setInjuryPick] = useState("");
+
+  function toggleEquipment(id) {
+    setPreferredEquipmentIds((prev) => {
+      const set = new Set(prev.map(Number));
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      return Array.from(set);
+    });
+  }
+
+  // ✅ Injured MUSCLES stored into prefs.injuries
+  function addInjuredMuscle() {
+    const t = String(injuryPick || "").trim();
+    if (!t) return;
+
+    setPrefs((p) => {
+      const cur = Array.isArray(p.injuries) ? p.injuries : [];
+      const lower = cur.map((x) => String(x).toLowerCase());
+      if (lower.includes(t.toLowerCase())) return p;
+      return { ...p, injuries: [...cur, t] };
+    });
+
+    setInjuryPick("");
+  }
+
+  function removeInjury(tag) {
+    setPrefs((p) => ({
+      ...p,
+      injuries: (p.injuries || []).filter(
+        (x) => String(x).toLowerCase() !== String(tag).toLowerCase()
+      ),
+    }));
+  }
+
+  const eqList = Array.isArray(equipmentOptions) ? equipmentOptions : [];
+
+  return (
+    <div className="ww-modal-backdrop" onClick={onClose}>
+      <div
+        className="ww-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="ww-modal-head">
+          <div>
+            <div className="ww-modal-title">Recalibrate Preferences</div>
+            <div className="ww-modal-sub">
+              Pick your goal, injured muscles to avoid, equipment, then regenerate.
+            </div>
+          </div>
+
+          <button
+            className="ww-btn ww-btn-ghost"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="ww-modal-loading">Loading…</div>
+        ) : (
+          <>
+            {error ? <div className="ww-modal-error">{error}</div> : null}
+
+            <div className="ww-modal-grid">
+              {/* ✅ GOAL DROPDOWN */}
+              <label className="ww-field">
+                <span>Goal</span>
+                <select
+                  value={prefs.goal || ""}
+                  onChange={(e) =>
+                    setPrefs((p) => ({ ...p, goal: e.target.value }))
+                  }
+                >
+                  <option value="" disabled>
+                    Select a goal…
+                  </option>
+                  {GOAL_OPTIONS.map((g) => (
+                    <option key={g} value={g}>
+                      {prettyLabel(g)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="ww-field">
+                <span>Days / week</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="7"
+                  value={prefs.workout_days ?? 3}
+                  onChange={(e) =>
+                    setPrefs((p) => ({
+                      ...p,
+                      workout_days: Number(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="ww-field">
+                <span>Level</span>
+                <select
+                  value={prefs.workout_level || "intermediate"}
+                  onChange={(e) =>
+                    setPrefs((p) => ({ ...p, workout_level: e.target.value }))
+                  }
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </label>
+
+              <label className="ww-field">
+                <span>Session minutes</span>
+                <input
+                  type="number"
+                  min="10"
+                  max="240"
+                  value={prefs.session_minutes ?? 45}
+                  onChange={(e) =>
+                    setPrefs((p) => ({
+                      ...p,
+                      session_minutes: Number(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="ww-field">
+                <span>Workout place</span>
+                <select
+                  value={prefs.workout_place || "gym"}
+                  onChange={(e) =>
+                    setPrefs((p) => ({ ...p, workout_place: e.target.value }))
+                  }
+                >
+                  <option value="home">Home</option>
+                  <option value="gym">Gym</option>
+                  <option value="both">Both</option>
+                </select>
+              </label>
+
+              <label className="ww-field">
+                <span>Preferred style</span>
+                <select
+                  value={prefs.preferred_style || "mixed"}
+                  onChange={(e) =>
+                    setPrefs((p) => ({
+                      ...p,
+                      preferred_style: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="strength">Strength</option>
+                  <option value="hypertrophy">Hypertrophy</option>
+                  <option value="endurance">Endurance</option>
+                  <option value="hiit">HIIT</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </label>
+
+              {/* ✅ INJURED MUSCLES DROPDOWN (stored in injuries[]) */}
+              <div className="ww-field ww-field-wide">
+                <span>Injured Muscles (will be avoided)</span>
+
+                <div className="ww-tags">
+                  {(prefs.injuries || []).map((t) => (
+                    <span key={String(t)} className="ww-tag">
+                      {prettyLabel(t)}
+                      <button type="button" onClick={() => removeInjury(t)}>
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="ww-tag-row">
+                  <select
+                    value={injuryPick}
+                    onChange={(e) => setInjuryPick(e.target.value)}
+                  >
+                    <option value="">Select a muscle…</option>
+                    {MUSCLE_OPTIONS.map((m) => (
+                      <option key={m} value={m}>
+                        {prettyLabel(m)}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    className="ww-btn ww-btn-ghost"
+                    type="button"
+                    onClick={addInjuredMuscle}
+                    disabled={!injuryPick}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="ww-muted" style={{ color: "#6b7280", marginTop: 8 }}>
+                  Example: If you add “Back”, exercises with primary muscle “back”
+                  will be filtered out during generation.
+                </div>
+              </div>
+            </div>
+
+            <div className="ww-modal-section">
+              <div className="ww-modal-section-title">Preferred Equipment</div>
+
+              <div className="ww-eq-grid">
+                {eqList.map((e) => {
+                  const id = Number(e?.equipment_id);
+                  if (!id) return null;
+
+                  const name = e?.name || `Equipment #${id}`;
+                  const checked = preferredEquipmentIds.map(Number).includes(id);
+
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`ww-eq-pill ${checked ? "is-on" : ""}`}
+                      onClick={() => toggleEquipment(id)}
+                      title={name}
+                    >
+                      {checked ? "✓ " : ""}
+                      {prettyLabel(name)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="ww-modal-actions">
+              <button
+                className="ww-btn ww-btn-ghost"
+                onClick={onClose}
+                type="button"
+                disabled={saving}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="ww-btn"
+                onClick={onSave}
+                type="button"
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Save & Recalibrate"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

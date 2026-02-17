@@ -36,6 +36,49 @@ async function request(path, options = {}) {
 }
 
 /* ------------------------------------------------------------------
+ * USER PREFERENCES + PREFERRED EQUIPMENTS (auth required)
+ * ------------------------------------------------------------------ */
+
+// ✅ GET current user's preferences
+export function getUserPreferences() {
+  return request(`/api/v1/user/preferences`);
+}
+
+// ✅ POST upsert preferences
+// Allowed fields per your controller:
+// goal, activity_level, budget, plan_type,
+// workout_days, workout_time, food_budget,
+// workout_level, session_minutes, workout_place, preferred_style,
+// dietary_restrictions[], injuries[]
+export function saveUserPreferences(payload = {}) {
+  return request(`/api/v1/user/preferences`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+// ✅ GET current user's preferred equipments (returns equipment objects)
+export function getUserPreferredEquipments() {
+  return request(`/api/v1/user/preferred-equipments`);
+}
+
+// ✅ POST sync preferred equipments by ids
+export function saveUserPreferredEquipments(equipmentIds = []) {
+  return request(`/api/v1/user/preferred-equipments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ equipment_ids: equipmentIds }),
+  });
+}
+
+// ✅ Equipments catalog for picker UI
+export function getEquipments(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  return request(`/api/v1/equipments${qs ? `?${qs}` : ""}`);
+}
+
+/* ------------------------------------------------------------------
  * EXERCISES (auth required in your routes)
  * ------------------------------------------------------------------ */
 
@@ -146,7 +189,9 @@ export function deleteUserWorkoutPlanDay(id) {
 export function getUserWorkoutPlanDayExercises(params = {}) {
   // params example: { user_plan_day_id: 49 }
   const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/user/workout-plan-day-exercises${qs ? `?${qs}` : ""}`);
+  return request(
+    `/api/v1/user/workout-plan-day-exercises${qs ? `?${qs}` : ""}`
+  );
 }
 
 export function getUserWorkoutPlanDayExercise(id) {
