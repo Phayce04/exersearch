@@ -64,7 +64,7 @@ function App() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/test-find-gyms" element={<FindGyms />} />
       <Route path="/test-gym-results" element={<GymResults />} />
-
+    
       <Route path="/profile" element={<Profile />} />
 
       <Route path="/home" element={<UserLayout />}>

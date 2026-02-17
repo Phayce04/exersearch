@@ -93,8 +93,8 @@ export default function Login() {
 
     try {
       const response = await axios.post(`https://exersearch.test${endpoint}`, payload, {
-        withCredentials: true,
-      });
+      withCredentials: true,
+});
 
       const data = response.data;
 
