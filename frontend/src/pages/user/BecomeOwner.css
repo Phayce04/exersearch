@@ -1,0 +1,717 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+.bo-page {
+  font-family: 'Montserrat', sans-serif;
+  background: #fff;
+  color: #1a1a1a;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   HERO
+============================================ */
+.bo-hero {
+  position: relative;
+  height: 92vh;
+  min-height: 580px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.bo-hero-image-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.bo-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.bo-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+}
+
+.bo-hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 6rem 5rem;
+  max-width: 800px;
+}
+
+.bo-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #d23f0b;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 0.45rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.bo-hero-title {
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 900;
+  line-height: 1.08;
+  color: white;
+  letter-spacing: -2px;
+  margin-bottom: 1.25rem;
+}
+
+.bo-hero-title span {
+  color: #ff6b35;
+}
+
+.bo-hero-desc {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.75;
+  margin-bottom: 2.5rem;
+  max-width: 520px;
+}
+
+.bo-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #d23f0b;
+  color: white;
+  padding: 1rem 2.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 2px solid #d23f0b;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.bo-hero-cta:hover {
+  background: transparent;
+  color: #ff6b35;
+  border-color: #ff6b35;
+}
+
+.bo-scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  right: 3rem;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.2rem;
+  animation: bounce 2s infinite;
+  text-decoration: none;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+/* ============================================
+   WHAT YOU GET
+============================================ */
+.bo-what {
+  padding: 0;
+}
+
+.bo-what-label {
+  padding: 3.5rem 6rem 1.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #d23f0b;
+}
+
+.bo-what-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid #e5e5e5;
+}
+
+.bo-what-item {
+  padding: 3rem 2.5rem;
+  border-right: 1px solid #e5e5e5;
+  position: relative;
+  transition: background 0.3s;
+}
+
+.bo-what-item:last-child {
+  border-right: none;
+}
+
+.bo-what-item:hover {
+  background: #fafafa;
+}
+
+.bo-what-featured {
+  background: #1a1a1a;
+  color: white;
+}
+
+.bo-what-featured:hover {
+  background: #222;
+}
+
+.bo-what-accent {
+  background: #fff8f6;
+}
+
+.bo-what-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ccc;
+  margin-bottom: 1.5rem;
+}
+
+.bo-what-featured .bo-what-num {
+  color: #555;
+}
+
+.bo-what-icon {
+  font-size: 1.75rem;
+  color: #d23f0b;
+  margin-bottom: 1.25rem;
+  display: block;
+}
+
+.bo-what-item h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+.bo-what-featured h3 {
+  color: white;
+}
+
+.bo-what-item p {
+  font-size: 0.87rem;
+  line-height: 1.8;
+  color: #6b7280;
+}
+
+.bo-what-featured p {
+  color: #999;
+}
+
+/* ============================================
+   HOW IT WORKS
+============================================ */
+.bo-how {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  min-height: 700px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.bo-how-inner {
+  padding: 6rem;
+  border-right: 1px solid #e5e5e5;
+}
+
+.bo-how-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #d23f0b;
+  margin-bottom: 1rem;
+}
+
+.bo-how-title {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  color: #1a1a1a;
+  margin-bottom: 4rem;
+}
+
+.bo-how-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bo-how-step {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.bo-how-step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bo-how-step-num {
+  width: 40px;
+  height: 40px;
+  background: #d23f0b;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 800;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bo-how-step-line {
+  width: 2px;
+  height: 60px;
+  background: #e5e5e5;
+  margin-top: 6px;
+}
+
+.bo-how-step-right {
+  padding-bottom: 2.5rem;
+}
+
+.bo-how-step-right h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.4rem;
+  padding-top: 0.5rem;
+}
+
+.bo-how-step-right p {
+  font-size: 0.87rem;
+  line-height: 1.8;
+  color: #6b7280;
+  margin: 0;
+}
+
+.bo-inline-link {
+  color: #d23f0b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bo-inline-link:hover {
+  text-decoration: underline;
+}
+
+/* Step approval tags */
+.bo-step-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: rgba(210, 63, 11, 0.1);
+  color: #d23f0b;
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.bo-step-tag-gym {
+  background: rgba(16, 110, 190, 0.1);
+  color: #106ebe;
+}
+
+/* Image column */
+.bo-how-image-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.bo-how-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bo-how-image-tag {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 2rem;
+  background: white;
+  padding: 1.25rem 1.75rem;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.bo-how-image-tag strong {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #d23f0b;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+
+.bo-how-image-tag span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #888;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   REQUIREMENTS
+============================================ */
+.bo-reqs {
+  background: #1a1a1a;
+  padding: 7rem 0;
+}
+
+.bo-reqs-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 6rem;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 6rem;
+  align-items: start;
+}
+
+.bo-reqs-label {
+  grid-column: 1 / -1;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #d23f0b;
+  margin-bottom: -3rem;
+}
+
+.bo-reqs-title {
+  font-size: clamp(1.8rem, 2.5vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  color: white;
+  position: sticky;
+  top: 5rem;
+}
+
+.bo-reqs-desc {
+  display: none;
+}
+
+.bo-reqs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bo-req-item {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  padding: 2rem 0;
+  border-bottom: 1px solid #2a2a2a;
+  transition: padding-left 0.3s;
+}
+
+.bo-req-item:first-child {
+  border-top: 1px solid #2a2a2a;
+}
+
+.bo-req-item:hover {
+  padding-left: 0.75rem;
+}
+
+.bo-req-check {
+  color: #d23f0b;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.bo-req-item h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.25rem;
+}
+
+.bo-req-item p {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================
+   FAQ
+============================================ */
+.bo-faq {
+  padding: 7rem 0;
+  background: #fafafa;
+  border-top: 1px solid #e5e5e5;
+}
+
+.bo-faq-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.bo-faq-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #d23f0b;
+  margin-bottom: 0.75rem;
+}
+
+.bo-faq-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: #1a1a1a;
+  margin-bottom: 3rem;
+}
+
+.bo-faq-item {
+  border-bottom: 1px solid #e5e5e5;
+  cursor: pointer;
+}
+
+.bo-faq-item:first-of-type {
+  border-top: 1px solid #e5e5e5;
+}
+
+.bo-faq-q {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem 0;
+}
+
+.bo-faq-q span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  transition: color 0.2s;
+}
+
+.bo-faq-item.open .bo-faq-q span {
+  color: #d23f0b;
+}
+
+.bo-faq-toggle {
+  width: 30px;
+  height: 30px;
+  background: #e5e5e5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  flex-shrink: 0;
+  transition: all 0.25s;
+}
+
+.bo-faq-item.open .bo-faq-toggle {
+  background: #d23f0b;
+  color: white;
+}
+
+.bo-faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+}
+
+.bo-faq-item.open .bo-faq-a {
+  max-height: 200px;
+  opacity: 1;
+  padding-bottom: 1.5rem;
+}
+
+.bo-faq-a p {
+  font-size: 0.9rem;
+  line-height: 1.85;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ============================================
+   FINAL CTA
+============================================ */
+.bo-cta {
+  background: #d23f0b;
+  padding: 7rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.bo-cta::before {
+  content: 'OWNER';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 220px;
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.06);
+  white-space: nowrap;
+  letter-spacing: -8px;
+  pointer-events: none;
+}
+
+.bo-cta-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.bo-cta-inner h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  color: white;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+}
+
+.bo-cta-inner p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+
+.bo-cta-btns {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.bo-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  color: #d23f0b;
+  padding: 1rem 2.25rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+  border-radius: 6px;
+  border: 2px solid white;
+  transition: all 0.3s;
+}
+
+.bo-cta-primary:hover {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+  color: white;
+}
+
+.bo-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  color: white;
+  padding: 1rem 2.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  transition: all 0.3s;
+}
+
+.bo-cta-secondary:hover {
+  border-color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   RESPONSIVE
+============================================ */
+@media (max-width: 1100px) {
+  .bo-what-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bo-what-item:nth-child(2) {
+    border-right: none;
+  }
+
+  .bo-what-item {
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .bo-how {
+    grid-template-columns: 1fr;
+  }
+
+  .bo-how-image-wrap {
+    height: 400px;
+  }
+
+  .bo-how-inner {
+    padding: 4rem 2rem;
+  }
+
+  .bo-reqs-inner {
+    grid-template-columns: 1fr;
+    padding: 0 2rem;
+    gap: 3rem;
+  }
+
+  .bo-reqs-title {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .bo-hero-content {
+    padding: 0 2rem 4rem;
+  }
+
+  .bo-what-label {
+    padding: 3rem 2rem 1rem;
+  }
+
+  .bo-what-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bo-what-item {
+    border-right: none;
+  }
+}
