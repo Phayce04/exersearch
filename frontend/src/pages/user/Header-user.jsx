@@ -209,7 +209,8 @@ export default function HeaderUser() {
             WORKOUT PLAN
           </Link>
 
-          <div className="profile-container" ref={containerRef}>
+          {/* ✅ RENAMED from profile-container to header-profile */}
+          <div className="header-profile" ref={containerRef}>
             <button
               className="profile-btn"
               type="button"
@@ -257,7 +258,10 @@ export default function HeaderUser() {
                 Workout Plan
               </Link>
 
-              <Link to="/home/settings" onClick={() => setProfileDropdown(false)}>
+              <Link
+                to="/home/settings"
+                onClick={() => setProfileDropdown(false)}
+              >
                 Settings
               </Link>
 

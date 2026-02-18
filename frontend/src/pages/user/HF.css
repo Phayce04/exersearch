@@ -38,7 +38,9 @@
   height: 70px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+
+  /* ✅ CHANGED: stop spacing items across the row */
+  justify-content: flex-start;
 
   padding: 0 24px;
   background: #fff;
@@ -59,6 +61,9 @@
   opacity: 0;
   pointer-events: none;
   width: 50px; /* Reserve space so nav-links stay aligned */
+
+  /* ✅ CHANGED: this pushes nav-links to the far right */
+  margin-right: auto;
 }
 
 .header.header--scrolled .logo {
@@ -74,6 +79,10 @@
   display: flex;
   align-items: center;
   gap: 2rem;
+
+  /* ✅ NEW: ensure the whole nav hugs the right */
+  margin-left: auto;
+  justify-content: flex-end;
 }
 
 .nav-links a {
@@ -315,8 +324,8 @@
   font-weight: 200;
 }
 
-/* Header User Profile */
-.profile-container {
+/* ✅ Header User Profile (RENAMED) */
+.header-profile {
   position: relative;
   display: flex;
   align-items: center;
