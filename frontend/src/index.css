@@ -763,7 +763,7 @@ body {
 
 .carousel-scroll::-webkit-scrollbar-thumb {
   background: #d23f0b;
-  border-radius: 10px;
+  border-radius: 0px;
 }
 
 .carousel-card {
@@ -994,5 +994,5 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #d23f0b;
-  border-radius: 5px;
+  border-radius: 0;
 }
