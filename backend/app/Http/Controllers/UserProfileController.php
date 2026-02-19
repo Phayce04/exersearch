@@ -7,6 +7,20 @@ use Illuminate\Support\Facades\DB;
 
 class UserProfileController extends Controller
 {
+    private const ROLE_LEVEL = [
+        'user' => 1,
+        'owner' => 2,
+        'admin' => 3,
+        'superadmin' => 4,
+    ];
+
+    private function hasAtLeastRole(?string $role, string $required): bool
+    {
+        $lvl = self::ROLE_LEVEL[$role ?? ''] ?? 0;
+        $req = self::ROLE_LEVEL[$required] ?? PHP_INT_MAX;
+        return $lvl >= $req;
+    }
+
     public function show(Request $request)
     {
         $user = $request->user();
@@ -15,7 +29,8 @@ class UserProfileController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        if ($user->role !== 'user') {
+        // ✅ allow user AND upgraded roles
+        if (!$this->hasAtLeastRole($user->role, 'user')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -42,7 +57,7 @@ class UserProfileController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        if ($user->role !== 'user') {
+        if (!$this->hasAtLeastRole($user->role, 'user')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -56,13 +71,11 @@ class UserProfileController extends Controller
             'gender' => ['nullable', 'string', 'in:male,female,other'],
         ]);
 
-        $update = [
-            'updated_at' => now(),
-        ];
+        $update = ['updated_at' => now()];
 
         foreach (['age', 'weight', 'height', 'address', 'latitude', 'longitude', 'gender'] as $k) {
             if ($request->has($k)) {
-                $update[$k] = $data[$k] ?? null; 
+                $update[$k] = $data[$k] ?? null;
             }
         }
 

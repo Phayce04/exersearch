@@ -8,35 +8,53 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    private const ROLE_LEVEL = [
+        'user' => 1,
+        'owner' => 2,
+        'admin' => 3,
+        'superadmin' => 4,
+    ];
+
+    private function hasAtLeastRole(?string $role, string $required): bool
+    {
+        $lvl = self::ROLE_LEVEL[$role ?? ''] ?? 0;
+        $req = self::ROLE_LEVEL[$required] ?? PHP_INT_MAX;
+        return $lvl >= $req;
+    }
+
     /**
      * GET /api/users
-     * ⚠️ Recommend: remove this route or move to admin-only later.
-     * Keeping it here for now, but making it safe by requiring superadmin.
+     * Superadmin-only list of gym users
      */
     public function index(Request $request)
     {
         $me = $request->user();
-        if (!$me || $me->role !== 'superadmin') {
+        if (!$me || !$this->hasAtLeastRole($me->role, 'superadmin')) {
             abort(403, 'Unauthorized');
         }
 
         return UserResource::collection(
             User::where('role', 'user')
-                ->with(['preference', 'preferredEquipments', 'preferredAmenities', 'userProfile']) // ✅ changed
+                ->with(['preference', 'preferredEquipments', 'preferredAmenities', 'userProfile'])
                 ->paginate(10)
         );
     }
 
     /**
      * GET /api/users/{user_id}
-     * ✅ Minimal change: always return the logged-in user (ignore user_id)
+     * Always returns logged-in user (ignores user_id)
      */
     public function show(Request $request, $user_id)
     {
         $me = $request->user();
         if (!$me) abort(401, 'Unauthenticated');
 
-        $user = User::with(['preference', 'preferredEquipments', 'preferredAmenities', 'userProfile']) // ✅ changed
+        // ✅ allow upgraded roles as well
+        if (!$this->hasAtLeastRole($me->role, 'user')) {
+            abort(403, 'Forbidden');
+        }
+
+        $user = User::with(['preference', 'preferredEquipments', 'preferredAmenities', 'userProfile'])
             ->findOrFail($me->user_id);
 
         return new UserResource($user);
@@ -47,6 +65,11 @@ class UserController extends Controller
         $me = $request->user();
         if (!$me) abort(401, 'Unauthenticated');
 
+        // ✅ allow upgraded roles as well
+        if (!$this->hasAtLeastRole($me->role, 'user')) {
+            abort(403, 'Forbidden');
+        }
+
         $user = User::with(['preference', 'preferredAmenities', 'preferredEquipments'])
             ->findOrFail($me->user_id);
 
@@ -55,7 +78,8 @@ class UserController extends Controller
                 'user_id' => $user->user_id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'onboarded_at' => $user->onboarded_at, // ✅ added
+                'onboarded_at' => $user->onboarded_at,
+                'role' => $user->role,
             ],
             'preferences' => $user->preference,
             'preferred_equipments' => $user->preferredEquipments,
@@ -68,7 +92,13 @@ class UserController extends Controller
         $me = $request->user();
         if (!$me) abort(401, 'Unauthenticated');
 
-        $user = User::where('role', 'user')->findOrFail($me->user_id);
+        // ✅ allow upgraded roles as well
+        if (!$this->hasAtLeastRole($me->role, 'user')) {
+            abort(403, 'Forbidden');
+        }
+
+        // ✅ IMPORTANT: remove role filter (owner/admin/superadmin should still update their own prefs)
+        $user = User::findOrFail($me->user_id);
 
         $validated = $request->validate([
             'goal' => 'nullable|string|max:100',
@@ -82,7 +112,6 @@ class UserController extends Controller
             'preferred_equipments.*' => 'integer',
         ]);
 
-        // ✅ Only preference table fields
         $prefData = [];
         if (array_key_exists('goal', $validated)) $prefData['goal'] = $validated['goal'];
         if (array_key_exists('activity_level', $validated)) $prefData['activity_level'] = $validated['activity_level'];
@@ -95,7 +124,6 @@ class UserController extends Controller
             );
         }
 
-        // ✅ Only sync if the key is present (so partial updates don't wipe)
         if (array_key_exists('preferred_amenities', $validated)) {
             $user->preferredAmenities()->sync($validated['preferred_amenities'] ?? []);
         }
@@ -111,16 +139,19 @@ class UserController extends Controller
     }
 
     /**
-     * ✅ NEW: Mark onboarding as completed (only for role=user)
-     * Call this AFTER your onboarding wizard saves profile/preferences.
+     * Mark onboarding as completed
+     * ✅ Changed: allow upgraded roles to complete onboarding too (they still use user app)
+     *
+     * If you truly want ONLY pure users to have onboarding, keep the old check.
      */
     public function markOnboarded(Request $request)
     {
         $me = $request->user();
         if (!$me) abort(401, 'Unauthenticated');
 
-        if ($me->role !== 'user') {
-            return response()->json(['message' => 'Only gym users can complete onboarding.'], 403);
+        // ✅ allow upgraded roles as well
+        if (!$this->hasAtLeastRole($me->role, 'user')) {
+            return response()->json(['message' => 'Forbidden'], 403);
         }
 
         $me->onboarded_at = now();

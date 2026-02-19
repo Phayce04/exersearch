@@ -5,12 +5,14 @@ import { MAIN, adminThemes } from "../AdminLayout";
 import { useNavigate } from "react-router-dom";
 
 const FALLBACK_AVATAR = "/arellano.png";
+const API_BASE = "https://exersearch.test";
+const UI_MODE_KEY = "ui_mode";
 
 type Me = {
   user_id: number;
   name: string;
   email: string;
-  role: string; // "admin" or "superadmin"
+  role: string; // "user" | "owner" | "superadmin"
   admin_profile?: {
     admin_profile_id: number;
     permission_level: string;
@@ -33,6 +35,20 @@ type Props = {
 
   onLogout?: () => void;
 };
+
+const ROLE_LEVEL: Record<string, number> = {
+  user: 1,
+  owner: 2,
+  superadmin: 3,
+};
+
+function roleLevel(role?: string | null) {
+  return ROLE_LEVEL[String(role || "")] ?? 0;
+}
+
+function hasAtLeastRole(role: string | undefined | null, required: "user" | "owner" | "superadmin") {
+  return roleLevel(role) >= roleLevel(required);
+}
 
 export default function AdminHeader({
   title,
@@ -80,6 +96,14 @@ export default function AdminHeader({
     navigate(path);
   };
 
+  const switchUi = (mode: "user" | "owner" | "superadmin") => {
+    localStorage.setItem(UI_MODE_KEY, mode);
+    setMenuOpen(false);
+    if (mode === "user") return navigate("/home");
+    if (mode === "owner") return navigate("/owner/dashboard");
+    return navigate("/superadmin/dashboard");
+  };
+
   const itemStyle: React.CSSProperties = {
     width: "100%",
     textAlign: "left",
@@ -111,14 +135,15 @@ export default function AdminHeader({
   const displayName = me?.name || "Admin";
   const displayEmail = me?.email || "";
 
-const API_BASE = "https://exersearch.test";
-
-const avatarSrc =
-  me?.admin_profile?.avatar_url
-    ? (me.admin_profile.avatar_url.startsWith("http")
+  const avatarSrc =
+    me?.admin_profile?.avatar_url
+      ? me.admin_profile.avatar_url.startsWith("http")
         ? me.admin_profile.avatar_url
-        : `${API_BASE}${me.admin_profile.avatar_url}`)
-    : FALLBACK_AVATAR;
+        : `${API_BASE}${me.admin_profile.avatar_url}`
+      : FALLBACK_AVATAR;
+
+  const canSwitchToUser = hasAtLeastRole(me?.role, "user");
+  const canSwitchToOwner = hasAtLeastRole(me?.role, "owner");
 
   return (
     <div
@@ -135,7 +160,6 @@ const avatarSrc =
         borderBottom: `1px solid ${t.border}`,
       }}
     >
-      {/* Left: burger + page title */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 220 }}>
         <button
           onClick={onBurgerClick}
@@ -165,9 +189,7 @@ const avatarSrc =
         </div>
       </div>
 
-      {/* Right */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {/* Theme toggle */}
         <div
           style={{
             display: "flex",
@@ -191,7 +213,6 @@ const avatarSrc =
           />
         </div>
 
-        {/* Notifications */}
         <button
           style={{
             width: 42,
@@ -212,12 +233,7 @@ const avatarSrc =
               strokeWidth="1.6"
               strokeLinejoin="round"
             />
-            <path
-              d="M7.8 15a2.2 2.2 0 0 0 4.4 0"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
+            <path d="M7.8 15a2.2 2.2 0 0 0 4.4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
           <span
             style={{
@@ -233,7 +249,6 @@ const avatarSrc =
           />
         </button>
 
-        {/* Profile dropdown */}
         <div ref={menuRef} style={{ position: "relative" }}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -301,6 +316,50 @@ const avatarSrc =
                 ) : null}
               </div>
 
+              {canSwitchToUser && (
+                <button
+                  onClick={() => switchUi("user")}
+                  style={itemStyle}
+                  onMouseEnter={(e) => ((e.currentTarget.style.background = t.soft) as any)}
+                  onMouseLeave={(e) => ((e.currentTarget.style.background = "transparent") as any)}
+                >
+                  <span style={iconWrap}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 10a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.6" />
+                      <path
+                        d="M3.5 18a6.5 6.5 0 0 1 13 0"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+                  Switch to User
+                </button>
+              )}
+
+              {canSwitchToOwner && (
+                <button
+                  onClick={() => switchUi("owner")}
+                  style={itemStyle}
+                  onMouseEnter={(e) => ((e.currentTarget.style.background = t.soft) as any)}
+                  onMouseLeave={(e) => ((e.currentTarget.style.background = "transparent") as any)}
+                >
+                  <span style={iconWrap}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 10a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.6" />
+                      <path
+                        d="M3.5 18a6.5 6.5 0 0 1 13 0"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+                  Switch to Owner
+                </button>
+              )}
+
               <button
                 onClick={() => go("/admin/profile")}
                 style={itemStyle}
@@ -329,11 +388,7 @@ const avatarSrc =
               >
                 <span style={iconWrap}>
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path
-                      d="M10 12.2a2.2 2.2 0 1 0-2.2-2.2A2.2 2.2 0 0 0 10 12.2Z"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                    />
+                    <path d="M10 12.2a2.2 2.2 0 1 0-2.2-2.2A2.2 2.2 0 0 0 10 12.2Z" stroke="currentColor" strokeWidth="1.6" />
                     <path
                       d="M16.6 10a6.6 6.6 0 0 0-.1-1l1.6-1.2-1.6-2.8-1.9.7a6.7 6.7 0 0 0-1.7-1L12.7 2H9.3L9 4.7a6.7 6.7 0 0 0-1.7 1L5.4 5l-1.6 2.8L5.4 9a6.6 6.6 0 0 0 0 2l-1.6 1.2L5.4 15l1.9-.7a6.7 6.7 0 0 0 1.7 1L9.3 18h3.4l.3-2.7a6.7 6.7 0 0 0 1.7-1l1.9.7 1.6-2.8-1.6-1.2c.1-.3.1-.7.1-1Z"
                       stroke="currentColor"
@@ -357,13 +412,7 @@ const avatarSrc =
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                     <path d="M8 3h7v14H8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     <path d="M9 10H3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    <path
-                      d="M6 7l-3 3 3 3"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                    <path d="M6 7l-3 3 3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
                 Logout

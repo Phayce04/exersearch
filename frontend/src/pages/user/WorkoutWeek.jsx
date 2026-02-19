@@ -188,7 +188,8 @@ export default function WorkoutWeek() {
       console.log("[WorkoutWeek] Loaded plan:", loaded);
     } catch (e) {
       console.error("[WorkoutWeek] Load plan error:", e);
-      setError(e?.message || "Failed to load plan.");
+// silently ignore for first-time users
+console.warn("[WorkoutWeek] No existing plan found.");
     } finally {
       setLoadingPlan(false);
     }
@@ -313,7 +314,6 @@ export default function WorkoutWeek() {
       return;
     }
 
-    // ✅ ensure the plan id is persisted before leaving
     if (activePlanId) saveLastPlanId(activePlanId);
 
     navigate(path);
@@ -348,7 +348,6 @@ export default function WorkoutWeek() {
               Recalibrate Preferences
             </button>
 
-            {error ? <div className="ww-landing-error">{error}</div> : null}
           </div>
         </section>
       ) : (

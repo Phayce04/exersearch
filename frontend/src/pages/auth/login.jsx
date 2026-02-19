@@ -3,6 +3,17 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./login.css";
 
+import { redirectAfterAuth } from "../../utils/redirects";
+import { allowedUiModes } from "../../utils/roles";
+import { setUiMode } from "../../utils/appMode";
+
+function prettyModeLabel(m) {
+  if (m === "user") return "User";
+  if (m === "owner") return "Owner";
+  if (m === "superadmin") return "Superadmin";
+  return m;
+}
+
 export default function Login() {
   const [mode, setMode] = useState("login");
   const [formData, setFormData] = useState({
@@ -33,27 +44,7 @@ export default function Login() {
     }));
   };
 
-  const redirectUser = (me) => {
-    const role = me?.role;
-
-    if (role === "user") {
-      if (!me?.onboarded_at) navigate("/onboarding");
-      else navigate("/home");
-      return;
-    }
-
-    if (role === "owner") {
-      navigate("/owner/dashboard");
-      return;
-    }
-
-    if (role === "admin" || role === "superadmin") {
-      navigate("/admin/dashboard");
-      return;
-    }
-
-    navigate("/login");
-  };
+  const hasUiChoice = (role) => allowedUiModes(role).length > 1;
 
   const fetchMeAndRedirect = async (token) => {
     const res = await axios.get("https://exersearch.test/api/v1/me", {
@@ -63,7 +54,13 @@ export default function Login() {
 
     const me = res.data;
     setUser(me);
-    redirectUser(me);
+
+    if (hasUiChoice(me.role)) {
+      return;
+    }
+
+    setUiMode("user");
+    redirectAfterAuth(me, navigate);
   };
 
   const handleSubmit = async (e) => {
@@ -93,8 +90,8 @@ export default function Login() {
 
     try {
       const response = await axios.post(`https://exersearch.test${endpoint}`, payload, {
-      withCredentials: true,
-});
+        withCredentials: true,
+      });
 
       const data = response.data;
 
@@ -134,12 +131,16 @@ export default function Login() {
       .then((res) => {
         const me = res.data;
         setUser(me);
-        redirectUser(me);
+
+        if (!hasUiChoice(me.role)) {
+          setUiMode("user");
+          redirectAfterAuth(me, navigate);
+        }
       })
       .catch(() => {
         localStorage.removeItem("token");
       });
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="login-page">
@@ -157,57 +158,76 @@ export default function Login() {
 
             {user && <p>Logged in as: {user.name}</p>}
 
-            <form onSubmit={handleSubmit}>
-              {mode === "signup" && (
+            {user && hasUiChoice(user.role) && (
+              <div style={{ display: "flex", gap: 10, marginBottom: 15, flexWrap: "wrap" }}>
+                {allowedUiModes(user.role).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setUiMode(m);
+                      redirectAfterAuth(user, navigate);
+                    }}
+                  >
+                    Continue as {prettyModeLabel(m)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!user && (
+              <form onSubmit={handleSubmit}>
+                {mode === "signup" && (
+                  <input
+                    type="text"
+                    name="fullName"
+                    placeholder="Full Name"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    required
+                  />
+                )}
+
                 <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Full Name"
-                  value={formData.fullName}
+                  type="email"
+                  name="email"
+                  placeholder="Email"
+                  value={formData.email}
                   onChange={handleChange}
                   required
                 />
-              )}
 
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-
-              {mode === "signup" && (
                 <input
                   type="password"
-                  name="password_confirmation"
-                  placeholder="Confirm Password"
-                  value={formData.password_confirmation}
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
                   onChange={handleChange}
                   required
                 />
-              )}
 
-              <button type="submit" disabled={loading}>
-                {loading
-                  ? mode === "login"
-                    ? "Logging in..."
-                    : "Signing up..."
-                  : mode === "login"
-                  ? "Login"
-                  : "Sign Up"}
-              </button>
-            </form>
+                {mode === "signup" && (
+                  <input
+                    type="password"
+                    name="password_confirmation"
+                    placeholder="Confirm Password"
+                    value={formData.password_confirmation}
+                    onChange={handleChange}
+                    required
+                  />
+                )}
+
+                <button type="submit" disabled={loading}>
+                  {loading
+                    ? mode === "login"
+                      ? "Logging in..."
+                      : "Signing up..."
+                    : mode === "login"
+                    ? "Login"
+                    : "Sign Up"}
+                </button>
+              </form>
+            )}
 
             <p className="toggle-text">
               {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}

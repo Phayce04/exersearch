@@ -8,6 +8,21 @@ import { Link, useNavigate } from "react-router-dom";
 const API_BASE = "https://exersearch.test";
 const FALLBACK_AVATAR = "https://i.pravatar.cc/60?img=12";
 const TOKEN_KEY = "token";
+const UI_MODE_KEY = "ui_mode";
+
+const ROLE_LEVEL = {
+  user: 1,
+  owner: 2,
+  superadmin: 3,
+};
+
+function roleLevel(role) {
+  return ROLE_LEVEL[role] ?? 0;
+}
+
+function hasAtLeastRole(role, required) {
+  return roleLevel(role) >= roleLevel(required);
+}
 
 function toAbsUrl(u) {
   if (!u) return "";
@@ -17,6 +32,26 @@ function toAbsUrl(u) {
   const base = String(API_BASE || "").replace(/\/$/, "");
   const path = s.startsWith("/") ? s : `/${s}`;
   return `${base}${path}`;
+}
+
+function allowedUiModesForRole(role) {
+  const lvl = roleLevel(role);
+  const modes = [];
+  if (lvl >= ROLE_LEVEL.owner) modes.push("owner");
+  if (lvl >= ROLE_LEVEL.superadmin) modes.push("superadmin");
+  return modes;
+}
+
+function routeForUiMode(mode) {
+  if (mode === "owner") return "/owner/dashboard";
+  if (mode === "superadmin") return "/admin/dashboard";
+  return "/home";
+}
+
+function labelForUiMode(mode) {
+  if (mode === "owner") return "Owner UI";
+  if (mode === "superadmin") return "Superadmin UI";
+  return "";
 }
 
 export default function HeaderUser() {
@@ -35,9 +70,6 @@ export default function HeaderUser() {
   const token = localStorage.getItem(TOKEN_KEY);
   const effectiveUser = user || me;
 
-  // ===============================
-  // fetch /me if needed
-  // ===============================
   useEffect(() => {
     let mounted = true;
 
@@ -62,9 +94,6 @@ export default function HeaderUser() {
     return () => (mounted = false);
   }, [user, me, token]);
 
-  // ===============================
-  // Public settings (user_logo_url)
-  // ===============================
   useEffect(() => {
     let mounted = true;
 
@@ -88,9 +117,6 @@ export default function HeaderUser() {
     return () => (mounted = false);
   }, []);
 
-  // ===============================
-  // avatar resolver
-  // ===============================
   const avatarSrc = useMemo(() => {
     const u = effectiveUser;
     if (!u) return FALLBACK_AVATAR;
@@ -115,6 +141,19 @@ export default function HeaderUser() {
 
   const displayName = effectiveUser?.name || (meLoading ? "Loading..." : "User");
   const displayEmail = effectiveUser?.email || "";
+
+  const isOwnerPlus = hasAtLeastRole(effectiveUser?.role, "owner");
+  const switchModes = isOwnerPlus ? allowedUiModesForRole(effectiveUser?.role) : [];
+
+  const handleSwitchUi = useCallback(
+    (mode) => {
+      localStorage.setItem(UI_MODE_KEY, mode);
+      setProfileDropdown(false);
+      setMobileMenuOpen(false);
+      navigate(routeForUiMode(mode));
+    },
+    [navigate]
+  );
 
   const handleLogout = useCallback(
     (e) => {
@@ -141,9 +180,6 @@ export default function HeaderUser() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [profileDropdown]);
 
-  // ===============================
-  // scroll effect
-  // ===============================
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.pageYOffset > 50);
     window.addEventListener("scroll", handleScroll);
@@ -154,7 +190,6 @@ export default function HeaderUser() {
 
   return (
     <>
-      {/* ✅ SHOW ONLY AFTER SCROLL */}
       {isScrolled && (
         <div className="top-logo scrolled">
           <div
@@ -176,7 +211,6 @@ export default function HeaderUser() {
         </div>
       )}
 
-      {/* Main Header */}
       <header className={`header ${isScrolled ? "header--scrolled" : ""}`}>
         <div
           className="logo"
@@ -209,7 +243,6 @@ export default function HeaderUser() {
             WORKOUT PLAN
           </Link>
 
-          {/* ✅ RENAMED from profile-container to header-profile */}
           <div className="header-profile" ref={containerRef}>
             <button
               className="profile-btn"
@@ -265,6 +298,30 @@ export default function HeaderUser() {
                 Settings
               </Link>
 
+              {isOwnerPlus && switchModes.length > 0 && (
+                <>
+                  <div className="dropdown-divider" />
+                  {switchModes.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      className="dropdown-btn"
+                      onClick={() => handleSwitchUi(m)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        background: "transparent",
+                        border: "none",
+                        padding: "10px 12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Switch to {labelForUiMode(m)}
+                    </button>
+                  ))}
+                </>
+              )}
+
               <Link to="/login" onClick={handleLogout}>
                 Logout
               </Link>
@@ -303,6 +360,25 @@ export default function HeaderUser() {
         <Link to="/home/settings" onClick={() => setMobileMenuOpen(false)}>
           Settings
         </Link>
+
+        {isOwnerPlus &&
+          switchModes.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => handleSwitchUi(m)}
+              style={{
+                background: "transparent",
+                border: "none",
+                textAlign: "left",
+                padding: "12px 16px",
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
+              Switch to {labelForUiMode(m)}
+            </button>
+          ))}
 
         <Link to="/login" onClick={handleLogout}>
           Logout

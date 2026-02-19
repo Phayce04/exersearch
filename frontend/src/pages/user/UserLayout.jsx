@@ -1,13 +1,20 @@
-// ✅ WHOLE FILE: src/pages/user/UserLayout.jsx
 import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import UserLoading from "./UserLoading";
-
-// Header & Footer for all user pages
 import HeaderUser from "./Header-user";
 import Footer from "./Footer";
-
 import { api } from "../../utils/apiClient";
+
+const ROLE_LEVEL = {
+  user: 1,
+  owner: 2,
+  admin: 3,
+  superadmin: 4,
+};
+
+function hasAtLeastRole(role, required) {
+  return (ROLE_LEVEL[role] || 0) >= (ROLE_LEVEL[required] || 0);
+}
 
 export default function UserLayout() {
   const [ready, setReady] = useState(false);
@@ -25,14 +32,12 @@ export default function UserLayout() {
         }
 
         const minDelay = new Promise((r) => setTimeout(r, 800));
-
-        // ✅ USE apiClient so maintenance 503 redirect works
         const meReq = api.get("/me");
 
         const [meRes] = await Promise.all([meReq, minDelay]);
         const fetchedUser = meRes.data.user || meRes.data;
 
-        if (fetchedUser?.role !== "user") {
+        if (!hasAtLeastRole(fetchedUser?.role, "user")) {
           navigate("/login", { replace: true });
           return;
         }
@@ -40,7 +45,6 @@ export default function UserLayout() {
         if (!alive) return;
         setReady(true);
       } catch (err) {
-        // ✅ If maintenance, go to maintenance page (not login)
         if (err?.response?.status === 503) {
           navigate("/maintenance", { replace: true });
           return;
