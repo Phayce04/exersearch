@@ -4,7 +4,6 @@ import Swal from "sweetalert2";
 const API_BASE = "https://exersearch.test";
 const TOKEN_KEY = "token";
 
-// 🔑 change this if your project uses a different key
 const ROLE_KEY = "role";
 
 function authHeaders() {
@@ -12,7 +11,6 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// ✅ prevents infinite redirects / spam
 let handlingMaintenance = false;
 
 export const api = axios.create({

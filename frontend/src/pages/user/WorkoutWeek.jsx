@@ -1,6 +1,7 @@
 // WorkoutWeek.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./workoutWeek.css";
 import {
   generateUserWorkoutPlan,
@@ -24,10 +25,8 @@ const WEEK = [
   { weekday: 7, name: "Sunday" },
 ];
 
-// ✅ your unique goals (no redundancy)
 const GOAL_OPTIONS = ["build_muscle", "lose_fat", "strength", "endurance"];
 
-// ✅ unique muscles from your templates list
 const MUSCLE_OPTIONS = [
   "quads",
   "chest",
@@ -43,6 +42,21 @@ const MUSCLE_OPTIONS = [
   "cardio",
 ];
 
+/* ✅ Persist last generated plan id so back button returns to generated plan */
+const LAST_PLAN_ID_KEY = "exersearch_last_user_plan_id";
+
+function loadLastPlanId() {
+  const v = localStorage.getItem(LAST_PLAN_ID_KEY);
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function saveLastPlanId(id) {
+  const n = Number(id);
+  if (!Number.isFinite(n) || n <= 0) return;
+  localStorage.setItem(LAST_PLAN_ID_KEY, String(n));
+}
+
 function prettyLabel(s = "") {
   return String(s)
     .trim()
@@ -56,7 +70,15 @@ function countSets(day) {
   return ex.reduce((sum, e) => sum + (Number(e.sets) || 0), 0);
 }
 
+function safeNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export default function WorkoutWeek() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [plan, setPlan] = useState(null);
   const [activePlanId, setActivePlanId] = useState(null);
 
@@ -75,13 +97,22 @@ export default function WorkoutWeek() {
     workout_days: 3,
     workout_level: "intermediate",
     session_minutes: 45,
-    workout_place: "gym", // home | gym | both
-    preferred_style: "mixed", // strength | hypertrophy | endurance | hiit | mixed
-    injuries: [], // ✅ will store injured MUSCLES now (e.g. ["back","shoulders"])
+    workout_place: "gym",
+    preferred_style: "mixed",
+    injuries: [],
   });
 
   const [equipmentOptions, setEquipmentOptions] = useState([]);
   const [preferredEquipmentIds, setPreferredEquipmentIds] = useState([]);
+
+  // ✅ On first mount: restore last plan id so returning from DayDetails shows the generated plan
+  useEffect(() => {
+    const last = loadLastPlanId();
+    if (last && !activePlanId) {
+      setActivePlanId(last);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const weekDays = useMemo(() => {
     const apiDays = plan?.days || [];
@@ -128,7 +159,13 @@ export default function WorkoutWeek() {
 
       setPlan(newPlan);
       setActivePlanId(newPlan.user_plan_id);
+
+      // ✅ persist so when user goes back from details, they see this plan again
+      saveLastPlanId(newPlan.user_plan_id);
+
+      console.log("[WorkoutWeek] Generated plan:", newPlan);
     } catch (e) {
+      console.error("[WorkoutWeek] Generate error:", e);
       setError(e?.message || "Failed to generate plan.");
     } finally {
       setLoadingGenerate(false);
@@ -142,8 +179,15 @@ export default function WorkoutWeek() {
 
     try {
       const res = await getUserWorkoutPlan(id);
-      setPlan(res?.data || null);
+      const loaded = res?.data || null;
+      setPlan(loaded);
+
+      // ✅ also persist the id if load works
+      saveLastPlanId(id);
+
+      console.log("[WorkoutWeek] Loaded plan:", loaded);
     } catch (e) {
+      console.error("[WorkoutWeek] Load plan error:", e);
       setError(e?.message || "Failed to load plan.");
     } finally {
       setLoadingPlan(false);
@@ -197,6 +241,7 @@ export default function WorkoutWeek() {
 
       setEquipmentOptions(allEquipments);
     } catch (e) {
+      console.error("[WorkoutWeek] Pref load error:", e);
       setPrefsError(e?.message || "Failed to load preferences.");
     } finally {
       setPrefsLoading(false);
@@ -215,7 +260,7 @@ export default function WorkoutWeek() {
         session_minutes: Number(prefs.session_minutes),
         workout_place: prefs.workout_place,
         preferred_style: prefs.preferred_style || null,
-        injuries: prefs.injuries || [], // ✅ now muscle strings
+        injuries: prefs.injuries || [],
       });
 
       await saveUserPreferredEquipments(
@@ -234,10 +279,44 @@ export default function WorkoutWeek() {
         injuries: prefs.injuries || [],
       });
     } catch (e) {
+      console.error("[WorkoutWeek] Save+Recalibrate error:", e);
       setPrefsError(e?.message || "Failed to save preferences.");
     } finally {
       setPrefsSaving(false);
     }
+  }
+
+  function goToDayDetails(userPlanDayId, dayObj) {
+    const id = safeNum(userPlanDayId);
+    const path = id ? `/home/workout/day/${id}` : "";
+
+    const clickInfo = {
+      clickedAt: new Date().toISOString(),
+      from: location.pathname,
+      targetIdRaw: userPlanDayId,
+      targetIdParsed: id,
+      computedPath: path,
+      day: {
+        weekday: dayObj?.weekday,
+        weekday_name: dayObj?.weekday_name,
+        day_number: dayObj?.day_number,
+        is_rest: dayObj?.is_rest,
+        focus: dayObj?.focus,
+        hasExercises: (dayObj?.exercises?.length ?? 0) > 0,
+      },
+    };
+
+    console.log("[WorkoutWeek] View details click:", clickInfo);
+
+    if (!id) {
+      setError("This day has no user_plan_day_id yet (cannot open details).");
+      return;
+    }
+
+    // ✅ ensure the plan id is persisted before leaving
+    if (activePlanId) saveLastPlanId(activePlanId);
+
+    navigate(path);
   }
 
   const hasPlan = !!plan;
@@ -293,8 +372,7 @@ export default function WorkoutWeek() {
 
                     {plan?.start_date && (
                       <span className="ww-muted">
-                        Start:{" "}
-                        <b>{new Date(plan.start_date).toDateString()}</b>
+                        Start: <b>{new Date(plan.start_date).toDateString()}</b>
                       </span>
                     )}
                   </div>
@@ -331,13 +409,25 @@ export default function WorkoutWeek() {
             <section className="ww-grid-wrap">
               <div className="ww-grid ww-grid-top">
                 {topRow.map((day) => (
-                  <DayCard key={day.weekday} day={day} />
+                  <DayCard
+                    key={day.weekday}
+                    day={day}
+                    onViewDetails={(userPlanDayId) =>
+                      goToDayDetails(userPlanDayId, day)
+                    }
+                  />
                 ))}
               </div>
 
               <div className="ww-grid ww-grid-bottom">
                 {bottomRow.map((day) => (
-                  <DayCard key={day.weekday} day={day} />
+                  <DayCard
+                    key={day.weekday}
+                    day={day}
+                    onViewDetails={(userPlanDayId) =>
+                      goToDayDetails(userPlanDayId, day)
+                    }
+                  />
                 ))}
               </div>
             </section>
@@ -355,7 +445,6 @@ export default function WorkoutWeek() {
         </div>
       )}
 
-      {/* ✅ Modal via Portal */}
       {showPrefs
         ? createPortal(
             <PreferencesModal
@@ -377,11 +466,13 @@ export default function WorkoutWeek() {
   );
 }
 
-function DayCard({ day }) {
+function DayCard({ day, onViewDetails }) {
   const isRest = !!day.is_rest || (day.exercises?.length ?? 0) === 0;
   const focusLabel = prettyLabel(isRest ? "rest" : day.focus);
   const setsTotal = countSets(day);
   const list = (day.exercises || []).slice(0, 6);
+
+  const canView = !!day?.user_plan_day_id && !isRest;
 
   return (
     <article className={`ww-card ${isRest ? "is-rest" : ""}`}>
@@ -447,12 +538,10 @@ function DayCard({ day }) {
       <button
         className={`ww-btn ww-btn-card ${isRest ? "is-rest" : ""}`}
         type="button"
+        disabled={!canView}
         onClick={() => {
-          alert(
-            isRest
-              ? `${day.weekday_name}: Rest day`
-              : `${day.weekday_name}: ${prettyLabel(day.focus)} day`
-          );
+          if (!canView) return;
+          onViewDetails?.(day.user_plan_day_id);
         }}
       >
         {isRest ? "Rest Day" : "View Details"}
@@ -488,7 +577,6 @@ function PreferencesModal({
     });
   }
 
-  // ✅ Injured MUSCLES stored into prefs.injuries
   function addInjuredMuscle() {
     const t = String(injuryPick || "").trim();
     if (!t) return;
@@ -530,11 +618,7 @@ function PreferencesModal({
             </div>
           </div>
 
-          <button
-            className="ww-btn ww-btn-ghost"
-            onClick={onClose}
-            type="button"
-          >
+          <button className="ww-btn ww-btn-ghost" onClick={onClose} type="button">
             Close
           </button>
         </div>
@@ -546,14 +630,11 @@ function PreferencesModal({
             {error ? <div className="ww-modal-error">{error}</div> : null}
 
             <div className="ww-modal-grid">
-              {/* ✅ GOAL DROPDOWN */}
               <label className="ww-field">
                 <span>Goal</span>
                 <select
                   value={prefs.goal || ""}
-                  onChange={(e) =>
-                    setPrefs((p) => ({ ...p, goal: e.target.value }))
-                  }
+                  onChange={(e) => setPrefs((p) => ({ ...p, goal: e.target.value }))}
                 >
                   <option value="" disabled>
                     Select a goal…
@@ -631,10 +712,7 @@ function PreferencesModal({
                 <select
                   value={prefs.preferred_style || "mixed"}
                   onChange={(e) =>
-                    setPrefs((p) => ({
-                      ...p,
-                      preferred_style: e.target.value,
-                    }))
+                    setPrefs((p) => ({ ...p, preferred_style: e.target.value }))
                   }
                 >
                   <option value="strength">Strength</option>
@@ -645,7 +723,6 @@ function PreferencesModal({
                 </select>
               </label>
 
-              {/* ✅ INJURED MUSCLES DROPDOWN (stored in injuries[]) */}
               <div className="ww-field ww-field-wide">
                 <span>Injured Muscles (will be avoided)</span>
 
@@ -727,12 +804,7 @@ function PreferencesModal({
                 Cancel
               </button>
 
-              <button
-                className="ww-btn"
-                onClick={onSave}
-                type="button"
-                disabled={saving}
-              >
+              <button className="ww-btn" onClick={onSave} type="button" disabled={saving}>
                 {saving ? "Saving…" : "Save & Recalibrate"}
               </button>
             </div>

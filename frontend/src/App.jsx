@@ -31,11 +31,12 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import GymDetails from "./pages/user/GymDetails";
 import SavedGyms from "./pages/user/SavedGyms";
 import WorkoutWeek from "./pages/user/WorkoutWeek";
+import WorkoutDayDetails from "./pages/user/WorkoutDayDetails";
 import BecomeOwner from "./pages/user/BecomeOwner";
 import AdminExercises from "./pages/admin/AdminExercises";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
 import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
-import AdminTemplateItems from "./pages/admin/AdminTemplateItems";// 
+import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -67,15 +68,15 @@ function App() {
       <Route path="/become-an-owner" element={<BecomeOwner />} />
       <Route path="/profile" element={<Profile />} />
 
-      <Route path="/home" element={<UserLayout />}>
+<Route path="/home/*" element={<UserLayout />}>
         <Route index element={<UserHome />} />
         <Route path="profile" element={<Profile />} />
         <Route path="find-gyms" element={<FindGyms />} />
         <Route path="gym/:id" element={<GymDetails />} />
         <Route path="gym-results" element={<GymResultsMatching />} />
         <Route path="saved-gyms" element={<SavedGyms />} />
-                <Route path="workout" element={<WorkoutWeek />} />
-
+        <Route path="workout" element={<WorkoutWeek />} />
+        <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
       </Route>
 
       <Route path="/owner" element={<OwnerLayout />}>
@@ -96,9 +97,9 @@ function App() {
         <Route path="gyms/:gymId" element={<GymDetailAdmin />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="exercises" element={<AdminExercises />} />
-  <Route path="workout-templates" element={<AdminWorkoutTemplates />} />
+        <Route path="workout-templates" element={<AdminWorkoutTemplates />} />
         <Route path="template-days" element={<AdminTemplateDays />} />
-        <Route path="template-items" element={<AdminTemplateItems />} /> 
+        <Route path="template-items" element={<AdminTemplateItems />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -34,4 +34,5 @@ class Exercise extends Model
             'equipment_id'
         );
     }
+    
 }

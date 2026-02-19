@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\UserWorkoutPlan;
 use App\Models\UserWorkoutPlanDay;
+use App\Models\Gym;
+use App\Services\UserWorkoutPlanGeneratorService;
 use Illuminate\Http\Request;
 
 class UserWorkoutPlanDayController extends Controller
@@ -23,8 +25,6 @@ class UserWorkoutPlanDayController extends Controller
             $query->where('user_plan_id', (int) $planId);
         }
 
-        // better ordering for calendar UI:
-        // weekday if exists, else fallback to day_number
         return $query
             ->orderByRaw('COALESCE(weekday, day_number) asc')
             ->paginate(100);
@@ -34,12 +34,18 @@ class UserWorkoutPlanDayController extends Controller
     {
         $userId = (int) $request->user()->user_id;
 
-        $day = UserWorkoutPlanDay::with([
-            'plan',
-            'templateDay',
-            'exercises.exercise',
-            'exercises.originalExercise',
-        ])
+        $day = UserWorkoutPlanDay::query()
+            ->with([
+                'plan',
+                'templateDay',
+                'exercises' => function ($q) {
+                    $q->orderBy('order_index', 'asc')
+                        ->with([
+                            'exercise.equipments',
+                            'originalExercise',
+                        ]);
+                },
+            ])
             ->whereHas('plan', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             })
@@ -51,48 +57,66 @@ class UserWorkoutPlanDayController extends Controller
         ]);
     }
 
+    public function recalibrateGym(Request $request, int $id, UserWorkoutPlanGeneratorService $svc)
+    {
+        $userId = (int) $request->user()->user_id;
+
+        $data = $request->validate([
+            'gym_id' => ['required', 'integer', 'min:1', 'exists:gyms,gym_id'],
+        ]);
+
+        $gymId = (int) $data['gym_id'];
+
+        $day = $svc->recalibrateSingleDayForGym(
+            userId: $userId,
+            userPlanDayId: (int) $id,
+            gymId: $gymId
+        );
+
+        $gym = Gym::query()
+            ->select(['gym_id', 'name', 'latitude', 'longitude'])
+            ->where('gym_id', $gymId)
+            ->first();
+
+        return response()->json([
+            'message' => 'Day recalibrated for selected gym.',
+            'data' => $day,
+            'gym' => $gym,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $userId = (int) $request->user()->user_id;
 
         $data = $request->validate([
             'user_plan_id' => 'required|integer|exists:user_workout_plans,user_plan_id',
-
-            // ✅ now nullable (rest days)
             'template_day_id' => 'nullable|integer|exists:workout_template_days,template_day_id',
-
-            // we recommend you keep 1..7 always in user table
             'day_number' => 'required|integer|min:1|max:7',
-
-            // new fields
             'weekday' => 'nullable|integer|min:1|max:7',
             'weekday_name' => 'nullable|string|max:10',
             'focus' => 'nullable|string|max:30',
             'is_rest' => 'nullable|boolean',
         ]);
 
-        // ensure plan belongs to user
         UserWorkoutPlan::where('user_id', $userId)
             ->where('user_plan_id', (int) $data['user_plan_id'])
             ->firstOrFail();
 
         $isRest = (bool)($data['is_rest'] ?? false);
 
-        // rule: rest day => template_day_id must be null
         if ($isRest && !empty($data['template_day_id'])) {
             return response()->json([
                 'message' => 'Rest days must not have template_day_id.',
             ], 422);
         }
 
-        // rule: workout day => template_day_id should exist
         if (!$isRest && empty($data['template_day_id'])) {
             return response()->json([
                 'message' => 'Workout days require template_day_id. If it is a rest day, set is_rest=true.',
             ], 422);
         }
 
-        // uniqueness: (plan, day_number)
         $existsDayNumber = UserWorkoutPlanDay::where('user_plan_id', (int) $data['user_plan_id'])
             ->where('day_number', (int) $data['day_number'])
             ->exists();
@@ -103,7 +127,6 @@ class UserWorkoutPlanDayController extends Controller
             ], 422);
         }
 
-        // optional uniqueness: (plan, weekday)
         if (!empty($data['weekday'])) {
             $existsWeekday = UserWorkoutPlanDay::where('user_plan_id', (int) $data['user_plan_id'])
                 ->where('weekday', (int) $data['weekday'])
@@ -116,7 +139,6 @@ class UserWorkoutPlanDayController extends Controller
             }
         }
 
-        // default focus for rest days
         if ($isRest && empty($data['focus'])) {
             $data['focus'] = 'rest';
         }
@@ -142,7 +164,6 @@ class UserWorkoutPlanDayController extends Controller
         $data = $request->validate([
             'day_number' => 'sometimes|required|integer|min:1|max:7',
             'template_day_id' => 'nullable|integer|exists:workout_template_days,template_day_id',
-
             'weekday' => 'nullable|integer|min:1|max:7',
             'weekday_name' => 'nullable|string|max:10',
             'focus' => 'nullable|string|max:30',
@@ -164,7 +185,6 @@ class UserWorkoutPlanDayController extends Controller
             ], 422);
         }
 
-        // uniqueness checks if day_number changed
         if (isset($data['day_number'])) {
             $exists = UserWorkoutPlanDay::where('user_plan_id', $day->user_plan_id)
                 ->where('day_number', (int) $data['day_number'])
@@ -178,7 +198,6 @@ class UserWorkoutPlanDayController extends Controller
             }
         }
 
-        // uniqueness checks if weekday changed
         if (array_key_exists('weekday', $data) && !empty($data['weekday'])) {
             $exists = UserWorkoutPlanDay::where('user_plan_id', $day->user_plan_id)
                 ->where('weekday', (int) $data['weekday'])

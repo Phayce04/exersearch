@@ -13,6 +13,7 @@ use App\Models\WorkoutTemplateDayExercise;
 
 use App\Models\Exercise;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserWorkoutPlanGeneratorService
 {
@@ -42,11 +43,15 @@ class UserWorkoutPlanGeneratorService
 
         $preferredEquipmentIds = $this->getPreferredEquipmentIds($userId);
 
-        $gymId = $overrides['gym_id'] ?? null;
+        // plan-level gym (optional)
+        $gymId = $overrides['gym_id'] ?? $prefs->gym_id ?? null;
+
+        /**
+         * IMPORTANT:
+         * Gym equipment filtering must NOT apply during initial plan generation.
+         * Only apply equipment constraints during explicit recalibration.
+         */
         $availableEquipmentIds = [];
-        if (!empty($gymId)) {
-            $availableEquipmentIds = $this->getGymEquipmentIds((int)$gymId);
-        }
 
         $splitWanted = $this->determineSplit($days);
 
@@ -75,10 +80,7 @@ class UserWorkoutPlanGeneratorService
             $days,
             $sessionMinutes
         ) {
-            // =========================================================
-            // ✅ NO ARCHIVING:
-            // Delete existing ACTIVE plan + children (prevents DB bloat)
-            // =========================================================
+            // delete active plan(s)
             $activePlanIds = UserWorkoutPlan::query()
                 ->where('user_id', $userId)
                 ->where('status', 'active')
@@ -106,7 +108,6 @@ class UserWorkoutPlanGeneratorService
                     ->delete();
             }
 
-            // ✅ create new plan
             $plan = UserWorkoutPlan::create([
                 'user_id' => $userId,
                 'template_id' => $template->template_id,
@@ -115,7 +116,6 @@ class UserWorkoutPlanGeneratorService
                 'gym_id' => $gymId ? (int)$gymId : null,
             ]);
 
-            // ✅ compute time scaling policy once per plan
             $timePolicy = $this->computeTimePolicy(
                 sessionMinutes: $sessionMinutes,
                 templateMin: (int)($template->session_minutes_min ?? 0),
@@ -124,7 +124,6 @@ class UserWorkoutPlanGeneratorService
                 level: (string)($template->level ?? '')
             );
 
-            // template days
             $tplDays = WorkoutTemplateDay::where('template_id', $template->template_id)
                 ->orderByRaw('COALESCE(weekday, 99) asc')
                 ->orderBy('day_number', 'asc')
@@ -172,7 +171,6 @@ class UserWorkoutPlanGeneratorService
                     $originalExerciseId = null;
                     $isModified = false;
 
-                    // 1) If slot has exercise_id and it's allowed, keep it.
                     if (!empty($slot->exercise_id)) {
                         $candidateId = (int)$slot->exercise_id;
 
@@ -180,11 +178,10 @@ class UserWorkoutPlanGeneratorService
                             exerciseId: $candidateId,
                             injuries: $injuries,
                             pickedToday: $pickedToday,
-                            availableEquipmentIds: $availableEquipmentIds
+                            availableEquipmentIds: $availableEquipmentIds // always []
                         )) {
                             $finalExerciseId = $candidateId;
                         } else {
-                            // 2) Replace via stable TOPSIS
                             $replacement = $this->pickExerciseForSlotTopsis(
                                 userId: $userId,
                                 slotSeedId: (int)($slot->tde_id ?? 0),
@@ -196,27 +193,10 @@ class UserWorkoutPlanGeneratorService
                                 preferredStyle: $preferredStyle,
                                 injuries: $injuries,
                                 preferredEquipmentIds: $preferredEquipmentIds,
-                                availableEquipmentIds: $availableEquipmentIds,
-                                excludeExerciseIds: $pickedToday
+                                availableEquipmentIds: $availableEquipmentIds, // always []
+                                excludeExerciseIds: $pickedToday,
+                                enforceEquipment: false // ✅ initial generation: no gym constraint
                             );
-
-                            // fallback: ignore gym equipment constraint
-                            if (!$replacement && !empty($availableEquipmentIds)) {
-                                $replacement = $this->pickExerciseForSlotTopsis(
-                                    userId: $userId,
-                                    slotSeedId: (int)($slot->tde_id ?? 0),
-                                    targetMuscle: $target,
-                                    movementPattern: $pattern,
-                                    slotType: $slotType,
-                                    level: $level,
-                                    workoutPlace: $workoutPlace,
-                                    preferredStyle: $preferredStyle,
-                                    injuries: $injuries,
-                                    preferredEquipmentIds: $preferredEquipmentIds,
-                                    availableEquipmentIds: [],
-                                    excludeExerciseIds: $pickedToday
-                                );
-                            }
 
                             if ($replacement) {
                                 $finalExerciseId = (int)$replacement->exercise_id;
@@ -226,7 +206,6 @@ class UserWorkoutPlanGeneratorService
                         }
                     }
 
-                    // 3) If still none, pick via stable TOPSIS
                     if (!$finalExerciseId) {
                         $exercise = $this->pickExerciseForSlotTopsis(
                             userId: $userId,
@@ -239,36 +218,18 @@ class UserWorkoutPlanGeneratorService
                             preferredStyle: $preferredStyle,
                             injuries: $injuries,
                             preferredEquipmentIds: $preferredEquipmentIds,
-                            availableEquipmentIds: $availableEquipmentIds,
-                            excludeExerciseIds: $pickedToday
+                            availableEquipmentIds: $availableEquipmentIds, // always []
+                            excludeExerciseIds: $pickedToday,
+                            enforceEquipment: false // ✅ initial generation: no gym constraint
                         );
-
-                        if (!$exercise && !empty($availableEquipmentIds)) {
-                            $exercise = $this->pickExerciseForSlotTopsis(
-                                userId: $userId,
-                                slotSeedId: (int)($slot->tde_id ?? 0),
-                                targetMuscle: $target,
-                                movementPattern: $pattern,
-                                slotType: $slotType,
-                                level: $level,
-                                workoutPlace: $workoutPlace,
-                                preferredStyle: $preferredStyle,
-                                injuries: $injuries,
-                                preferredEquipmentIds: $preferredEquipmentIds,
-                                availableEquipmentIds: [],
-                                excludeExerciseIds: $pickedToday
-                            );
-                        }
 
                         if ($exercise) {
                             $finalExerciseId = (int)$exercise->exercise_id;
                         }
                     }
 
-                    // skip if we still couldn't pick
                     if (!$finalExerciseId) continue;
 
-                    // ✅ TIME-AWARE SETS (THIS IS THE KEY CHANGE)
                     $baseSets = (int)($slot->sets ?? 0);
                     $adjustedSets = $this->adjustSetsByTime(
                         baseSets: $baseSets,
@@ -276,8 +237,6 @@ class UserWorkoutPlanGeneratorService
                         timePolicy: $timePolicy
                     );
 
-                    // (optional) if baseSets is null/0 in DB, keep it 0 instead of forcing 1
-                    // If you want ALWAYS at least 1 set, change the condition inside adjustSetsByTime().
                     UserWorkoutPlanDayExercise::create([
                         'user_plan_day_id' => $userDay->user_plan_day_id,
                         'template_day_exercise_id' => $slot->tde_id,
@@ -296,21 +255,6 @@ class UserWorkoutPlanGeneratorService
                 }
             }
 
-            // optional gym recalibration pass (also stable)
-            if (!empty($availableEquipmentIds)) {
-                $this->recalibratePlanForGym(
-                    userId: $userId,
-                    userPlanId: (int)$plan->user_plan_id,
-                    level: $level,
-                    workoutPlace: $workoutPlace,
-                    preferredStyle: $preferredStyle,
-                    injuries: $injuries,
-                    preferredEquipmentIds: $preferredEquipmentIds,
-                    availableEquipmentIds: $availableEquipmentIds,
-                    timePolicy: $timePolicy
-                );
-            }
-
             return UserWorkoutPlan::with([
                 'template',
                 'days.templateDay',
@@ -320,6 +264,411 @@ class UserWorkoutPlanGeneratorService
         });
     }
 
+    /**
+     * ✅ WHOLE PLAN RECALIBRATION
+     * - optionally set plan.gym_id
+     * - optionally clear day overrides
+     * - ✅ returns recalibration_notices + recalibration_summary attached to response
+     */
+    public function recalibrateWholePlanForGym(
+        int $userId,
+        int $userPlanId,
+        int $gymId,
+        bool $setAsPlanGym = true,
+        bool $clearDayOverrides = true
+    ): UserWorkoutPlan {
+        $prefs = UserPreference::where('user_id', $userId)->first();
+        if (!$prefs) throw new \Exception('User preferences not found.');
+
+        $plan = UserWorkoutPlan::query()
+            ->with(['template'])
+            ->where('user_plan_id', (int)$userPlanId)
+            ->first();
+
+        if (!$plan) throw new \Exception('Plan not found.');
+        if ((int)$plan->user_id !== (int)$userId) throw new \Exception('Unauthorized plan access.');
+
+        $availableEquipmentIds = $this->getGymEquipmentIds((int)$gymId);
+
+        $level = (string)($prefs->workout_level ?? $this->levelFromActivity($prefs->activity_level));
+        $sessionMinutes = (int)($prefs->session_minutes ?? 0);
+        $workoutPlace = $prefs->workout_place ?? null;
+        $preferredStyle = $prefs->preferred_style ?? null;
+
+        $injuries = $prefs->injuries ?? [];
+        if (!is_array($injuries)) $injuries = [];
+
+        $preferredEquipmentIds = $this->getPreferredEquipmentIds($userId);
+
+        $template = $plan->template ?? null;
+        $timePolicy = $this->computeTimePolicy(
+            sessionMinutes: $sessionMinutes,
+            templateMin: (int)($template?->session_minutes_min ?? 0),
+            templateMax: (int)($template?->session_minutes_max ?? 0),
+            goal: (string)($template?->goal ?? ''),
+            level: (string)($template?->level ?? '')
+        );
+
+        return DB::transaction(function () use (
+            $userId,
+            $plan,
+            $gymId,
+            $setAsPlanGym,
+            $clearDayOverrides,
+            $availableEquipmentIds,
+            $level,
+            $workoutPlace,
+            $preferredStyle,
+            $injuries,
+            $preferredEquipmentIds,
+            $timePolicy
+        ) {
+            if ($setAsPlanGym) {
+                UserWorkoutPlan::query()
+                    ->where('user_plan_id', (int)$plan->user_plan_id)
+                    ->update(['gym_id' => (int)$gymId]);
+            }
+
+            if ($clearDayOverrides) {
+                UserWorkoutPlanDay::query()
+                    ->where('user_plan_id', (int)$plan->user_plan_id)
+                    ->update(['gym_id' => null]);
+            }
+
+            // ✅ core now returns notices
+            $notices = $this->recalibratePlanForGym(
+                userId: (int)$userId,
+                userPlanId: (int)$plan->user_plan_id,
+                level: (string)$level,
+                workoutPlace: $workoutPlace,
+                preferredStyle: $preferredStyle,
+                injuries: $injuries,
+                preferredEquipmentIds: $preferredEquipmentIds,
+                availableEquipmentIds: $availableEquipmentIds,
+                timePolicy: $timePolicy
+            );
+
+            $out = UserWorkoutPlan::with([
+                'template',
+                'days.templateDay',
+                'days.exercises.exercise',
+                'days.exercises.originalExercise',
+            ])->where('user_plan_id', (int)$plan->user_plan_id)->firstOrFail();
+
+            // ✅ attach notices to API payload
+            $out->setAttribute('recalibration_notices', $notices);
+
+            $droppedCount = 0;
+            foreach ($notices as $n) {
+                if (($n['type'] ?? '') === 'exercise_dropped') $droppedCount++;
+            }
+
+            if ($droppedCount > 0) {
+                $out->setAttribute(
+                    'recalibration_summary',
+                    "{$droppedCount} exercise(s) were removed because the selected gym has no compatible equipment. Training volume was redistributed to remaining exercises."
+                );
+            } else {
+                $out->setAttribute('recalibration_summary', null);
+            }
+
+            return $out;
+        });
+    }
+
+    /**
+     * ✅ SINGLE DAY RECALIBRATION (day override)
+     * - enforces gym equipment constraints
+     * - ✅ keeps only "true bodyweight" (no required equipment, or only equipment_id=50)
+     * - ✅ if cannot replace: drops exercise and redistributes its sets to remaining exercises
+     * - ✅ attaches recalibration_notices + recalibration_summary to response
+     */
+    public function recalibrateSingleDayForGym(int $userId, int $userPlanDayId, int $gymId): UserWorkoutPlanDay
+    {
+        $prefs = UserPreference::where('user_id', $userId)->first();
+        if (!$prefs) {
+            throw new \Exception('User preferences not found.');
+        }
+
+        $day = UserWorkoutPlanDay::query()
+            ->with(['plan.template'])
+            ->where('user_plan_day_id', (int)$userPlanDayId)
+            ->first();
+
+        if (!$day) throw new \Exception('Plan day not found.');
+
+        $plan = $day->plan ?? null;
+        if (!$plan || (int)$plan->user_id !== (int)$userId) {
+            throw new \Exception('Unauthorized day access.');
+        }
+
+        if ((bool)$day->is_rest) {
+            UserWorkoutPlanDay::query()
+                ->where('user_plan_day_id', (int)$userPlanDayId)
+                ->update(['gym_id' => (int)$gymId]);
+
+            $out = $this->loadDayPayload((int)$userPlanDayId);
+            $out->setAttribute('recalibration_notices', []);
+            $out->setAttribute('recalibration_summary', null);
+            return $out;
+        }
+
+        UserWorkoutPlanDay::query()
+            ->where('user_plan_day_id', (int)$userPlanDayId)
+            ->update(['gym_id' => (int)$gymId]);
+
+        $availableEquipmentIds = $this->getGymEquipmentIds((int)$gymId);
+
+        $level = (string)($prefs->workout_level ?? $this->levelFromActivity($prefs->activity_level));
+        $sessionMinutes = (int)($prefs->session_minutes ?? 0);
+        $workoutPlace = $prefs->workout_place ?? null;
+        $preferredStyle = $prefs->preferred_style ?? null;
+
+        $injuries = $prefs->injuries ?? [];
+        if (!is_array($injuries)) $injuries = [];
+
+        $preferredEquipmentIds = $this->getPreferredEquipmentIds($userId);
+
+        $template = $plan->template ?? null;
+        $timePolicy = $this->computeTimePolicy(
+            sessionMinutes: $sessionMinutes,
+            templateMin: (int)($template?->session_minutes_min ?? 0),
+            templateMax: (int)($template?->session_minutes_max ?? 0),
+            goal: (string)($template?->goal ?? ''),
+            level: (string)($template?->level ?? '')
+        );
+
+        return DB::transaction(function () use (
+            $userId,
+            $userPlanDayId,
+            $availableEquipmentIds,
+            $level,
+            $workoutPlace,
+            $preferredStyle,
+            $injuries,
+            $preferredEquipmentIds,
+            $timePolicy
+        ) {
+            $items = UserWorkoutPlanDayExercise::query()
+                ->where('user_plan_day_id', (int)$userPlanDayId)
+                ->orderBy('order_index', 'asc')
+                ->get();
+
+            if ($items->isEmpty()) {
+                $out = $this->loadDayPayload((int)$userPlanDayId);
+                $out->setAttribute('recalibration_notices', []);
+                $out->setAttribute('recalibration_summary', null);
+                return $out;
+            }
+
+            $pickedToday = [];
+            $dropped = []; // used for redistribution
+            $notices = []; // returned to UI
+
+            foreach ($items as $it) {
+                $currentId = !empty($it->exercise_id) ? (int)$it->exercise_id : null;
+                if (!$currentId) continue;
+
+                if (!in_array($currentId, $pickedToday, true)) {
+                    $pickedToday[] = $currentId;
+                }
+
+                // ✅ true bodyweight shortcut: no required equipment OR only equipment_id=50
+                $required = $this->requiredEquipmentIds($currentId);
+                $isTrueBodyweight = empty($required) || (count($required) === 1 && (int)$required[0] === 50);
+
+                if ($isTrueBodyweight) {
+                    if ((int)($it->original_exercise_id ?? 0) === $currentId) {
+                        UserWorkoutPlanDayExercise::query()
+                            ->where('user_plan_exercise_id', (int)$it->user_plan_exercise_id)
+                            ->update([
+                                'is_modified' => false,
+                                'original_exercise_id' => null,
+                            ]);
+                    }
+                    continue;
+                }
+
+                // supported by gym equipment -> keep
+                if ($this->isExerciseSupportedByEquipment($currentId, $availableEquipmentIds)) {
+                    continue;
+                }
+
+                // else: try to replace
+                $slot = null;
+                if (!empty($it->template_day_exercise_id)) {
+                    $slot = WorkoutTemplateDayExercise::query()
+                        ->select('tde_id', 'target_muscle', 'movement_pattern', 'slot_type')
+                        ->where('tde_id', (int)$it->template_day_exercise_id)
+                        ->first();
+                }
+
+                $target = $this->normStr($slot?->target_muscle ?? '');
+                $pattern = $this->normStr($slot?->movement_pattern ?? '');
+                $slotType = $this->normStr($slot?->slot_type ?? ($it->slot_type ?? ''));
+
+                $exclude = array_values(array_unique(array_merge($pickedToday, [$currentId])));
+
+                $replacement = $this->pickExerciseForSlotTopsis(
+                    userId: $userId,
+                    slotSeedId: (int)($it->template_day_exercise_id ?? 0),
+                    targetMuscle: $target,
+                    movementPattern: $pattern,
+                    slotType: $slotType,
+                    level: $level,
+                    workoutPlace: $workoutPlace,
+                    preferredStyle: $preferredStyle,
+                    injuries: $injuries,
+                    preferredEquipmentIds: $preferredEquipmentIds,
+                    availableEquipmentIds: $availableEquipmentIds,
+                    excludeExerciseIds: $exclude,
+                    enforceEquipment: true // ✅ enforce even if gym has 0 equipment
+                );
+
+                if (!$replacement) {
+                    $replacement = $this->pickBodyweightFallbackForSlot(
+                        targetMuscle: $target,
+                        injuries: $injuries,
+                        excludeExerciseIds: $exclude
+                    );
+                }
+
+                if (!$replacement) {
+                    // ✅ cannot be changed: drop it
+                    $setsToRedistribute = (int)($it->sets ?? 0);
+                    $reason = 'No compatible replacement found for selected gym equipment and your constraints. Exercise removed and volume redistributed.';
+
+                    Log::warning('Workout recalibration dropped exercise (single-day)', [
+                        'user_id' => $userId,
+                        'user_plan_day_id' => (int)$userPlanDayId,
+                        'dropped_exercise_id' => $currentId,
+                        'template_day_exercise_id' => (int)($it->template_day_exercise_id ?? 0),
+                        'slot_type' => $slotType,
+                        'target' => $target,
+                        'pattern' => $pattern,
+                        'sets' => $setsToRedistribute,
+                        'gym_equipment_count' => count($availableEquipmentIds),
+                        'reason' => $reason,
+                    ]);
+
+                    $notices[] = [
+                        'type' => 'exercise_dropped',
+                        'scope' => 'day',
+                        'user_plan_day_id' => (int)$userPlanDayId,
+                        'exercise_id' => $currentId,
+                        'exercise_name' => optional(Exercise::find($currentId))->name,
+                        'slot_type' => (string)$slotType,
+                        'target_muscle' => (string)$target,
+                        'movement_pattern' => (string)$pattern,
+                        'sets_lost' => $setsToRedistribute,
+                        'reason' => $reason,
+                    ];
+
+                    $dropped[] = [
+                        'user_plan_exercise_id' => (int)$it->user_plan_exercise_id,
+                        'exercise_id' => $currentId,
+                        'sets' => $setsToRedistribute,
+                        'slot_type' => (string)$slotType,
+                        'reason' => $reason,
+                    ];
+
+                    UserWorkoutPlanDayExercise::query()
+                        ->where('user_plan_exercise_id', (int)$it->user_plan_exercise_id)
+                        ->delete();
+
+                    continue;
+                }
+
+                $newId = (int)$replacement->exercise_id;
+                if ($newId === $currentId) continue;
+
+                // ✅ "before" = immediately previous (legit before/after)
+                $orig = $currentId;
+
+                $baseSets = (int)($it->sets ?? 0);
+                $adjustedSets = $this->adjustSetsByTime(
+                    baseSets: $baseSets,
+                    slotType: (string)($slotType ?? ''),
+                    timePolicy: $timePolicy
+                );
+
+                UserWorkoutPlanDayExercise::query()
+                    ->where('user_plan_exercise_id', (int)$it->user_plan_exercise_id)
+                    ->update([
+                        'exercise_id' => $newId,
+                        'is_modified' => true,
+                        'original_exercise_id' => $orig,
+                        'sets' => $adjustedSets > 0 ? $adjustedSets : $it->sets,
+                    ]);
+
+                $notices[] = [
+                    'type' => 'exercise_replaced',
+                    'scope' => 'day',
+                    'user_plan_day_id' => (int)$userPlanDayId,
+                    'from_exercise_id' => $currentId,
+                    'from_exercise_name' => optional(Exercise::find($currentId))->name,
+                    'to_exercise_id' => $newId,
+                    'to_exercise_name' => optional(Exercise::find($newId))->name,
+                    'reason' => 'Exercise required unavailable equipment for the selected gym.',
+                ];
+
+                if (!in_array($newId, $pickedToday, true)) {
+                    $pickedToday[] = $newId;
+                }
+            }
+
+            // ✅ redistribute dropped sets to remaining exercises
+            if (!empty($dropped)) {
+                $this->redistributeDroppedSetsWithinDay(
+                    userPlanDayId: (int)$userPlanDayId,
+                    dropped: $dropped
+                );
+            }
+
+            $out = $this->loadDayPayload((int)$userPlanDayId);
+            $out->setAttribute('recalibration_notices', $notices);
+
+            $droppedCount = 0;
+            foreach ($notices as $n) {
+                if (($n['type'] ?? '') === 'exercise_dropped') $droppedCount++;
+            }
+
+            if ($droppedCount > 0) {
+                $out->setAttribute(
+                    'recalibration_summary',
+                    "{$droppedCount} exercise(s) were removed because the selected gym has no compatible equipment. Training volume was redistributed to remaining exercises."
+                );
+            } else {
+                $out->setAttribute('recalibration_summary', null);
+            }
+
+            return $out;
+        });
+    }
+
+    private function loadDayPayload(int $userPlanDayId): UserWorkoutPlanDay
+    {
+        return UserWorkoutPlanDay::query()
+            ->with([
+                'templateDay',
+                'plan',
+                'exercises' => function ($q) {
+                    $q->orderBy('order_index', 'asc')
+                        ->with([
+                            'exercise.equipments',
+                            'originalExercise',
+                        ]);
+                },
+            ])
+            ->where('user_plan_day_id', $userPlanDayId)
+            ->firstOrFail();
+    }
+
+    /**
+     * Private whole-plan recalibration core.
+     * ✅ returns notices so API can tell user what happened
+     * ✅ drops unreplaceable exercises and redistributes sets per day
+     */
     private function recalibratePlanForGym(
         int $userId,
         int $userPlanId,
@@ -330,7 +679,7 @@ class UserWorkoutPlanGeneratorService
         array $preferredEquipmentIds,
         array $availableEquipmentIds,
         array $timePolicy
-    ): void {
+    ): array {
         $items = UserWorkoutPlanDayExercise::query()
             ->with(['planDay.templateDay'])
             ->whereHas('planDay', function ($q) use ($userPlanId) {
@@ -340,20 +689,40 @@ class UserWorkoutPlanGeneratorService
             ->orderBy('order_index', 'asc')
             ->get();
 
+        if ($items->isEmpty()) return [];
+
         $pickedByDay = [];
+        $droppedByDay = []; // dayId => dropped[]
+        $notices = [];
 
         foreach ($items as $it) {
             $dayId = (int)($it->user_plan_day_id ?? 0);
             if ($dayId <= 0) continue;
 
             if (!isset($pickedByDay[$dayId])) $pickedByDay[$dayId] = [];
+            if (!isset($droppedByDay[$dayId])) $droppedByDay[$dayId] = [];
 
             $currentId = !empty($it->exercise_id) ? (int)$it->exercise_id : null;
             if (!$currentId) continue;
 
             $pickedByDay[$dayId][] = $currentId;
 
-            // already supported by gym equipment -> keep
+            // ✅ true bodyweight shortcut
+            $required = $this->requiredEquipmentIds($currentId);
+            $isTrueBodyweight = empty($required) || (count($required) === 1 && (int)$required[0] === 50);
+
+            if ($isTrueBodyweight) {
+                if ((int)($it->original_exercise_id ?? 0) === $currentId) {
+                    UserWorkoutPlanDayExercise::query()
+                        ->where('user_plan_exercise_id', (int)$it->user_plan_exercise_id)
+                        ->update([
+                            'is_modified' => false,
+                            'original_exercise_id' => null,
+                        ]);
+                }
+                continue;
+            }
+
             if ($this->isExerciseSupportedByEquipment($currentId, $availableEquipmentIds)) {
                 continue;
             }
@@ -384,15 +753,70 @@ class UserWorkoutPlanGeneratorService
                 injuries: $injuries,
                 preferredEquipmentIds: $preferredEquipmentIds,
                 availableEquipmentIds: $availableEquipmentIds,
-                excludeExerciseIds: $exclude
+                excludeExerciseIds: $exclude,
+                enforceEquipment: true
             );
 
-            if (!$replacement) continue;
+            if (!$replacement) {
+                $replacement = $this->pickBodyweightFallbackForSlot(
+                    targetMuscle: $target,
+                    injuries: $injuries,
+                    excludeExerciseIds: $exclude
+                );
+            }
+
+            if (!$replacement) {
+                $setsToRedistribute = (int)($it->sets ?? 0);
+                $reason = 'No compatible replacement found for selected gym equipment and your constraints. Exercise removed and volume redistributed.';
+
+                Log::warning('Workout recalibration dropped exercise (whole-plan)', [
+                    'user_id' => $userId,
+                    'user_plan_id' => (int)$userPlanId,
+                    'user_plan_day_id' => $dayId,
+                    'dropped_exercise_id' => $currentId,
+                    'template_day_exercise_id' => (int)($it->template_day_exercise_id ?? 0),
+                    'slot_type' => $slotType,
+                    'target' => $target,
+                    'pattern' => $pattern,
+                    'sets' => $setsToRedistribute,
+                    'gym_equipment_count' => count($availableEquipmentIds),
+                    'reason' => $reason,
+                ]);
+
+                $notices[] = [
+                    'type' => 'exercise_dropped',
+                    'scope' => 'plan',
+                    'user_plan_id' => (int)$userPlanId,
+                    'user_plan_day_id' => $dayId,
+                    'exercise_id' => $currentId,
+                    'exercise_name' => optional(Exercise::find($currentId))->name,
+                    'slot_type' => (string)$slotType,
+                    'target_muscle' => (string)$target,
+                    'movement_pattern' => (string)$pattern,
+                    'sets_lost' => $setsToRedistribute,
+                    'reason' => $reason,
+                ];
+
+                $droppedByDay[$dayId][] = [
+                    'user_plan_exercise_id' => (int)$it->user_plan_exercise_id,
+                    'exercise_id' => $currentId,
+                    'sets' => $setsToRedistribute,
+                    'slot_type' => (string)$slotType,
+                    'reason' => $reason,
+                ];
+
+                UserWorkoutPlanDayExercise::query()
+                    ->where('user_plan_exercise_id', (int)$it->user_plan_exercise_id)
+                    ->delete();
+
+                continue;
+            }
 
             $newId = (int)$replacement->exercise_id;
-            $orig = !empty($it->original_exercise_id) ? (int)$it->original_exercise_id : $currentId;
+            if ($newId === $currentId) continue;
 
-            // ✅ keep time-aware sets after replacement too
+            $orig = $currentId;
+
             $baseSets = (int)($it->sets ?? 0);
             $adjustedSets = $this->adjustSetsByTime(
                 baseSets: $baseSets,
@@ -409,8 +833,119 @@ class UserWorkoutPlanGeneratorService
                     'sets' => $adjustedSets > 0 ? $adjustedSets : $it->sets,
                 ]);
 
+            $notices[] = [
+                'type' => 'exercise_replaced',
+                'scope' => 'plan',
+                'user_plan_id' => (int)$userPlanId,
+                'user_plan_day_id' => $dayId,
+                'from_exercise_id' => $currentId,
+                'from_exercise_name' => optional(Exercise::find($currentId))->name,
+                'to_exercise_id' => $newId,
+                'to_exercise_name' => optional(Exercise::find($newId))->name,
+                'reason' => 'Exercise required unavailable equipment for the selected gym.',
+            ];
+
             $pickedByDay[$dayId][] = $newId;
         }
+
+        // ✅ redistribute dropped sets per day
+        foreach ($droppedByDay as $dayId => $drops) {
+            if (empty($drops)) continue;
+            $this->redistributeDroppedSetsWithinDay(
+                userPlanDayId: (int)$dayId,
+                dropped: $drops
+            );
+        }
+
+        return $notices;
+    }
+
+    /**
+     * Redistribute sets from dropped exercises to remaining exercises in the same day.
+     * - Adds +1 set round-robin until exhausted.
+     * - Caps per-exercise extra sets based on slot_type:
+     *    compound/main/primary => +2 max
+     *    others => +1 max
+     */
+    private function redistributeDroppedSetsWithinDay(int $userPlanDayId, array $dropped): void
+    {
+        $total = 0;
+        foreach ($dropped as $d) {
+            $total += max(0, (int)($d['sets'] ?? 0));
+        }
+        if ($total <= 0) return;
+
+        $remaining = UserWorkoutPlanDayExercise::query()
+            ->where('user_plan_day_id', (int)$userPlanDayId)
+            ->orderBy('order_index', 'asc')
+            ->get();
+
+        if ($remaining->isEmpty()) return;
+
+        // baseline sets at time of redistribution
+        $baseSetsByRow = [];
+        foreach ($remaining as $r) {
+            $baseSetsByRow[(int)$r->user_plan_exercise_id] = (int)($r->sets ?? 0);
+        }
+
+        $i = 0;
+        $safety = 0;
+        while ($total > 0 && $safety < 5000) {
+            $safety++;
+
+            $row = $remaining[$i % $remaining->count()];
+            $rowId = (int)$row->user_plan_exercise_id;
+
+            $slotTypeNorm = strtolower(trim((string)($row->slot_type ?? '')));
+            $maxExtra = $this->maxExtraSetsForSlotType($slotTypeNorm);
+
+            $base = (int)($baseSetsByRow[$rowId] ?? (int)($row->sets ?? 0));
+            $current = (int)($row->sets ?? 0);
+
+            if ($current < ($base + $maxExtra)) {
+                $new = $current + 1;
+
+                UserWorkoutPlanDayExercise::query()
+                    ->where('user_plan_exercise_id', $rowId)
+                    ->update(['sets' => $new]);
+
+                $row->sets = $new;
+                $total--;
+            }
+
+            $i++;
+
+            if ($i > ($remaining->count() * 5) && $this->noMoreCapacity($remaining, $baseSetsByRow)) {
+                Log::warning('Workout recalibration: dropped sets could not be fully redistributed', [
+                    'user_plan_day_id' => $userPlanDayId,
+                    'remaining_unassigned_sets' => $total,
+                ]);
+                break;
+            }
+        }
+    }
+
+    private function noMoreCapacity($remaining, array $baseSetsByRow): bool
+    {
+        foreach ($remaining as $r) {
+            $rowId = (int)$r->user_plan_exercise_id;
+            $slotTypeNorm = strtolower(trim((string)($r->slot_type ?? '')));
+            $maxExtra = $this->maxExtraSetsForSlotType($slotTypeNorm);
+
+            $base = (int)($baseSetsByRow[$rowId] ?? (int)($r->sets ?? 0));
+            $current = (int)($r->sets ?? 0);
+
+            if ($current < ($base + $maxExtra)) return false;
+        }
+        return true;
+    }
+
+    private function maxExtraSetsForSlotType(string $slotTypeNorm): int
+    {
+        return match ($slotTypeNorm) {
+            'compound', 'main', 'primary' => 2,
+            default => 1,
+        };
     }
 
     private function determineSplit(int $days): string
@@ -502,6 +1037,7 @@ class UserWorkoutPlanGeneratorService
             }
         }
 
+        // Only enforced when availableEquipmentIds is non-empty (generation path uses [])
         if (!empty($availableEquipmentIds)) {
             return $this->isExerciseSupportedByEquipment($exerciseId, $availableEquipmentIds);
         }
@@ -509,27 +1045,40 @@ class UserWorkoutPlanGeneratorService
         return true;
     }
 
+    /**
+     * ✅ requires ALL required equipment_ids for the exercise to be present at the gym.
+     */
     private function isExerciseSupportedByEquipment(int $exerciseId, array $availableEquipmentIds): bool
     {
-        $ids = array_values(array_unique(array_map('intval', $availableEquipmentIds)));
+        $avail = array_values(array_unique(array_map('intval', $availableEquipmentIds)));
+        $availableSet = array_fill_keys($avail, true);
 
-        $total = DB::table('exercise_equipments')
-            ->where('exercise_id', $exerciseId)
-            ->count();
+        $required = $this->requiredEquipmentIds($exerciseId);
 
-        if ($total === 0) return true; // bodyweight / no equipment requirement
+        // No equipment requirement → always supported
+        if (empty($required)) return true;
 
-        $count = DB::table('exercise_equipments')
-            ->where('exercise_id', $exerciseId)
-            ->whereIn('equipment_id', $ids)
-            ->count();
+        // Require FULL coverage
+        foreach ($required as $reqId) {
+            if (!isset($availableSet[(int)$reqId])) return false;
+        }
 
-        return $count > 0;
+        return true;
     }
 
     /**
-     * ✅ TOPSIS-based picker (STABLE)
+     * Required equipment IDs for an exercise (pivot). Always int[].
      */
+    private function requiredEquipmentIds(int $exerciseId): array
+    {
+        return DB::table('exercise_equipments')
+            ->where('exercise_id', $exerciseId)
+            ->pluck('equipment_id')
+            ->map(fn ($x) => (int)$x)
+            ->values()
+            ->all();
+    }
+
     private function pickExerciseForSlotTopsis(
         int $userId,
         int $slotSeedId,
@@ -542,7 +1091,8 @@ class UserWorkoutPlanGeneratorService
         array $injuries,
         array $preferredEquipmentIds,
         array $availableEquipmentIds,
-        array $excludeExerciseIds = []
+        array $excludeExerciseIds = [],
+        bool $enforceEquipment = false
     ): ?Exercise {
         $target = strtolower(trim((string)$targetMuscle));
         $pattern = strtolower(trim((string)$movementPattern));
@@ -569,8 +1119,7 @@ class UserWorkoutPlanGeneratorService
             $q->whereNotIn(DB::raw("LOWER(COALESCE(primary_muscle,''))"), $blocked);
         }
 
-        // ✅ deterministic pool
-        $candidates = $q->orderBy('exercise_id', 'asc')->limit(80)->get();
+        $candidates = $q->orderBy('exercise_id', 'asc')->limit(120)->get();
         if ($candidates->isEmpty()) return null;
 
         $candIds = $candidates->pluck('exercise_id')->map(fn($x) => (int)$x)->values()->all();
@@ -605,6 +1154,7 @@ class UserWorkoutPlanGeneratorService
         ];
 
         $rows = [];
+
         foreach ($candidates as $ex) {
             $eid  = (int)$ex->exercise_id;
             $pm   = strtolower(trim((string)($ex->primary_muscle ?? '')));
@@ -612,6 +1162,15 @@ class UserWorkoutPlanGeneratorService
 
             $hasEquipReq = !empty($equipByExercise[$eid]);
             $equipIds = $hasEquipReq ? array_keys($equipByExercise[$eid]) : [];
+
+            // ✅ enforce even when gym has 0 equipment
+            if ($enforceEquipment && $hasEquipReq) {
+                foreach ($equipIds as $eqId) {
+                    if (!isset($availableSet[(int)$eqId])) {
+                        continue 2;
+                    }
+                }
+            }
 
             $targetMatch = ($target !== '' && $pm === $target) ? 1.0 : ($target === '' ? 0.5 : 0.0);
 
@@ -626,15 +1185,6 @@ class UserWorkoutPlanGeneratorService
             }
 
             $equipFit = 1.0;
-            if (!empty($availableSet)) {
-                if ($hasEquipReq) {
-                    $ok = false;
-                    foreach ($equipIds as $eqId) {
-                        if (isset($availableSet[(int)$eqId])) { $ok = true; break; }
-                    }
-                    $equipFit = $ok ? 1.0 : 0.0;
-                }
-            }
 
             $prefBonus = 0.0;
             if (!empty($preferredSet) && $hasEquipReq) {
@@ -674,6 +1224,8 @@ class UserWorkoutPlanGeneratorService
             ];
         }
 
+        if (empty($rows)) return null;
+
         $ranked = $this->topsisRank($rows, $weights);
         if (empty($ranked)) return null;
 
@@ -695,10 +1247,46 @@ class UserWorkoutPlanGeneratorService
         $idx = $seed % max(1, count($topK));
         $picked = $topK[$idx];
 
-        /** @var Exercise $best */
-        $best = $picked['exercise'];
+        return $picked['exercise'];
+    }
 
-        return $best;
+    /**
+     * ✅ True bodyweight fallback:
+     * must NOT require any equipment besides 50 (your "bodyweight" equipment id).
+     */
+    private function pickBodyweightFallbackForSlot(
+        string $targetMuscle,
+        array $injuries,
+        array $excludeExerciseIds = []
+    ): ?Exercise {
+        $target = strtolower(trim((string)$targetMuscle));
+
+        $q = Exercise::query()
+            ->select(['exercise_id', 'name', 'primary_muscle', 'difficulty', 'equipment'])
+            ->where(function ($qq) {
+                $qq->whereRaw("LOWER(COALESCE(equipment,'')) = 'bodyweight'")
+                    ->orWhereDoesntHave('equipments')
+                    ->orWhereHas('equipments', fn($e) => $e->where('equipments.equipment_id', 50));
+            })
+            // ✅ must NOT require any equipment besides 50
+            ->whereDoesntHave('equipments', function ($e) {
+                $e->where('equipments.equipment_id', '!=', 50);
+            });
+
+        if ($target !== '') {
+            $q->whereRaw("LOWER(COALESCE(primary_muscle,'')) = ?", [$target]);
+        }
+
+        if (!empty($excludeExerciseIds)) {
+            $q->whereNotIn('exercise_id', $excludeExerciseIds);
+        }
+
+        $blocked = $this->blockedMusclesFromInjuries($injuries);
+        if (!empty($blocked)) {
+            $q->whereNotIn(DB::raw("LOWER(COALESCE(primary_muscle,''))"), $blocked);
+        }
+
+        return $q->orderBy('exercise_id', 'asc')->first(); // ✅ Exercise|null
     }
 
     private function stablePickSeed(
@@ -738,13 +1326,6 @@ class UserWorkoutPlanGeneratorService
         return (int) sprintf('%u', crc32(json_encode($payload)));
     }
 
-    // =========================================================
-    // ✅ TIME-AWARE HELPERS
-    // =========================================================
-
-    /**
-     * Produces a deterministic policy from sessionMinutes vs template min/max.
-     */
     private function computeTimePolicy(
         int $sessionMinutes,
         int $templateMin,
@@ -756,7 +1337,6 @@ class UserWorkoutPlanGeneratorService
         $templateMin = max(0, (int)$templateMin);
         $templateMax = max(0, (int)$templateMax);
 
-        // If no session minutes given OR template missing ranges -> neutral
         if ($sessionMinutes <= 0 || $templateMin <= 0 || $templateMax <= 0 || $templateMax < $templateMin) {
             return [
                 'scale' => 1.0,
@@ -770,7 +1350,7 @@ class UserWorkoutPlanGeneratorService
         $mid = ($templateMin + $templateMax) / 2.0;
         $rawScale = $mid > 0 ? ($sessionMinutes / $mid) : 1.0;
 
-      $scale = max(0.85, min(1.15, $rawScale));
+        $scale = max(0.85, min(1.15, $rawScale));
 
         $aboveMax = $sessionMinutes > $templateMax;
         $belowMin = $sessionMinutes < $templateMin;
@@ -784,12 +1364,6 @@ class UserWorkoutPlanGeneratorService
         ];
     }
 
-    /**
-     * Adjust sets for a slot using time policy.
-     * - If user is ABOVE template max -> add sets (capped)
-     * - If BELOW template min -> reduce sets (floored)
-     * - Otherwise scale around base sets slightly
-     */
     private function adjustSetsByTime(int $baseSets, string $slotType, array $timePolicy): int
     {
         $baseSets = (int)$baseSets;
@@ -797,7 +1371,6 @@ class UserWorkoutPlanGeneratorService
 
         $slotTypeNorm = strtolower(trim((string)$slotType));
 
-        // slot caps: compounds can grow more than accessories
         $maxExtra = match ($slotTypeNorm) {
             'compound', 'main', 'primary' => 2,
             default => 1,
@@ -806,32 +1379,24 @@ class UserWorkoutPlanGeneratorService
         $minSets = 1;
 
         $scale = (float)($timePolicy['scale'] ?? 1.0);
-
-        // base scaled sets (rounded)
         $scaled = (int) round($baseSets * $scale);
 
-        // If way above max, add extra sets per ~15 minutes (but capped)
         if (!empty($timePolicy['aboveMax'])) {
             $overBy = (int)($timePolicy['overBy'] ?? 0);
             $extra = min($maxExtra, 1 + (int) floor($overBy / 15));
             $scaled = $baseSets + $extra;
         }
 
-        // If way below min, remove sets per ~15 minutes (but floored)
         if (!empty($timePolicy['belowMin'])) {
             $underBy = (int)($timePolicy['underBy'] ?? 0);
             $reduce = 1 + (int) floor($underBy / 15);
             $scaled = max($minSets, $baseSets - $reduce);
         }
 
-        // safety clamp
         $upper = $baseSets + $maxExtra;
         return max($minSets, min($upper, $scaled));
     }
 
-    /**
-     * TOPSIS ranking (all criteria are benefit)
-     */
     private function topsisRank(array $rows, array $weights): array
     {
         if (empty($rows)) return [];

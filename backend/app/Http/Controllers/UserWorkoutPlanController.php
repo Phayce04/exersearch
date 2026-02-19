@@ -109,10 +109,6 @@ class UserWorkoutPlanController extends Controller
         ]);
     }
 
-    /**
-     * POST /api/v1/user/workout-plans/generate
-     * Create a user plan instance by selecting a matching template and copying its days/items.
-     */
     public function generate(Request $request, UserWorkoutPlanGeneratorService $svc)
     {
         $userId = (int) $request->user()->user_id;
@@ -131,5 +127,32 @@ class UserWorkoutPlanController extends Controller
             'message' => 'Workout plan generated.',
             'data' => $plan,
         ], 201);
+    }
+
+
+    public function recalibrateGym(Request $request, $id, UserWorkoutPlanGeneratorService $svc)
+    {
+        $userId = (int) $request->user()->user_id;
+
+        $data = $request->validate([
+            'gym_id' => 'required|integer|min:1',
+        ]);
+
+        $gymId = (int) $data['gym_id'];
+        $planId = (int) $id;
+
+        $plan = $svc->recalibrateWholePlanForGym(
+            userId: $userId,
+            userPlanId: $planId,
+            gymId: $gymId,
+            setAsPlanGym: true,
+            clearDayOverrides: true
+        );
+
+        return response()->json([
+            'message' => 'Plan recalibrated for selected gym.',
+            'data' => $plan,
+            'gym_id' => $gymId,
+        ]);
     }
 }
