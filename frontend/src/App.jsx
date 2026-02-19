@@ -32,6 +32,7 @@ import GymDetails from "./pages/user/GymDetails";
 import SavedGyms from "./pages/user/SavedGyms";
 import WorkoutWeek from "./pages/user/WorkoutWeek";
 import BecomeOwner from "./pages/user/BecomeOwner";
+import OwnerApplication from "./pages/user/OwnerApplication";
 import AdminExercises from "./pages/admin/AdminExercises";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
 import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
@@ -65,6 +66,7 @@ function App() {
       <Route path="/test-find-gyms" element={<FindGyms />} />
       <Route path="/test-gym-results" element={<GymResults />} />
       <Route path="/become-an-owner" element={<BecomeOwner />} />
+      <Route path="/owner-application" element={<OwnerApplication />} />
       <Route path="/profile" element={<Profile />} />
 
       <Route path="/home" element={<UserLayout />}>
