@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import HeaderUserNoScroll from "./HeaderUserNoScroll";
-
+import Header from "./Header";
+import Footer from "./Footer";
 import "./BecomeOwner.css";
 import {
   FaArrowRight,

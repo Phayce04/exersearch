@@ -1,7 +1,7 @@
 // ✅ src/pages/user/OwnerApplication.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import HeaderUserNoScroll from "./HeaderUserNoScroll";
+import HeaderUser from "./Header-user";
 import Footer from "./Footer";
 import "./OwnerApplication.css";
 import {
@@ -980,7 +980,7 @@ export default function OwnerApplication() {
 
   return (
     <div className="oa-app">
-      <HeaderUserNoScroll />
+      <HeaderUser />
 
       <div className="oa-stepper-bar">
         <div className="oa-stepper">
