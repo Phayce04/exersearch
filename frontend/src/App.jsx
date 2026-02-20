@@ -36,6 +36,7 @@ import BecomeOwner from "./pages/owner/BecomeOwner";
 import OwnerApplication from "./pages/owner/OwnerApplication";
 import ViewGym from "./pages/owner/ViewGym";
 import EditGym from "./pages/owner/EditGym";
+import ViewStats from "./pages/owner/ViewStats";
 import AdminExercises from "./pages/admin/AdminExercises";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
 import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
@@ -72,6 +73,7 @@ function App() {
       <Route path="/owner-application" element={<OwnerApplication />} />
       <Route path="/view-gym" element={<ViewGym />} />
       <Route path="/edit-gym" element={<EditGym />} />
+      <Route path="/view-stats" element={<ViewStats />} />
       <Route path="/profile" element={<Profile />} />
 
 <Route path="/home/*" element={<UserLayout />}>
