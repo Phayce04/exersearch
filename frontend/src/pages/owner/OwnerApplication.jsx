@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import HeaderUser from "./Header-user";
-import Footer from "./Footer";
+import Header from "../user/Header-user";
+import Footer from "../user/Footer";
 import "./OwnerApplication.css";
 import {
   FaArrowRight, FaArrowLeft, FaCheck, FaUser,
@@ -346,7 +346,7 @@ export default function OwnerApplication() {
   /* ── SUCCESS ── */
   if (submitted) return (
     <div className="oa-app">
-      <HeaderUser />
+      <Header />
       <div className="oa-success">
         <div className="oa-success-card">
           <div className="oa-success-icon"><FaCheckCircle /></div>
@@ -370,7 +370,7 @@ export default function OwnerApplication() {
   /* ── MAIN FORM ── */
   return (
     <div className="oa-app">
-      <HeaderUser />
+      <Header />
 
       {/* Top Stepper */}
       <div className="oa-stepper-bar">

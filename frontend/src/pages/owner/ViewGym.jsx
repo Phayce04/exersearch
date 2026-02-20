@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import HeaderUser from "./Header-user";
-import Footer from "./Footer";
+import Header from "../user/Header-user";
+import Footer from "../user/Footer";
 import "./ViewGym.css";
 import {
   MapPin, Clock, DollarSign, Dumbbell,
@@ -130,7 +130,7 @@ export default function ViewGym() {
   if (loading) {
     return (
       <div className="vg-app">
-        <HeaderUser />
+        <Header />
         <div className="vg-loading">
           <div className="vg-spinner"></div>
           Loading gym management...
@@ -143,7 +143,7 @@ export default function ViewGym() {
   if (!gym) {
     return (
       <div className="vg-app">
-        <HeaderUser />
+        <Header />
         <div className="vg-error">Gym not found</div>
         <Footer />
       </div>
@@ -152,7 +152,7 @@ export default function ViewGym() {
 
   return (
     <div className="vg-app">
-      <HeaderUser />
+      <Header />
 
       <div className="vg-container">
 
@@ -411,7 +411,7 @@ export default function ViewGym() {
             <div className="vg-section-card vg-pricing-card">
               <h2 className="vg-section-heading">
                 <DollarSign size={20} />
-                Membership Plans
+                Pricing
               </h2>
               <div className="vg-pricing-options">
                 {gym.pricing.day_pass && (
