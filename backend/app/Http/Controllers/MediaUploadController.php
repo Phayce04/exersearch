@@ -10,12 +10,6 @@ class MediaUploadController extends Controller
 {
     public function upload(Request $request)
     {
-        /**
-         * ✅ IMPORTANT:
-         * Don't rely on $request->hasFile('file') here.
-         * When upload fails at PHP level, hasFile() may be false,
-         * but the Symfony file bag may still hold the "file" with an error code.
-         */
         $raw = $request->files->get('file');
 
         if ($raw instanceof UploadedFile) {
@@ -39,7 +33,6 @@ class MediaUploadController extends Controller
                     'errors' => [
                         'file' => [$msg],
                     ],
-                    // keep this temporarily while debugging
                     'debug' => [
                         'upload_error_code' => $err,
                         'php_upload_max_filesize' => ini_get('upload_max_filesize'),
@@ -50,32 +43,56 @@ class MediaUploadController extends Controller
             }
         }
 
-        // ✅ Normal validation (runs only when PHP successfully received the file)
+        $type = $request->input('type');
+        $kind = $request->input('kind') ?? null;
+
         $request->validate(
             [
-                'type' => ['required', 'in:equipments,amenities,gyms,settings'],
-                'kind' => ['nullable', 'string'],
-                'file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+                'type' => ['required', 'in:equipments,amenities,gyms,settings,owner_applications'],
+                'kind' => ['nullable', 'string', 'max:80'],
+                'file' => ['required', 'file', 'max:5120'],
             ],
             [
                 'type.required' => 'Upload type is required.',
-                'type.in' => 'Upload type must be one of: equipments, amenities, gyms, settings.',
-
-                'file.required' => 'Please select an image to upload.',
+                'type.in' => 'Upload type must be one of: equipments, amenities, gyms, settings, owner_applications.',
+                'file.required' => 'Please select a file to upload.',
                 'file.file' => 'Invalid upload. Please re-select the file and try again.',
-                'file.image' => 'File must be a valid image.',
-                'file.mimes' => 'Only JPG, JPEG, PNG, and WebP are allowed.',
-                'file.max' => 'Image is too large. Max is 5MB.',
+                'file.max' => 'File is too large. Max is 5MB.',
             ]
         );
 
-        $user = $request->user();
-        $type = $request->type;               // equipments | amenities | gyms | settings
-        $kind = $request->kind ?? 'covers';   // default folder
+        if ($type === 'owner_applications') {
+            $request->validate(
+                [
+                    'file' => ['mimes:jpg,jpeg,png,webp,pdf'],
+                ],
+                [
+                    'file.mimes' => 'Only JPG, JPEG, PNG, WebP, and PDF are allowed for applications.',
+                ]
+            );
+        } else {
+            $request->validate(
+                [
+                    'file' => ['image', 'mimes:jpg,jpeg,png,webp'],
+                ],
+                [
+                    'file.image' => 'File must be a valid image.',
+                    'file.mimes' => 'Only JPG, JPEG, PNG, and WebP are allowed.',
+                ]
+            );
+        }
 
-        // ✅ permissions
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
         if ($type === 'settings') {
             if (!in_array($user->role, ['admin', 'superadmin'])) {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+        } elseif ($type === 'owner_applications') {
+            if (!in_array($user->role, ['user', 'admin', 'superadmin'])) {
                 return response()->json(['message' => 'Forbidden'], 403);
             }
         } else {
@@ -84,6 +101,7 @@ class MediaUploadController extends Controller
             }
         }
 
+        $kind = $kind ?: ($type === 'owner_applications' ? 'docs' : 'covers');
         $folder = "{$type}/{$kind}";
 
         $path = $request->file('file')->store($folder, 'public');
@@ -92,6 +110,9 @@ class MediaUploadController extends Controller
         return response()->json([
             'message' => 'Uploaded',
             'url' => $url,
+            'path' => $path,
+            'type' => $type,
+            'kind' => $kind,
         ]);
     }
 
@@ -106,7 +127,12 @@ class MediaUploadController extends Controller
             ]
         );
 
-        if (!in_array($request->user()->role, ['admin', 'superadmin'])) {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        if (!in_array($user->role, ['admin', 'superadmin'])) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 

@@ -1,25 +1,18 @@
 // src/pages/admin/AdminOwnerApplications.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { adminThemes } from "./AdminLayout";
 
 import { useAuthMe } from "../../utils/useAuthMe";
 import { useApiList } from "../../utils/useApiList";
-import {
-  toggleSort,
-  sortIndicator,
-  sortRows,
-  paginate,
-  globalSearch,
-  tableValue,
-} from "../../utils/tableUtils";
+import { toggleSort, sortIndicator, sortRows, paginate, globalSearch, tableValue } from "../../utils/tableUtils";
 
-import {
-  approveOwnerApplication,
-  rejectOwnerApplication,
-} from "../../utils/ownerApplicationApi";
+import { approveOwnerApplication, rejectOwnerApplication } from "../../utils/ownerApplicationApi";
 
 import "./AdminEquipments.css";
+import "./AdminOwnerApplications.css";
+
+const API_BASE = "https://exersearch.test";
 
 function formatDateTimeFallback(value) {
   if (!value) return "-";
@@ -29,6 +22,210 @@ function formatDateTimeFallback(value) {
 
 const STATUS_OPTIONS = ["All", "pending", "approved", "rejected"];
 
+function safeArr(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // also handle comma-separated urls
+      if (v.includes(",")) return v.split(",").map((s) => s.trim()).filter(Boolean);
+      return [];
+    }
+  }
+  return [];
+}
+
+function isFiniteNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n);
+}
+
+function peso(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "—";
+  return `₱${n.toLocaleString()}`;
+}
+
+/** ✅ /storage/... -> https://exersearch.test/storage/... */
+function toAbsUrl(u) {
+  const s = String(u || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("//")) return `https:${s}`;
+  const base = String(API_BASE).replace(/\/$/, "");
+  const path = s.startsWith("/") ? s : `/${s}`;
+  return `${base}${path}`;
+}
+
+/** ✅ harden: Laravel may return "public/storage/.." or "storage/.." */
+function normalizeStoragePath(u) {
+  const s = String(u || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s) || s.startsWith("//")) return s;
+
+  // if backend returned "public/storage/xxx"
+  if (s.startsWith("public/storage/")) return `/${s.replace(/^public\//, "")}`;
+
+  // if backend returned "storage/xxx"
+  if (s.startsWith("storage/")) return `/${s}`;
+
+  // if backend returned "/storage/xxx"
+  if (s.startsWith("/storage/")) return s;
+
+  // default: leave as-is
+  return s;
+}
+
+/* ============================
+   Read-only Map (Leaflet)
+   ============================ */
+function ReadOnlyMap({ lat, lng }) {
+  const ref = useRef(null);
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLeaflet = () =>
+      new Promise((resolve) => {
+        if (window.L) return resolve(window.L);
+
+        if (!document.querySelector('link[href*="leaflet.min.css"]')) {
+          const css = document.createElement("link");
+          css.rel = "stylesheet";
+          css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+          document.head.appendChild(css);
+        }
+
+        const existing = document.querySelector('script[src*="leaflet.min.js"]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve(window.L));
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+        script.onload = () => resolve(window.L);
+        document.head.appendChild(script);
+      });
+
+    loadLeaflet().then((L) => {
+      if (cancelled) return;
+      if (!ref.current || mapRef.current) return;
+
+      const map = L.map(ref.current, {
+        center: [lat, lng],
+        zoom: 16,
+        zoomControl: true,
+        dragging: true,
+        scrollWheelZoom: true,
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(map);
+
+      const marker = L.marker([lat, lng]).addTo(map);
+
+      mapRef.current = map;
+      markerRef.current = marker;
+    });
+
+    return () => {
+      cancelled = true;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        markerRef.current = null;
+      }
+    };
+  }, []); // eslint-disable-line
+
+  useEffect(() => {
+    if (mapRef.current) mapRef.current.setView([lat, lng], 16);
+    if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
+  }, [lat, lng]);
+
+  return <div ref={ref} className="ao-map" />;
+}
+
+/* ============================
+   Media previews
+   ============================ */
+function DocumentPreview({ url }) {
+  const normalized = normalizeStoragePath(url);
+  const u = toAbsUrl(normalized);
+
+  if (!u) return <div className="ae-mutedSmall">No document uploaded.</div>;
+
+  const isPdf = /\.pdf(\?|$)/i.test(u);
+
+  return (
+    <div className="ao-previewWrap">
+      <div className="ao-previewTop">
+        <a className="ao-link" href={u} target="_blank" rel="noreferrer">
+          Open document ↗
+        </a>
+        <span className="ae-mutedTiny ao-urlTiny" title={u}>
+          {u}
+        </span>
+      </div>
+
+      {isPdf ? (
+        <iframe title="Business doc" src={u} className="ao-docFrame" />
+      ) : (
+        <img
+          src={u}
+          alt="Business document"
+          className="ao-docImg"
+          onError={(e) => {
+            e.currentTarget.classList.add("ao-photoBroken");
+          }}
+        />
+      )}
+
+      <div className="ae-mutedTiny" style={{ marginTop: 8 }}>
+        If this is broken, your backend likely needs: <b className="ae-strongText">php artisan storage:link</b> and
+        correct CORS/static serving for <b className="ae-strongText">/storage</b>.
+      </div>
+    </div>
+  );
+}
+
+function GalleryGrid({ urls }) {
+  const list = safeArr(urls)
+    .map(normalizeStoragePath)
+    .map(toAbsUrl)
+    .filter(Boolean);
+
+  if (!list.length) return <div className="ae-mutedSmall">No gym photos uploaded.</div>;
+
+  return (
+    <div className="ao-gallery">
+      {list.map((u) => (
+        <a key={u} href={u} target="_blank" rel="noreferrer" className="ao-photoLink" title="Open full image">
+          <img
+            src={u}
+            alt=""
+            className="ao-photo"
+            onError={(e) => {
+              e.currentTarget.classList.add("ao-photoBroken");
+            }}
+          />
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/* ============================
+   Page
+   ============================ */
 export default function AdminOwnerApplications() {
   const { theme } = useOutletContext();
   const t = adminThemes[theme]?.app || adminThemes.light.app;
@@ -36,16 +233,12 @@ export default function AdminOwnerApplications() {
 
   const { isAdmin } = useAuthMe();
 
-  // ✅ uses the admin list endpoint
-  const {
-    rows,
-    loading: loadingRows,
-    error,
-    reload,
-  } = useApiList("/api/v1/admin/owner-applications", { authed: true });
+  const { rows, loading: loadingRows, error, reload } = useApiList("/api/v1/admin/owner-applications", {
+    authed: true,
+  });
 
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState("pending"); // default view: pending
+  const [status, setStatus] = useState("pending");
   const [sort, setSort] = useState({ key: "created", dir: "desc" });
 
   const pageSize = 10;
@@ -60,6 +253,9 @@ export default function AdminOwnerApplications() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [rejectReason, setRejectReason] = useState("");
+
+  // ✅ tabs inside view modal
+  const [tab, setTab] = useState("profile"); // profile | gym | media
 
   useEffect(() => {
     const onKey = (e) => {
@@ -79,10 +275,12 @@ export default function AdminOwnerApplications() {
       (r) => r.gym_name,
       (r) => r.address,
       (r) => r.status,
-      // user fields if included by API
+      (r) => r.company_name,
+      (r) => r.contact_number,
       (r) => r.user?.name,
       (r) => r.user?.email,
       (r) => r.user?.user_id,
+      (r) => r.user_id,
     ]);
   }, [rows, q]);
 
@@ -113,7 +311,7 @@ export default function AdminOwnerApplications() {
     }
   };
 
-  const sorted = useMemo(() => sortRows(filtered, sort, getValue), [filtered, sort]);
+  const sorted = useMemo(() => sortRows(filtered, sort, getValue), [filtered, sort, getValue]);
   const { totalPages, safePage, pageRows, left, right } = useMemo(
     () => paginate(sorted, page, pageSize),
     [sorted, page]
@@ -140,7 +338,15 @@ export default function AdminOwnerApplications() {
 
   const openView = (r) => {
     setErr("");
-    setActive(r);
+    setTab("profile");
+
+    // ✅ normalize gallery_urls to array
+    const fixed = {
+      ...r,
+      gallery_urls: safeArr(r.gallery_urls),
+    };
+
+    setActive(fixed);
     setAppOpen(true);
   };
 
@@ -167,7 +373,7 @@ export default function AdminOwnerApplications() {
       setAppOpen(false);
       reload();
     } catch (e) {
-      setErr(e.message || "Approve failed.");
+      setErr(e?.message || "Approve failed.");
     } finally {
       setBusy(false);
     }
@@ -183,7 +389,7 @@ export default function AdminOwnerApplications() {
       setAppOpen(false);
       reload();
     } catch (e) {
-      setErr(e.message || "Reject failed.");
+      setErr(e?.message || "Reject failed.");
     } finally {
       setBusy(false);
     }
@@ -319,18 +525,10 @@ export default function AdminOwnerApplications() {
 
                             {isAdmin && r.status === "pending" ? (
                               <>
-                                <IconBtn
-                                  title="Approve"
-                                  className="ae-iconBtn"
-                                  onClick={() => askApprove(r)}
-                                >
+                                <IconBtn title="Approve" className="ae-iconBtn" onClick={() => askApprove(r)}>
                                   ✅
                                 </IconBtn>
-                                <IconBtn
-                                  title="Reject"
-                                  className="ae-iconBtnDanger"
-                                  onClick={() => askReject(r)}
-                                >
+                                <IconBtn title="Reject" className="ae-iconBtnDanger" onClick={() => askReject(r)}>
                                   ✕
                                 </IconBtn>
                               </>
@@ -355,8 +553,7 @@ export default function AdminOwnerApplications() {
             </button>
 
             <div className="ae-mutedSmall">
-              Page <b className="ae-strongText">{safePage}</b> of{" "}
-              <b className="ae-strongText">{totalPages}</b>
+              Page <b className="ae-strongText">{safePage}</b> of <b className="ae-strongText">{totalPages}</b>
             </div>
 
             <button
@@ -377,48 +574,164 @@ export default function AdminOwnerApplications() {
         </div>
       </div>
 
-      {/* VIEW MODAL */}
+      {/* ============================
+          VIEW MODAL (SCROLLABLE + TABS + MAP + PHOTOS)
+         ============================ */}
       {appOpen && active && (
         <div className="ae-backdrop" onClick={() => setAppOpen(false)}>
-          <div className="ae-formModal" onClick={(e) => e.stopPropagation()}>
-            <div className="ae-modalTopRow">
-              <div className="ae-modalTitle">Application</div>
-            </div>
-
-            {err ? <div className="ae-alert ae-alertError">{err}</div> : null}
-
-            <div className="ae-formGrid">
-              <ReadOnly label="Application ID" value={String(active.id)} />
-              <ReadOnly label="Status" value={active.status || "-"} />
-
-              <ReadOnly label="Gym name" value={active.gym_name || "-"} full />
-              <ReadOnly label="Address" value={active.address || "-"} full />
-
-              <ReadOnly label="Latitude" value={active.latitude ?? "-"} />
-              <ReadOnly label="Longitude" value={active.longitude ?? "-"} />
-
-              <ReadOnly label="User ID" value={String(active.user_id ?? "-")} />
-              <ReadOnly label="User" value={active.user?.name || active.user?.email || "-"} />
-
-              <ReadOnly label="Created" value={formatDateTimeFallback(active.created_at)} />
-              <ReadOnly label="Updated" value={formatDateTimeFallback(active.updated_at)} />
-            </div>
-
-            <div className="ae-modalFooter">
-              {isAdmin && active.status === "pending" ? (
-                <>
-                  <button className="ae-btn ae-btnSecondary" onClick={() => askReject(active)} disabled={busy}>
-                    Reject
-                  </button>
-                  <button className="ae-btn ae-btnPrimary" onClick={() => askApprove(active)} disabled={busy}>
-                    Approve
-                  </button>
-                </>
-              ) : (
-                <button className="ae-btn ae-btnSecondary" onClick={() => setAppOpen(false)}>
-                  Close
+          <div className="ae-formModal ao-formModalScroll" onClick={(e) => e.stopPropagation()}>
+            {/* Sticky header */}
+            <div className="ao-stickyTop">
+              <div className="ae-modalTopRow">
+                <div>
+                  <div className="ae-modalTitle">Application Review</div>
+                  <div className="ae-mutedTiny">
+                    App ID: <b className="ae-strongText">{active.id}</b> •{" "}
+                    <span className={statusPillClass(active.status)}>{active.status}</span>
+                  </div>
+                </div>
+                <button className="ae-modalClose" onClick={() => setAppOpen(false)}>
+                  ✕
                 </button>
+              </div>
+
+              {err ? <div className="ae-alert ae-alertError">{err}</div> : null}
+
+              {/* Tabs */}
+              <div className="ao-tabs">
+                <button
+                  type="button"
+                  className={`ao-tab ${tab === "profile" ? "on" : ""}`}
+                  onClick={() => setTab("profile")}
+                >
+                  Owner Profile
+                </button>
+                <button type="button" className={`ao-tab ${tab === "gym" ? "on" : ""}`} onClick={() => setTab("gym")}>
+                  Gym + Map
+                </button>
+                <button
+                  type="button"
+                  className={`ao-tab ${tab === "media" ? "on" : ""}`}
+                  onClick={() => setTab("media")}
+                >
+                  Documents & Photos
+                </button>
+              </div>
+            </div>
+
+            {/* Scroll body */}
+            <div className="ao-modalBody">
+              {tab === "profile" && (
+                <Section title="Submitted Owner Profile Details">
+                  <div className="ae-formGrid">
+                    <ReadOnly label="User ID" value={String(active.user_id ?? "-")} />
+                    <ReadOnly label="User" value={active.user?.name || active.user?.email || "-"} />
+
+                    <ReadOnly label="Email" value={active.user?.email || "-"} />
+                    <ReadOnly label="Contact" value={active.contact_number || "-"} />
+
+                    <ReadOnly label="Business / Company" value={active.company_name || "-"} full />
+                  </div>
+                </Section>
               )}
+
+              {tab === "gym" && (
+                <Section title="Submitted Gym Details">
+                  <div className="ae-formGrid">
+                    <ReadOnly label="Gym name" value={active.gym_name || "-"} full />
+                    <ReadOnly label="Address" value={active.address || "-"} full />
+
+                    <ReadOnly label="Latitude" value={active.latitude ?? "-"} />
+                    <ReadOnly label="Longitude" value={active.longitude ?? "-"} />
+
+                    <ReadOnly
+                      label="Pricing"
+                      value={`Day: ${peso(active.daily_price)} | Monthly: ${peso(active.monthly_price)} | Quarterly: ${peso(
+                        active.quarterly_price
+                      )}`}
+                      full
+                    />
+                    <ReadOnly label="Description" value={active.description || "-"} full />
+                  </div>
+
+                  <div className="ao-card">
+                    <div className="ao-cardTop">
+                      <div className="ao-cardTitle">Pinned Location</div>
+                      {isFiniteNum(active.latitude) && isFiniteNum(active.longitude) ? (
+                        <a
+                          className="ao-link"
+                          href={`https://www.google.com/maps?q=${Number(active.latitude)},${Number(active.longitude)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open in Google Maps ↗
+                        </a>
+                      ) : (
+                        <span className="ae-mutedTiny">No coords</span>
+                      )}
+                    </div>
+
+                    {isFiniteNum(active.latitude) && isFiniteNum(active.longitude) ? (
+                      <ReadOnlyMap lat={Number(active.latitude)} lng={Number(active.longitude)} />
+                    ) : (
+                      <div className="ae-mutedSmall">No coordinates submitted.</div>
+                    )}
+                  </div>
+                </Section>
+              )}
+
+              {tab === "media" && (
+                <Section title="Submitted Proof & Gym Photos">
+                  <div className="ao-card">
+                    <div className="ao-cardTop">
+                      <div className="ao-cardTitle">Business Document</div>
+                      {active.document_path ? (
+                        <a className="ao-link" href={toAbsUrl(normalizeStoragePath(active.document_path))} target="_blank" rel="noreferrer">
+                          Open ↗
+                        </a>
+                      ) : (
+                        <span className="ae-mutedTiny">None</span>
+                      )}
+                    </div>
+                    <DocumentPreview url={active.document_path} />
+                  </div>
+
+                  <div className="ao-card" style={{ marginTop: 12 }}>
+                    <div className="ao-cardTop">
+                      <div className="ao-cardTitle">Gym Photos</div>
+                      <span className="ae-mutedTiny">{safeArr(active.gallery_urls).length} photo(s)</span>
+                    </div>
+                    <GalleryGrid urls={active.gallery_urls} />
+                  </div>
+                </Section>
+              )}
+
+              <Section title="Meta">
+                <div className="ae-formGrid">
+                  <ReadOnly label="Created" value={formatDateTimeFallback(active.created_at)} />
+                  <ReadOnly label="Updated" value={formatDateTimeFallback(active.updated_at)} />
+                </div>
+              </Section>
+            </div>
+
+            {/* Sticky footer */}
+            <div className="ao-stickyBottom">
+              <div className="ae-modalFooter">
+                {isAdmin && active.status === "pending" ? (
+                  <>
+                    <button className="ae-btn ae-btnSecondary" onClick={() => askReject(active)} disabled={busy}>
+                      Reject
+                    </button>
+                    <button className="ae-btn ae-btnPrimary" onClick={() => askApprove(active)} disabled={busy}>
+                      Approve
+                    </button>
+                  </>
+                ) : (
+                  <button className="ae-btn ae-btnSecondary" onClick={() => setAppOpen(false)}>
+                    Close
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -436,7 +749,7 @@ export default function AdminOwnerApplications() {
                 <div className="ae-confirmTitle">Approve application?</div>
                 <div className="ae-mutedTiny">
                   This will promote the user to <b className="ae-strongText">owner</b> and create a{" "}
-                  <b className="ae-strongText">gym</b> record.
+                  <b className="ae-strongText">gym</b>.
                 </div>
               </div>
               <button className="ae-modalClose" onClick={() => setApproveOpen(false)}>
@@ -450,7 +763,6 @@ export default function AdminOwnerApplications() {
               <button className="ae-btn ae-btnSecondary" onClick={() => setApproveOpen(false)} disabled={busy}>
                 Cancel
               </button>
-
               <button className="ae-btn ae-btnPrimary" onClick={doApprove} disabled={busy}>
                 {busy ? "Approving…" : "Yes, approve"}
               </button>
@@ -492,7 +804,6 @@ export default function AdminOwnerApplications() {
               <button className="ae-btn ae-btnSecondary" onClick={() => setRejectOpen(false)} disabled={busy}>
                 Cancel
               </button>
-
               <button className="ae-btn ae-btnDanger" onClick={doReject} disabled={busy}>
                 {busy ? "Rejecting…" : "Yes, reject"}
               </button>
@@ -506,6 +817,9 @@ export default function AdminOwnerApplications() {
   );
 }
 
+/* ============================
+   Small UI components
+   ============================ */
 function IconBtn({ children, title, className, onClick }) {
   return (
     <button type="button" title={title} onClick={onClick} className={className}>
@@ -514,11 +828,20 @@ function IconBtn({ children, title, className, onClick }) {
   );
 }
 
+function Section({ title, children }) {
+  return (
+    <div className="ao-section">
+      <div className="ao-sectionTitle">{title}</div>
+      {children}
+    </div>
+  );
+}
+
 function ReadOnly({ label, value, full }) {
   return (
     <label className={`ae-field ${full ? "ae-fieldFull" : ""}`}>
       <div className="ae-fieldLabel">{label}</div>
-      <input value={value} disabled className="ae-fieldInput ae-fieldInputDisabled" />
+      <input value={String(value ?? "")} disabled className="ae-fieldInput ae-fieldInputDisabled" />
     </label>
   );
 }

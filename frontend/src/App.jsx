@@ -66,12 +66,14 @@ function App() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/test-find-gyms" element={<FindGyms />} />
       <Route path="/test-gym-results" element={<GymResults />} />
-      <Route path="/become-an-owner" element={<BecomeOwner />} />
-      <Route path="/owner-application" element={<OwnerApplication />} />
+
       <Route path="/profile" element={<Profile />} />
 
-<Route path="/home/*" element={<UserLayout />}>
+      <Route path="/home/*" element={<UserLayout />}>
         <Route index element={<UserHome />} />
+          <Route path="becomeowner" element={<BecomeOwner />} />
+          <Route path="applyowner" element={<OwnerApplication />} />
+
         <Route path="profile" element={<Profile />} />
         <Route path="find-gyms" element={<FindGyms />} />
         <Route path="gym/:id" element={<GymDetails />} />

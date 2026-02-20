@@ -39,6 +39,8 @@ use App\Http\Controllers\UserWorkoutPlanController;
 use App\Http\Controllers\UserWorkoutPlanDayController;
 use App\Http\Controllers\UserWorkoutPlanDayExerciseController;
 
+use App\Http\Controllers\OwnerProfileController;
+
 Route::prefix('v1')->group(function () {
 
     Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
@@ -104,8 +106,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/workout-templates/{id}', [WorkoutTemplateController::class, 'show'])->whereNumber('id');
 
         Route::post('/user/workout-plans/generate', [UserWorkoutPlanController::class, 'generate']);
-        Route::post('/user/workout-plans/{id}/recalibrate-gym', [UserWorkoutPlanController::class, 'recalibrateGym'])
-    ->whereNumber('id');
+        Route::post('/user/workout-plans/{id}/recalibrate-gym', [UserWorkoutPlanController::class, 'recalibrateGym'])->whereNumber('id');
 
         Route::get('/user/workout-plans', [UserWorkoutPlanController::class, 'index']);
         Route::get('/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'show'])->whereNumber('id');
@@ -113,26 +114,29 @@ Route::prefix('v1')->group(function () {
         Route::match(['put', 'patch'], '/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'update'])->whereNumber('id');
         Route::delete('/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'destroy'])->whereNumber('id');
 
-        // ✅ NEW: Whole-plan (whole week) recalibration endpoint
-        // POST /api/v1/user/workout-plans/{id}/recalibrate-gym  { gym_id: number }
-        Route::post('/user/workout-plans/{id}/recalibrate-gym', [UserWorkoutPlanController::class, 'recalibrateGym'])
-            ->whereNumber('id');
-
         Route::get('/user/workout-plan-days', [UserWorkoutPlanDayController::class, 'index']);
         Route::get('/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'show'])->whereNumber('id');
         Route::post('/user/workout-plan-days', [UserWorkoutPlanDayController::class, 'store']);
         Route::match(['put', 'patch'], '/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'update'])->whereNumber('id');
         Route::delete('/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'destroy'])->whereNumber('id');
 
-        // ✅ Existing: single-day recalibration endpoint
-        Route::post('/user/workout-plan-days/{id}/recalibrate-gym', [UserWorkoutPlanDayController::class, 'recalibrateGym'])
-            ->whereNumber('id');
+        Route::post('/user/workout-plan-days/{id}/recalibrate-gym', [UserWorkoutPlanDayController::class, 'recalibrateGym'])->whereNumber('id');
 
         Route::get('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'index']);
         Route::get('/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'show'])->whereNumber('id');
         Route::post('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'store']);
         Route::match(['put', 'patch'], '/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'update'])->whereNumber('id');
         Route::delete('/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'destroy'])->whereNumber('id');
+
+        Route::get('/my-gyms', [GymController::class, 'myGyms']);
+
+        Route::post('/gyms', [GymController::class, 'store']);
+        Route::match(['put', 'patch'], '/gyms/{gym}', [GymController::class, 'update'])->whereNumber('gym');
+        Route::delete('/gyms/{gym}', [GymController::class, 'destroy'])->whereNumber('gym');
+
+        Route::get('/owner/profile', [OwnerProfileController::class, 'show']);
+        Route::post('/owner/profile', [OwnerProfileController::class, 'storeOrUpdate']);
+        Route::match(['put', 'patch'], '/owner/profile', [OwnerProfileController::class, 'update']);
 
         Route::middleware('admin')->group(function () {
 
@@ -160,14 +164,12 @@ Route::prefix('v1')->group(function () {
             Route::get('/gyms/map', [GymController::class, 'mapGyms']);
             Route::get('/owner-applications/map', [GymOwnerApplicationController::class, 'mapPoints']);
 
-            Route::post('/gyms', [GymController::class, 'store']);
-            Route::match(['put', 'patch'], '/gyms/{gym}', [GymController::class, 'update'])->whereNumber('gym');
-            Route::delete('/gyms/{gym}', [GymController::class, 'destroy'])->whereNumber('gym');
-
             Route::get('/admin/owner-applications', [GymOwnerApplicationController::class, 'index']);
             Route::get('/admin/owner-applications/{id}', [GymOwnerApplicationController::class, 'show'])->whereNumber('id');
             Route::patch('/admin/owner-applications/{id}/approve', [GymOwnerApplicationController::class, 'approve'])->whereNumber('id');
             Route::patch('/admin/owner-applications/{id}/reject', [GymOwnerApplicationController::class, 'reject'])->whereNumber('id');
+
+            Route::patch('/admin/owner-profiles/{user_id}/verify', [OwnerProfileController::class, 'verify'])->whereNumber('user_id');
 
             Route::get('/admin/users', [AdminUserController::class, 'index']);
             Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);

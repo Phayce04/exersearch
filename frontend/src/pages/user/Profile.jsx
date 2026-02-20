@@ -431,7 +431,7 @@ export default function Profile() {
               <p className="owner-card-desc">
                 List your gym on ExerSearch and reach thousands of fitness enthusiasts in Pasig.
               </p>
-              <Link to="/become-owner" className="btn-owner">
+              <Link to="/home/becomeowner" className="btn-owner">
                 Become an Owner <ChevronRight size={16} />
               </Link>
             </div>

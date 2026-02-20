@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GymOwnerApplication;
 use App\Models\Gym;
+use App\Models\OwnerProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -11,12 +12,27 @@ class GymOwnerApplicationController extends Controller
 {
     public function applyOrUpdate(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'gym_name'  => 'required|string|max:255',
             'address'   => 'required|string',
             'latitude'  => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'document_path' => 'nullable|string|max:255',
+
+            'document_path' => 'nullable|string|max:2048',
+            'main_image_url' => 'nullable|string|max:2048',
+            'gallery_urls' => 'nullable|array',
+            'gallery_urls.*' => 'string|max:2048',
+
+            'description' => 'nullable|string',
+            'contact_number' => 'nullable|string|max:50',
+            'company_name' => 'nullable|string|max:255',
+
+            'daily_price' => 'nullable|numeric|min:0',
+            'monthly_price' => 'nullable|numeric|min:0',
+            'quarterly_price' => 'nullable|numeric|min:0',
+
+            'amenity_ids' => 'nullable|array',
+            'amenity_ids.*' => 'integer|min:1',
         ]);
 
         $user = $request->user();
@@ -25,31 +41,43 @@ class GymOwnerApplicationController extends Controller
 
         $application = GymOwnerApplication::where('user_id', $user->user_id)->first();
 
-        if ($application) {
-            $application->update([
-                'gym_name'      => $request->gym_name,
-                'address'       => $request->address,
-                'latitude'      => $request->latitude,
-                'longitude'     => $request->longitude,
-                'document_path' => $request->document_path ?? $application->document_path,
-                'status'        => 'pending',
-            ]);
+        $payload = [
+            'gym_name'  => $data['gym_name'],
+            'address'   => $data['address'],
+            'latitude'  => $data['latitude'],
+            'longitude' => $data['longitude'],
+            'status'    => 'pending',
 
+            'document_path' => $data['document_path'] ?? ($application?->document_path),
+            'main_image_url' => array_key_exists('main_image_url', $data) ? $data['main_image_url'] : ($application?->main_image_url),
+            'gallery_urls' => array_key_exists('gallery_urls', $data) ? array_values(array_filter($data['gallery_urls'] ?? [])) : ($application?->gallery_urls),
+
+            'description' => array_key_exists('description', $data) ? $data['description'] : ($application?->description),
+            'contact_number' => array_key_exists('contact_number', $data) ? $data['contact_number'] : ($application?->contact_number),
+            'company_name' => array_key_exists('company_name', $data) ? $data['company_name'] : ($application?->company_name),
+
+            'daily_price' => array_key_exists('daily_price', $data) ? $data['daily_price'] : ($application?->daily_price),
+            'monthly_price' => array_key_exists('monthly_price', $data) ? $data['monthly_price'] : ($application?->monthly_price),
+            'quarterly_price' => array_key_exists('quarterly_price', $data) ? $data['quarterly_price'] : ($application?->quarterly_price),
+        ];
+
+        if (array_key_exists('amenity_ids', $data)) {
+            $payload['amenity_ids'] = array_values(array_unique(array_map('intval', $data['amenity_ids'] ?? [])));
+        } else {
+            $payload['amenity_ids'] = $application?->amenity_ids;
+        }
+
+        if ($application) {
+            $application->update($payload);
             return response()->json([
                 'message' => 'Application updated.',
                 'data' => $application->fresh(),
             ]);
         }
 
-        $application = GymOwnerApplication::create([
-            'user_id'       => $user->user_id,
-            'gym_name'      => $request->gym_name,
-            'address'       => $request->address,
-            'latitude'      => $request->latitude,
-            'longitude'     => $request->longitude,
-            'document_path' => $request->document_path,
-            'status'        => 'pending',
-        ]);
+        $payload['user_id'] = $user->user_id;
+
+        $application = GymOwnerApplication::create($payload);
 
         return response()->json([
             'message' => 'Application submitted.',
@@ -63,7 +91,6 @@ class GymOwnerApplicationController extends Controller
         if (!$user) return response()->json(['message' => 'Unauthenticated'], 401);
 
         $application = GymOwnerApplication::where('user_id', $user->user_id)->first();
-
         return response()->json(['data' => $application]);
     }
 
@@ -92,8 +119,6 @@ class GymOwnerApplicationController extends Controller
         return response()->json(['data' => $application]);
     }
 
-    // GET /api/v1/owner-applications/map?south=&west=&north=&east=&status=
-    // Default: pending, unless status is provided
     public function mapPoints(Request $request)
     {
         $validated = $request->validate([
@@ -110,14 +135,8 @@ class GymOwnerApplicationController extends Controller
             ->whereNotNull('longitude')
             ->whereBetween('latitude', [$validated['south'], $validated['north']])
             ->whereBetween('longitude', [$validated['west'], $validated['east']])
-            ->when(
-                empty($validated['status']),
-                fn ($q) => $q->where('status', 'pending')
-            )
-            ->when(
-                !empty($validated['status']),
-                fn ($q) => $q->where('status', $validated['status'])
-            )
+            ->when(empty($validated['status']), fn ($q) => $q->where('status', 'pending'))
+            ->when(!empty($validated['status']), fn ($q) => $q->where('status', $validated['status']))
             ->orderByDesc('created_at')
             ->get();
 
@@ -126,67 +145,92 @@ class GymOwnerApplicationController extends Controller
 
     public function approve($id)
     {
-        $application = GymOwnerApplication::with('user')->findOrFail($id);
+        DB::transaction(function () use ($id) {
+            $application = GymOwnerApplication::with('user')
+                ->where('id', $id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($application->status === 'approved') {
-            return response()->json(['message' => 'Already approved'], 409);
-        }
-        if ($application->status === 'rejected') {
-            return response()->json(['message' => 'Cannot approve a rejected application'], 409);
-        }
+            if ($application->status === 'approved') abort(409, 'Already approved');
+            if ($application->status === 'rejected') abort(409, 'Cannot approve a rejected application');
 
-        DB::transaction(function () use ($application) {
             $application->update(['status' => 'approved']);
             $application->user->update(['role' => 'owner']);
 
-            Gym::create([
-                'name'          => $application->gym_name,
-                'description'   => null,
-                'owner_id'      => $application->user_id,
-                'address'       => $application->address,
-                'latitude'      => $application->latitude,
-                'longitude'     => $application->longitude,
+            OwnerProfile::updateOrCreate(
+                ['user_id' => $application->user_id],
+                [
+                    'contact_number' => $application->contact_number ?? null,
+                    'address' => $application->address ?? null,
+                    'company_name' => $application->company_name ?? null,
+                    'verified' => true,
+                ]
+            );
 
-                'daily_price'   => null,
-                'monthly_price' => 0.00,
-                'annual_price'  => null,
+            $gym = Gym::where('owner_id', $application->user_id)->lockForUpdate()->first();
 
-                'opening_time'  => null,
-                'closing_time'  => null,
-                'gym_type'      => 'General',
+            $gymPayload = [
+                'name' => $application->gym_name,
+                'description' => $application->description ?? null,
+                'owner_id' => $application->user_id,
+                'address' => $application->address,
+                'latitude' => $application->latitude,
+                'longitude' => $application->longitude,
 
-                'contact_number' => null,
-                'email'          => null,
-                'website'        => null,
-                'facebook_page'  => null,
-                'instagram_page' => null,
+                'daily_price' => $application->daily_price ?? null,
+                'monthly_price' => $application->monthly_price ?? 0.00,
 
-                'main_image_url' => null,
-                'gallery_urls'   => null,
+                'main_image_url' => $application->main_image_url ?? null,
+                'gallery_urls' => $application->gallery_urls ?? [],
 
-                'has_personal_trainers' => false,
-                'has_classes'           => false,
-                'is_24_hours'           => false,
-                'is_airconditioned'     => true,
-            ]);
+                'gym_type' => $gym?->gym_type ?? 'General',
+                'has_personal_trainers' => $gym?->has_personal_trainers ?? false,
+                'has_classes' => $gym?->has_classes ?? false,
+                'is_24_hours' => $gym?->is_24_hours ?? false,
+                'is_airconditioned' => $gym?->is_airconditioned ?? true,
+            ];
+
+            if ($gym) {
+                $gym->update($gymPayload);
+            } else {
+                $gym = Gym::create(array_merge($gymPayload, [
+                    'annual_price' => null,
+                    'opening_time' => null,
+                    'closing_time' => null,
+                    'contact_number' => null,
+                    'email' => null,
+                    'website' => null,
+                    'facebook_page' => null,
+                    'instagram_page' => null,
+                ]));
+            }
+
+            $amenityIds = $application->amenity_ids ?? [];
+            $amenityIds = array_values(array_unique(array_filter(array_map('intval', (array) $amenityIds))));
+
+            $syncPayload = [];
+            foreach ($amenityIds as $aid) {
+                $syncPayload[$aid] = [
+                    'availability_status' => 'available',
+                    'notes' => null,
+                    'image_url' => null,
+                ];
+            }
+
+            $gym->amenities()->sync($syncPayload);
         });
 
-        return response()->json(['message' => 'Approved and gym created.']);
+        return response()->json(['message' => 'Approved. Owner upgraded and gym populated.']);
     }
 
     public function reject(Request $request, $id)
     {
         $application = GymOwnerApplication::findOrFail($id);
 
-        if ($application->status === 'rejected') {
-            return response()->json(['message' => 'Already rejected'], 409);
-        }
-        if ($application->status === 'approved') {
-            return response()->json(['message' => 'Cannot reject an approved application'], 409);
-        }
+        if ($application->status === 'rejected') return response()->json(['message' => 'Already rejected'], 409);
+        if ($application->status === 'approved') return response()->json(['message' => 'Cannot reject an approved application'], 409);
 
         $application->update(['status' => 'rejected']);
-
         return response()->json(['message' => 'Rejected']);
     }
 }

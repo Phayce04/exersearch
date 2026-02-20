@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import Header from "./Header";
-import Footer from "./Footer";
+import HeaderUserNoScroll from "./HeaderUserNoScroll";
+
 import "./BecomeOwner.css";
 import {
   FaArrowRight,
@@ -21,7 +21,7 @@ export default function BecomeOwner() {
 
   return (
     <div className="bo-page">
-      <Header />
+    <HeaderUserNoScroll />
 
       {/* ── HERO ── */}
       <section className="bo-hero">
@@ -45,7 +45,7 @@ export default function BecomeOwner() {
             Join ExerSearch as a verified gym owner and get discovered 
             by thousands of fitness-ready members in Pasig City.
           </p>
-          <Link to="/owner-application" className="bo-hero-cta">
+          <Link to="/home/applyowner" className="bo-hero-cta">
             Apply Now — It's Free <FaArrowRight />
           </Link>
         </div>
@@ -318,7 +318,6 @@ export default function BecomeOwner() {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 }

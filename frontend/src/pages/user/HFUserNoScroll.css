@@ -1,0 +1,295 @@
+/* ✅ src/components/header/HFUserNoScroll.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap');
+
+/* ====== ALWAYS VISIBLE TOP LOGO (no scroll state) ====== */
+.hfns-topLogo {
+  position: fixed;
+  top: 10px;
+  left: 24px;
+  z-index: 1002;
+  transition: filter 0.3s ease;
+}
+
+.hfns-topLogo img {
+  height: 50px;
+  width: auto;
+  cursor: pointer;
+  transition: filter 0.3s ease;
+  filter: none; 
+}
+
+
+/* ====== HEADER (always visible, no translate animation) ====== */
+.hfns-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1001;
+
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  padding: 0 24px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* optional: if you want to hide the logo inside header and use only top logo,
+   set opacity:0 like before. Here we show it by default. */
+.hfns-logo {
+  width: 50px;
+  margin-right: auto; /* pushes nav to the right */
+  display: flex;
+  align-items: center;
+}
+
+.hfns-logo img {
+  height: 50px;
+  width: auto;
+}
+
+/* ====== NAV ====== */
+.hfns-navLinks {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.hfns-navLinks a {
+  text-decoration: none;
+  color: #d23f0b;
+  font-weight: 900;
+  font-size: 0.95rem;
+  transition: color 0.3s;
+}
+
+.hfns-navLinks a:hover {
+  color: #f18585;
+}
+
+/* ====== PROFILE DROPDOWN ====== */
+.hfns-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.hfns-profileBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.hfns-profileBtn:hover {
+  background: #f2f2f2;
+}
+
+.hfns-profileAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hfns-dropdownArrow {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.hfns-dropdownArrow.open {
+  transform: rotate(180deg);
+}
+
+.hfns-profileDropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 260px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 2px solid #dddddd;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  padding: 12px;
+  z-index: 9999;
+}
+
+.hfns-profileDropdown.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.hfns-profileDropdown::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  right: 24px;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-left: 2px solid #dddddd;
+  border-top: 2px solid #dddddd;
+  transform: rotate(45deg);
+}
+
+.hfns-profileHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px;
+}
+
+.hfns-dropdownAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hfns-profileName {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.hfns-profileEmail {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.hfns-dropdownDivider {
+  height: 1px;
+  background: #ddd;
+  margin: 10px 0;
+}
+
+.hfns-profileDropdown a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.hfns-profileDropdown a:hover {
+  background: #f3f3f3;
+}
+
+.hfns-dropdownBtn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.hfns-dropdownBtn:hover {
+  background: #f3f3f3;
+}
+
+/* ====== HAMBURGER + MOBILE MENU ====== */
+.hfns-hamburger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  gap: 5px;
+  margin-left: 12px;
+}
+
+.hfns-hamburger span {
+  width: 25px;
+  height: 3px;
+  background: #333;
+  transition: all 0.3s;
+}
+
+.hfns-mobileMenu {
+  display: none;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  flex-direction: column;
+  padding: 1rem 0;
+  z-index: 1000;
+}
+
+.hfns-mobileMenu.open {
+  display: flex;
+}
+
+.hfns-mobileMenu a {
+  padding: 1rem 3rem;
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.hfns-mobileMenu a:hover {
+  background: #f5f5f5;
+}
+
+.hfns-mobileBtn,
+.hfns-mobileLogout {
+  display: block;
+  width: 100%;
+  padding: 1rem 3rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.hfns-mobileBtn:hover,
+.hfns-mobileLogout:hover {
+  background: #f5f5f5;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  .hfns-topLogo {
+    top: 16px;
+    left: 16px;
+  }
+
+  .hfns-topLogo img {
+    height: 40px;
+  }
+
+  .hfns-navLinks {
+    display: none;
+  }
+
+  .hfns-hamburger {
+    display: flex;
+  }
+
+  .hfns-header {
+    padding: 0 16px;
+  }
+}
