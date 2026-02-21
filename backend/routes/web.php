@@ -6,6 +6,7 @@ use App\Http\Controllers\GymEquipmentController;
 use App\Http\Controllers\EquipmentController;
 use App\Http\Controllers\GymAmenityController;
 use App\Http\Controllers\AmenityController;
+use Illuminate\Support\Facades\Mail;
 
 
 Route::get('/', function () {
@@ -23,3 +24,12 @@ Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
 Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show']);
 Route::get('/amenities', [AmenityController::class, 'index']);
 Route::get('/amenities/{id}', [AmenityController::class, 'show']);
+
+Route::get('/test-mail', function () {
+    Mail::raw('Test email from ExerSearch', function ($msg) {
+        $msg->to('dhenielpontiga@gmail.com')
+            ->subject('SMTP Test');
+    });
+
+    return 'Mail sent!';
+});

@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OwnerApplicationApproved;
+use App\Mail\OwnerApplicationRejected;
 use App\Models\GymOwnerApplication;
 use App\Models\Gym;
 use App\Models\OwnerProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class GymOwnerApplicationController extends Controller
 {
@@ -104,7 +108,7 @@ class GymOwnerApplicationController extends Controller
             ->when($q, function ($query) use ($q) {
                 $query->where(function ($qq) use ($q) {
                     $qq->where('gym_name', 'ilike', "%{$q}%")
-                       ->orWhere('address', 'ilike', "%{$q}%");
+                        ->orWhere('address', 'ilike', "%{$q}%");
                 });
             })
             ->orderByDesc('created_at')
@@ -145,7 +149,11 @@ class GymOwnerApplicationController extends Controller
 
     public function approve($id)
     {
-        DB::transaction(function () use ($id) {
+        $mailTo = null;
+        $mailName = 'Applicant';
+        $mailGym = 'Your Gym';
+
+        DB::transaction(function () use ($id, &$mailTo, &$mailName, &$mailGym) {
             $application = GymOwnerApplication::with('user')
                 ->where('id', $id)
                 ->lockForUpdate()
@@ -218,19 +226,56 @@ class GymOwnerApplicationController extends Controller
             }
 
             $gym->amenities()->sync($syncPayload);
+
+            $mailTo = $application->user?->email;
+            $mailName = $application->user?->name ?? 'Applicant';
+            $mailGym = $application->gym_name ?? 'Your Gym';
         });
+
+        if ($mailTo) {
+            DB::afterCommit(function () use ($mailTo, $mailName, $mailGym) {
+                try {
+                    Mail::to($mailTo)->send(new OwnerApplicationApproved(
+                        name: $mailName,
+                        gymName: $mailGym
+                    ));
+                } catch (\Throwable $e) {
+                    Log::warning('Approval email failed: ' . $e->getMessage());
+                }
+            });
+        }
 
         return response()->json(['message' => 'Approved. Owner upgraded and gym populated.']);
     }
 
     public function reject(Request $request, $id)
     {
-        $application = GymOwnerApplication::findOrFail($id);
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $application = GymOwnerApplication::with('user')->findOrFail($id);
 
         if ($application->status === 'rejected') return response()->json(['message' => 'Already rejected'], 409);
         if ($application->status === 'approved') return response()->json(['message' => 'Cannot reject an approved application'], 409);
 
         $application->update(['status' => 'rejected']);
+
+        $mailTo = $application->user?->email;
+        $mailName = $application->user?->name ?? 'Applicant';
+        $reason = $request->input('reason');
+
+        if ($mailTo) {
+            try {
+                Mail::to($mailTo)->send(new OwnerApplicationRejected(
+                    name: $mailName,
+                    reason: $reason
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('Rejection email failed: ' . $e->getMessage());
+            }
+        }
+
         return response()->json(['message' => 'Rejected']);
     }
 }
