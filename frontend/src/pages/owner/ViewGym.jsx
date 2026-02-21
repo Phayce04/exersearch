@@ -13,6 +13,13 @@ import {
   BadgeCheck, MoreVertical, ExternalLink, Copy, Share2
 } from "lucide-react";
 
+// Import modals with correct file names
+import AddEquipment from "./AddEquip";
+import UpdateEquipment from "./UpdateEquip";
+import AddAmenities from "./AddAmenities";
+import UpdateAmenities from "./UpdateAmenities";
+import "./Modals.css";
+
 const API_BASE = "https://exersearch.test";
 
 // Mock data for gym owner
@@ -93,6 +100,12 @@ export default function ViewGym() {
   const [visibility, setVisibility] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
 
+  // Modal states
+  const [showAddEquipment, setShowAddEquipment] = useState(false);
+  const [showUpdateEquipment, setShowUpdateEquipment] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] = useState(null);
+  const [showUpdateAmenities, setShowUpdateAmenities] = useState(false);
+
   useEffect(() => {
     setTimeout(() => {
       setGym(MOCK_GYM_OWNER);
@@ -125,6 +138,48 @@ export default function ViewGym() {
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     alert('Link copied to clipboard!');
+  };
+
+  // Equipment handlers
+  const handleAddEquipmentSuccess = () => {
+    setShowAddEquipment(false);
+    // Refresh equipment list here
+    console.log('Equipment added successfully!');
+  };
+
+  const handleUpdateEquipmentClick = (equipment) => {
+    setSelectedEquipment(equipment);
+    setShowUpdateEquipment(true);
+  };
+
+  const handleUpdateEquipmentSuccess = (updatedEquipment) => {
+    setGym({
+      ...gym,
+      equipments: gym.equipments.map(e => 
+        e.id === updatedEquipment.id ? updatedEquipment : e
+      )
+    });
+    setShowUpdateEquipment(false);
+    console.log('Equipment updated successfully!');
+  };
+
+  const handleDeleteEquipment = (equipmentId) => {
+    setGym({
+      ...gym,
+      equipments: gym.equipments.filter(e => e.id !== equipmentId)
+    });
+    setShowUpdateEquipment(false);
+    console.log('Equipment deleted successfully!');
+  };
+
+  // Amenities handlers
+  const handleUpdateAmenitiesSuccess = (updatedAmenities) => {
+    setGym({
+      ...gym,
+      amenities: updatedAmenities
+    });
+    setShowUpdateAmenities(false);
+    console.log('Amenities updated successfully!');
   };
 
   if (loading) {
@@ -360,19 +415,35 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Equipment */}
+            {/* Equipment - WITH MODAL TRIGGERS */}
             <div className="vg-section-card">
-              <h2 className="vg-section-heading">
-                <Dumbbell size={20} />
-                Equipment ({gym.equipments.length})
-              </h2>
+              <div className="vg-section-header-row">
+                <h2 className="vg-section-heading">
+                  <Dumbbell size={20} />
+                  Equipment ({gym.equipments.length})
+                </h2>
+                <button 
+                  className="vg-add-btn"
+                  onClick={() => setShowAddEquipment(true)}
+                >
+                  <Plus size={16} /> Add Equipment
+                </button>
+              </div>
               <div className="vg-equipment-showcase">
                 {gym.equipments.map((e) => (
-                  <div key={e.id} className="vg-equipment-item">
+                  <div 
+                    key={e.id} 
+                    className="vg-equipment-item clickable"
+                    onClick={() => handleUpdateEquipmentClick(e)}
+                  >
                     <img src={e.image} alt={e.name} />
                     <div className="vg-equipment-info">
                       <strong>{e.name}</strong>
                       <span>{e.quantity} available</span>
+                    </div>
+                    <div className="vg-equipment-edit-overlay">
+                      <Edit size={16} />
+                      Click to edit
                     </div>
                   </div>
                 ))}
@@ -435,12 +506,20 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Amenities */}
+            {/* Amenities - WITH MODAL TRIGGER */}
             <div className="vg-section-card">
-              <h2 className="vg-section-heading">
-                <CheckCircle size={20} />
-                Amenities
-              </h2>
+              <div className="vg-section-header-row">
+                <h2 className="vg-section-heading">
+                  <CheckCircle size={20} />
+                  Amenities
+                </h2>
+                <button 
+                  className="vg-edit-btn-small"
+                  onClick={() => setShowUpdateAmenities(true)}
+                >
+                  <Edit size={14} /> Edit
+                </button>
+              </div>
               <div className="vg-amenities-compact">
                 {gym.amenities.map((a, i) => (
                   <span key={i} className="vg-amenity-badge">{a}</span>
@@ -474,6 +553,36 @@ export default function ViewGym() {
       </div>
 
       <Footer />
+
+      {/* MODALS */}
+      {showAddEquipment && (
+        <AddEquipment
+          gymId={gym.id}
+          onClose={() => setShowAddEquipment(false)}
+          onSuccess={handleAddEquipmentSuccess}
+        />
+      )}
+
+      {showUpdateEquipment && selectedEquipment && (
+        <UpdateEquipment
+          equipment={selectedEquipment}
+          onClose={() => {
+            setShowUpdateEquipment(false);
+            setSelectedEquipment(null);
+          }}
+          onSuccess={handleUpdateEquipmentSuccess}
+          onDelete={handleDeleteEquipment}
+        />
+      )}
+
+      {showUpdateAmenities && (
+        <UpdateAmenities
+          gymId={gym.id}
+          existingAmenities={gym.amenities}
+          onClose={() => setShowUpdateAmenities(false)}
+          onSuccess={handleUpdateAmenitiesSuccess}
+        />
+      )}
     </div>
   );
 }
