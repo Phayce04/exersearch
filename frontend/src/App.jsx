@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import Index from "./pages/index";
 import Login from "./pages/auth/Login";
+import VerifyEmail from "./pages/auth/VerifyEmail";
 import UserHome from "./pages/user/Home";
 import Profile from "./pages/user/Profile";
 import OwnerDashboard from "./pages/owner/Dashboard";
@@ -42,6 +43,7 @@ import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
 import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
 import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
 import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
+
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
   const navigate = useNavigate();
@@ -65,6 +67,7 @@ function App() {
 
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/test-find-gyms" element={<FindGyms />} />
@@ -78,9 +81,8 @@ function App() {
 
       <Route path="/home/*" element={<UserLayout />}>
         <Route index element={<UserHome />} />
-          <Route path="becomeowner" element={<BecomeOwner />} />
-          <Route path="applyowner" element={<OwnerApplication />} />
-
+        <Route path="becomeowner" element={<BecomeOwner />} />
+        <Route path="applyowner" element={<OwnerApplication />} />
         <Route path="profile" element={<Profile />} />
         <Route path="find-gyms" element={<FindGyms />} />
         <Route path="gym/:id" element={<GymDetails />} />
@@ -96,7 +98,6 @@ function App() {
 
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
-
         <Route path="equipments" element={<AdminEquipments />} />
         <Route path="amenities" element={<AdminAmenities />} />
         <Route path="gyms" element={<AdminGyms />} />
@@ -111,8 +112,7 @@ function App() {
         <Route path="workout-templates" element={<AdminWorkoutTemplates />} />
         <Route path="template-days" element={<AdminTemplateDays />} />
         <Route path="template-items" element={<AdminTemplateItems />} />
-          <Route path="db-backup" element={<AdminDatabaseBackup />} />
-
+        <Route path="db-backup" element={<AdminDatabaseBackup />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

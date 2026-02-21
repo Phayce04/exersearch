@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import "./login.css";
 
 import { redirectAfterAuth } from "../../utils/redirects";
@@ -26,6 +27,7 @@ export default function Login() {
   const [user, setUser] = useState(null);
 
   const navigate = useNavigate();
+  const API = "https://exersearch.test/api/v1";
 
   const toggleMode = () => {
     setMode(mode === "login" ? "signup" : "login");
@@ -47,7 +49,7 @@ export default function Login() {
   const hasUiChoice = (role) => allowedUiModes(role).length > 1;
 
   const fetchMeAndRedirect = async (token) => {
-    const res = await axios.get("https://exersearch.test/api/v1/me", {
+    const res = await axios.get(`${API}/me`, {
       headers: { Authorization: `Bearer ${token}` },
       withCredentials: true,
     });
@@ -55,12 +57,30 @@ export default function Login() {
     const me = res.data;
     setUser(me);
 
+    if (!me?.email_verified_at) {
+      navigate("/verify-email");
+      return;
+    }
+
     if (hasUiChoice(me.role)) {
       return;
     }
 
     setUiMode("user");
     redirectAfterAuth(me, navigate);
+  };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      const res = await axios.post(`${API}/auth/google`, {
+        id_token: credentialResponse.credential,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      await fetchMeAndRedirect(res.data.token);
+    } catch (err) {
+      alert("Google sign-in failed");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -73,14 +93,11 @@ export default function Login() {
       return;
     }
 
-    const endpoint = mode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register";
+    const endpoint = mode === "login" ? "/auth/login" : "/auth/register";
 
     const payload =
       mode === "login"
-        ? {
-            email: formData.email,
-            password: formData.password,
-          }
+        ? { email: formData.email, password: formData.password }
         : {
             name: formData.fullName,
             email: formData.email,
@@ -89,10 +106,7 @@ export default function Login() {
           };
 
     try {
-      const response = await axios.post(`https://exersearch.test${endpoint}`, payload, {
-        withCredentials: true,
-      });
-
+      const response = await axios.post(`${API}${endpoint}`, payload);
       const data = response.data;
 
       if (!data?.token) {
@@ -102,45 +116,13 @@ export default function Login() {
       }
 
       localStorage.setItem("token", data.token);
-
       await fetchMeAndRedirect(data.token);
     } catch (error) {
-      if (error.response?.data?.errors) {
-        alert(Object.values(error.response.data.errors).flat().join("\n"));
-      } else {
-        const msg =
-          error.response?.data?.message ||
-          (error.response?.data ? JSON.stringify(error.response.data, null, 2) : null) ||
-          "Server error";
-        alert(msg);
-      }
+      alert(error.response?.data?.message || "Server error");
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    axios
-      .get("https://exersearch.test/api/v1/me", {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      })
-      .then((res) => {
-        const me = res.data;
-        setUser(me);
-
-        if (!hasUiChoice(me.role)) {
-          setUiMode("user");
-          redirectAfterAuth(me, navigate);
-        }
-      })
-      .catch(() => {
-        localStorage.removeItem("token");
-      });
-  }, [navigate]);
 
   return (
     <div className="login-page">
@@ -156,77 +138,67 @@ export default function Login() {
           <div className="login-box">
             <h1>{mode === "login" ? "Welcome Back" : "Create Account"}</h1>
 
-            {user && <p>Logged in as: {user.name}</p>}
-
-            {user && hasUiChoice(user.role) && (
-              <div style={{ display: "flex", gap: 10, marginBottom: 15, flexWrap: "wrap" }}>
-                {allowedUiModes(user.role).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => {
-                      setUiMode(m);
-                      redirectAfterAuth(user, navigate);
-                    }}
-                  >
-                    Continue as {prettyModeLabel(m)}
-                  </button>
-                ))}
-              </div>
-            )}
-
             {!user && (
-              <form onSubmit={handleSubmit}>
-                {mode === "signup" && (
+              <>
+                <form onSubmit={handleSubmit}>
+                  {mode === "signup" && (
+                    <input
+                      type="text"
+                      name="fullName"
+                      placeholder="Full Name"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      required
+                    />
+                  )}
+
                   <input
-                    type="text"
-                    name="fullName"
-                    placeholder="Full Name"
-                    value={formData.fullName}
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={formData.email}
                     onChange={handleChange}
                     required
                   />
-                )}
 
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
-
-                {mode === "signup" && (
                   <input
                     type="password"
-                    name="password_confirmation"
-                    placeholder="Confirm Password"
-                    value={formData.password_confirmation}
+                    name="password"
+                    placeholder="Password"
+                    value={formData.password}
                     onChange={handleChange}
                     required
                   />
-                )}
 
-                <button type="submit" disabled={loading}>
-                  {loading
-                    ? mode === "login"
-                      ? "Logging in..."
-                      : "Signing up..."
-                    : mode === "login"
-                    ? "Login"
-                    : "Sign Up"}
-                </button>
-              </form>
+                  {mode === "signup" && (
+                    <input
+                      type="password"
+                      name="password_confirmation"
+                      placeholder="Confirm Password"
+                      value={formData.password_confirmation}
+                      onChange={handleChange}
+                      required
+                    />
+                  )}
+
+                  <button type="submit" disabled={loading}>
+                    {loading
+                      ? mode === "login"
+                        ? "Logging in..."
+                        : "Signing up..."
+                      : mode === "login"
+                      ? "Login"
+                      : "Sign Up"}
+                  </button>
+                </form>
+
+                <div style={{ marginTop: 20 }}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleLogin}
+                    onError={() => alert("Google sign-in failed")}
+                  />
+                </div>
+              </>
             )}
 
             <p className="toggle-text">

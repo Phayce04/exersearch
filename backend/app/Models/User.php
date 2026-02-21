@@ -5,8 +5,9 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, Notifiable;
 
@@ -14,46 +15,24 @@ class User extends Authenticatable
     protected $primaryKey = 'user_id';
     public $timestamps = true;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Mass Assignment
-    |--------------------------------------------------------------------------
-    | Only columns that actually exist in `users` table
-    */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role', // user | owner | admin | superadmin
-        // 'onboarded_at', // ✅ optional (not required if you set it manually)
+        // 'onboarded_at',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Hidden Attributes
-    |--------------------------------------------------------------------------
-    */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Casts
-    |--------------------------------------------------------------------------
-    */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'onboarded_at' => 'datetime', // ✅ ADDED
+        'onboarded_at' => 'datetime',
     ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Profiles (role-specific)
-    |--------------------------------------------------------------------------
-    */
 
     // Regular gym user profile
     public function userProfile()
@@ -72,12 +51,6 @@ class User extends Authenticatable
     {
         return $this->hasOne(AdminProfile::class, 'user_id', 'user_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Preferences
-    |--------------------------------------------------------------------------
-    */
 
     public function preference()
     {
@@ -104,12 +77,6 @@ class User extends Authenticatable
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Owner Relations
-    |--------------------------------------------------------------------------
-    */
-
     public function gyms()
     {
         return $this->hasMany(Gym::class, 'owner_id', 'user_id');
@@ -119,12 +86,6 @@ class User extends Authenticatable
     {
         return $this->hasOne(GymOwnerApplication::class, 'user_id', 'user_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Role Helpers
-    |--------------------------------------------------------------------------
-    */
 
     public function isGymUser(): bool
     {
@@ -148,14 +109,9 @@ class User extends Authenticatable
 
     public function savedGyms()
     {
-        return $this->hasMany(
-            \App\Models\SavedGym::class,
-            'user_id',
-            'user_id'
-        );
+        return $this->hasMany(\App\Models\SavedGym::class, 'user_id', 'user_id');
     }
 
-    // Direct access to Gym models the user has saved
     public function savedGymDetails()
     {
         return $this->belongsToMany(
