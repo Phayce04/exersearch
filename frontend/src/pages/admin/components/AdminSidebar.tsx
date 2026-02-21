@@ -201,7 +201,7 @@ const AdminSidebar: React.FC<Props> = ({
                   Amenities
                 </MenuItem>
 
-                {/* ✅ NEW: Workout System (short labels) */}
+                {/* ✅ Workout System */}
                 <MenuItem
                   icon={<Dumbbell />}
                   onClick={() => go("/admin/exercises")}
@@ -312,6 +312,19 @@ const AdminSidebar: React.FC<Props> = ({
                   }
                 >
                   Maintenance
+                </MenuItem>
+
+                {/* ✅ NEW: Database Backup */}
+                <MenuItem
+                  icon={<Book />}
+                  onClick={() => go("/admin/db-backup")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/db-backup"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Database Backup
                 </MenuItem>
               </SubMenu>
 

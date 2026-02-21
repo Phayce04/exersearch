@@ -41,7 +41,7 @@ import AdminExercises from "./pages/admin/AdminExercises";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
 import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
 import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
-
+import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
   const navigate = useNavigate();
@@ -111,6 +111,8 @@ function App() {
         <Route path="workout-templates" element={<AdminWorkoutTemplates />} />
         <Route path="template-days" element={<AdminTemplateDays />} />
         <Route path="template-items" element={<AdminTemplateItems />} />
+          <Route path="db-backup" element={<AdminDatabaseBackup />} />
+
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

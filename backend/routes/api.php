@@ -40,6 +40,7 @@ use App\Http\Controllers\UserWorkoutPlanDayController;
 use App\Http\Controllers\UserWorkoutPlanDayExerciseController;
 
 use App\Http\Controllers\OwnerProfileController;
+use App\Http\Controllers\DatabaseBackupController;
 
 Route::prefix('v1')->group(function () {
 
@@ -184,9 +185,9 @@ Route::prefix('v1')->group(function () {
             Route::match(['put', 'patch'], '/exercises/{id}', [ExerciseController::class, 'update'])->whereNumber('id');
             Route::delete('/exercises/{id}', [ExerciseController::class, 'destroy'])->whereNumber('id');
 
-            Route::post('/workout-templates', [WorkoutTemplateController::class, 'store']);
             Route::match(['put', 'patch'], '/workout-templates/{id}', [WorkoutTemplateController::class, 'update'])->whereNumber('id');
             Route::delete('/workout-templates/{id}', [WorkoutTemplateController::class, 'destroy'])->whereNumber('id');
+            Route::post('/workout-templates', [WorkoutTemplateController::class, 'store']);
 
             Route::get('/workout-template-days', [WorkoutTemplateDayController::class, 'index']);
             Route::get('/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'show'])->whereNumber('id');
@@ -199,6 +200,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/workout-template-day-exercises', [WorkoutTemplateDayExerciseController::class, 'store']);
             Route::match(['put', 'patch'], '/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'update'])->whereNumber('id');
             Route::delete('/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'destroy'])->whereNumber('id');
+
+            Route::get('/admin/db/backups', [DatabaseBackupController::class, 'index']);
+            Route::get('/admin/db/tables', [DatabaseBackupController::class, 'tables']);
+            Route::post('/admin/db/backup', [DatabaseBackupController::class, 'store']);
+            Route::post('/admin/db/restore', [DatabaseBackupController::class, 'restore']);
+            Route::get('/admin/db/backups/{name}/download', [DatabaseBackupController::class, 'download']);
         });
     });
 });
