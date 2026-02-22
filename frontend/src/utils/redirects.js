@@ -9,7 +9,7 @@ export function redirectAfterAuth(me, navigate) {
     return navigate("/home");
   }
 
-  if (uiMode === "owner") return navigate("/owner/dashboard");
+  if (uiMode === "owner") return navigate("/owner/home");
   if (uiMode === "admin") return navigate("/admin/dashboard");
   if (uiMode === "superadmin") return navigate("/admin/dashboard");
 

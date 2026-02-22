@@ -6,7 +6,6 @@ import Login from "./pages/auth/login";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import UserHome from "./pages/user/Home";
 import Profile from "./pages/user/Profile";
-import OwnerDashboard from "./pages/owner/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -54,7 +53,7 @@ function ProtectedRoutes({ children }) {
     setRole(r);
 
     if (r === "user") navigate("/home");
-    else if (r === "owner") navigate("/owner/dashboard");
+    else if (r === "owner") navigate("/owner/home");
     else if (r === "superadmin") navigate("/admin/dashboard");
   }, [navigate]);
 
@@ -91,7 +90,8 @@ function App() {
       </Route>
 
       <Route path="/owner/*" element={<OwnerLayout />}>
-        <Route path="dashboard" element={<OwnerDashboard />} />
+                <Route path="home" element={<OwnerHome />} />
+
         <Route path="view-gym/:id" element={<ViewGym />} />
         <Route path="edit-gym/:id" element={<EditGym />} />
         <Route path="view-stats/:id" element={<ViewStats />} />

@@ -13,6 +13,6 @@ export function isLoggedIn() {
 
 export function logout() {
   localStorage.removeItem("token");
-  localStorage.removeItem("role"); // also remove role
-  window.location.replace("/login"); // redirect to login page
+  localStorage.removeItem("role"); 
+  window.location.replace("/login"); 
 }

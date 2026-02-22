@@ -27,7 +27,7 @@ export default function OwnerLayout() {
         const [meRes] = await Promise.all([meReq, minDelay]);
         const fetchedUser = meRes.data.user || meRes.data;
 
-        if (fetchedUser?.role !== "owner") {
+        if (!["owner", "superadmin"].includes(fetchedUser?.role)) {
           navigate("/login");
           return;
         }
@@ -41,9 +41,11 @@ export default function OwnerLayout() {
     };
 
     run();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [navigate]);
 
-if (!ready) return <OwnerLoading />;
+  if (!ready) return <OwnerLoading />;
   return <Outlet />;
 }

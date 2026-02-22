@@ -13,7 +13,6 @@ export function useAuthMe() {
       setMe(res.data.user || res.data);
       return res.data.user || res.data;
     } catch (err) {
-      // ✅ IMPORTANT: don't treat maintenance as "logged out"
       if (err?.response?.status === 503) {
         return null;
       }
