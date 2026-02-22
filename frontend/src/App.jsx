@@ -41,6 +41,7 @@ import ViewStats from "./pages/owner/ViewStats";
 import AdminExercises from "./pages/admin/AdminExercises";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
 import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
+import OwnerHome from "./pages/owner/OwnerHome";
 import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
 import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
 
@@ -77,6 +78,7 @@ function App() {
       <Route path="/view-gym" element={<ViewGym />} />
       <Route path="/edit-gym" element={<EditGym />} />
       <Route path="/view-stats" element={<ViewStats />} />
+      <Route path="/owner-home" element={<OwnerHome />} />
       <Route path="/profile" element={<Profile />} />
 
       <Route path="/home/*" element={<UserLayout />}>
