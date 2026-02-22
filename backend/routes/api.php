@@ -106,7 +106,7 @@ Route::prefix('v1')->group(function () {
     })->middleware('signed')->name('verification.verify');
 
     Route::middleware('auth:sanctum')->group(function () {
-        
+
         Route::post('/email/verification-notification', function (Request $request) {
             if ($request->user()->hasVerifiedEmail()) {
                 return response()->json(['message' => 'Email already verified.'], 200);
@@ -118,8 +118,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', MeController::class);
 
         Route::middleware('verified')->group(function () {
-Route::get('/gyms/{gym}/analytics', [GymAnalyticsController::class, 'show'])
-    ->whereNumber('gym');
+
+            Route::get('/gyms/{gym}/analytics', [GymAnalyticsController::class, 'show'])->whereNumber('gym');
+            Route::get('/owner/activities', [GymAnalyticsController::class, 'activities']);
+
             Route::post('/me/avatar', [ProfilePhotoController::class, 'upload']);
             Route::delete('/me/avatar', [ProfilePhotoController::class, 'remove']);
 
@@ -185,19 +187,13 @@ Route::get('/gyms/{gym}/analytics', [GymAnalyticsController::class, 'show'])
             Route::match(['put', 'patch'], '/gyms/{gym}', [GymController::class, 'update'])->whereNumber('gym');
             Route::delete('/gyms/{gym}', [GymController::class, 'destroy'])->whereNumber('gym');
 
-            Route::post('/gyms/{gym}/equipments', [GymEquipmentController::class, 'store'])
-                ->whereNumber('gym');
-            Route::match(['put', 'patch'], '/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'update'])
-                ->whereNumber('gym')->whereNumber('equipment');
-            Route::delete('/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'destroy'])
-                ->whereNumber('gym')->whereNumber('equipment');
+            Route::post('/gyms/{gym}/equipments', [GymEquipmentController::class, 'store'])->whereNumber('gym');
+            Route::match(['put', 'patch'], '/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'update'])->whereNumber('gym')->whereNumber('equipment');
+            Route::delete('/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'destroy'])->whereNumber('gym')->whereNumber('equipment');
 
-            Route::post('/gyms/{gym}/amenities', [GymAmenityController::class, 'store'])
-                ->whereNumber('gym');
-            Route::match(['put', 'patch'], '/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'update'])
-                ->whereNumber('gym')->whereNumber('amenity');
-            Route::delete('/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'destroy'])
-                ->whereNumber('gym')->whereNumber('amenity');
+            Route::post('/gyms/{gym}/amenities', [GymAmenityController::class, 'store'])->whereNumber('gym');
+            Route::match(['put', 'patch'], '/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'update'])->whereNumber('gym')->whereNumber('amenity');
+            Route::delete('/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'destroy'])->whereNumber('gym')->whereNumber('amenity');
 
             Route::get('/owner/profile', [OwnerProfileController::class, 'show']);
             Route::post('/owner/profile', [OwnerProfileController::class, 'storeOrUpdate']);

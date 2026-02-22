@@ -77,3 +77,5 @@ export async function uploadMedia({ file, type, kind }) {
 
   return res.data;
 }
+
+
