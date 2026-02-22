@@ -74,8 +74,6 @@ function App() {
       <Route path="/test-gym-results" element={<GymResults />} />
       <Route path="/become-an-owner" element={<BecomeOwner />} />
       <Route path="/owner-application" element={<OwnerApplication />} />
-      <Route path="/edit-gym" element={<EditGym />} />
-      <Route path="/view-stats" element={<ViewStats />} />
       <Route path="/profile" element={<Profile />} />
 
       <Route path="/home/*" element={<UserLayout />}>
@@ -94,7 +92,8 @@ function App() {
       <Route path="/owner/*" element={<OwnerLayout />}>
         <Route path="dashboard" element={<OwnerDashboard />} />
         <Route path="view-gym/:id" element={<ViewGym />} />
-
+        <Route path="edit-gym/:id" element={<EditGym />} />
+        <Route path="view-stats/:id" element={<ViewStats />} />
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>

@@ -1,184 +1,598 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../user/Header-user";
 import Footer from "../user/Footer";
 import "./EditGym.css";
 import {
-  Save, X, Upload, Trash2, Plus, MapPin, Clock, 
-  DollarSign, Dumbbell, Image as ImageIcon, Phone, 
-  Mail, Globe, AlertCircle, CheckCircle, Copy, ChevronLeft
+  Save,
+  Upload,
+  Trash2,
+  MapPin,
+  Clock,
+  DollarSign,
+  Image as ImageIcon,
+  Phone,
+  Mail,
+  Globe,
+  ChevronLeft,
+  AlertTriangle,
 } from "lucide-react";
+import Swal from "sweetalert2";
 
-const MOCK_GYM = {
-  id: 1,
-  name: "IronForge Fitness",
-  description: "Premier strength training facility in the heart of Pasig City. We offer state-of-the-art equipment, experienced trainers, and a motivating atmosphere for all fitness levels.",
-  address: "123 Kapitolyo Street, Barangay Kapitolyo",
-  city: "Pasig City",
-  landmark: "Near SM Pasig, 2nd Floor",
-  contact_number: "09171234567",
-  email: "info@ironforge.ph",
-  website: "www.ironforge.ph",
-  photos: [
-    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
-    "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1200&q=80",
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1200&q=80",
-  ],
-  hours: {
-    Monday: { open: "06:00", close: "22:00" },
-    Tuesday: { open: "06:00", close: "22:00" },
-    Wednesday: { open: "06:00", close: "22:00" },
-    Thursday: { open: "06:00", close: "22:00" },
-    Friday: { open: "06:00", close: "22:00" },
-    Saturday: { open: "08:00", close: "20:00" },
-    Sunday: { open: "08:00", close: "18:00" },
-  },
-  pricing: {
-    day_pass: 150,
-    monthly: 2500,
-    quarterly: 6500,
-  },
-  amenities: ["Shower Rooms", "Locker Rooms", "Parking", "Air Conditioning", "WiFi", "Personal Training"],
-  equipments: [
-    { id: 1, name: "Treadmill", quantity: 8 },
-    { id: 2, name: "Dumbbells", quantity: 20 },
-    { id: 3, name: "Bench Press", quantity: 4 },
-  ],
-};
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-const AMENITY_OPTIONS = [
-  "Shower Rooms", "Locker Rooms", "Parking", "Air Conditioning", 
-  "WiFi", "Personal Training", "Cardio Area", "Free Weights",
-  "Weight Machines", "Boxing Area", "Yoga Studio", "Sauna",
-  "Steam Room", "Juice Bar", "Pro Shop", "24/7 Access"
-];
+import { getGym, updateGym, uploadMedia, getMyGyms } from "../../utils/ownerGymApi";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const FULL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const API_BASE = "https://exersearch.test";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+function absUrl(u) {
+  if (!u) return "";
+  const s = String(u).trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.startsWith("//")) return `https:${s}`;
+  if (s.startsWith("/")) return `${API_BASE}${s}`;
+  return s;
+}
+
+function hhmm(v, fallback = "06:00") {
+  if (!v) return fallback;
+  const s = String(v);
+  const m = s.match(/(\d{2}):(\d{2})/);
+  return m ? `${m[1]}:${m[2]}` : fallback;
+}
+
+function toNumberOrNull(v) {
+  if (v === "" || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function toFloatOrNull(v) {
+  if (v === "" || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeGymId(g) {
+  return g?.gym_id ?? g?.id ?? null;
+}
+
+function isValidEmail(email) {
+  const s = String(email || "").trim();
+  if (!s) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+function normalizeUrlNullable(value) {
+  const s = String(value ?? "").trim();
+  if (!s) return null;
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  return `https://${s}`;
+}
+
+function isValidUrlNullable(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return true; // nullable
+  try {
+    const u = new URL(normalizeUrlNullable(raw));
+    return Boolean(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function extractCause(err) {
+  const d = err?.response?.data;
+  const top = (typeof d === "string" && d) || d?.message || err?.message || "Something went wrong.";
+  let firstField = "";
+  if (d?.errors && typeof d.errors === "object") {
+    const k = Object.keys(d.errors)[0];
+    const v = d.errors[k];
+    if (Array.isArray(v) && v.length) firstField = `${k}: ${v[0]}`;
+    else if (v) firstField = `${k}: ${String(v)}`;
+  }
+  let debugBits = "";
+  if (d?.debug?.upload_error_code != null) debugBits = ` (upload_error_code=${d.debug.upload_error_code})`;
+  return firstField ? `${top}\n${firstField}${debugBits}` : `${top}${debugBits}`;
+}
+
+function Recenter({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!center) return;
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+  return null;
+}
+
+function MapClick({ onPick }) {
+  useMapEvents({
+    click(e) {
+      const ll = e.latlng;
+      if (!ll) return;
+      onPick(ll);
+    },
+  });
+  return null;
+}
 
 export default function EditGym() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const fileInputRef = useRef(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
-  
+  const [errors, setErrors] = useState({});
+
   const [form, setForm] = useState({
+    gym_id: null,
     name: "",
     description: "",
     address: "",
     city: "",
-    landmark: "",
     contact_number: "",
     email: "",
     website: "",
-    photos: [],
-    hours: {},
-    pricing: { day_pass: "", monthly: "", quarterly: "" },
-    amenities: [],
-    equipments: [],
+    facebook_page: "",
+    instagram_page: "",
+    opening_time: "06:00",
+    closing_time: "22:00",
+    daily_price: "",
+    monthly_price: "",
+    annual_price: "",
+    gym_type: "",
+    main_image_url: "",
+    gallery_urls: [],
+    latitude: "",
+    longitude: "",
+    has_personal_trainers: false,
+    has_classes: false,
+    is_24_hours: false,
+    is_airconditioned: false,
   });
 
-  const [newEquipment, setNewEquipment] = useState({ name: "", quantity: "" });
-  const [errors, setErrors] = useState({});
-  const [copyAllHours, setCopyAllHours] = useState(false);
-  const [baseHours, setBaseHours] = useState({ open: "06:00", close: "22:00" });
+  const [mapCenter, setMapCenter] = useState({ lat: 14.5764, lng: 121.0851 });
+  const [mapZoom] = useState(15);
+
+  const [addressOpen, setAddressOpen] = useState(false);
+  const [addressActiveIndex, setAddressActiveIndex] = useState(-1);
+  const [myGyms, setMyGyms] = useState([]);
+
+  const [geoSuggestions, setGeoSuggestions] = useState([]);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoErr, setGeoErr] = useState("");
+
+  const markerPos = useMemo(() => {
+    const lat = toFloatOrNull(form.latitude);
+    const lng = toFloatOrNull(form.longitude);
+    if (lat == null || lng == null) return null;
+    return { lat, lng };
+  }, [form.latitude, form.longitude]);
+
+  const hasPinnedLocation = useMemo(() => {
+    const lat = toFloatOrNull(form.latitude);
+    const lng = toFloatOrNull(form.longitude);
+    return lat != null && lng != null;
+  }, [form.latitude, form.longitude]);
+
+  const rawPhotos = useMemo(() => {
+    return [form.main_image_url || null, ...(Array.isArray(form.gallery_urls) ? form.gallery_urls : [])].filter(Boolean);
+  }, [form.main_image_url, form.gallery_urls]);
+
+  const photos = useMemo(() => {
+    const display = rawPhotos.map(absUrl).filter(Boolean);
+    return display.length ? display : ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80"];
+  }, [rawPhotos]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setForm(MOCK_GYM);
-      setLoading(false);
-    }, 500);
-  }, [id]);
-
-  const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-    setHasChanges(true);
-    setErrors(prev => ({ ...prev, [field]: "" }));
-  };
-
-  const handleHourChange = (day, type, value) => {
-    setForm(prev => ({
-      ...prev,
-      hours: {
-        ...prev.hours,
-        [day]: { ...prev.hours[day], [type]: value }
+    let alive = true;
+    (async () => {
+      try {
+        if (typeof getMyGyms !== "function") return;
+        const res = await getMyGyms(1);
+        const data = res?.data ?? res;
+        const rows = data?.data ?? data?.gyms ?? data ?? [];
+        if (!alive) return;
+        setMyGyms(Array.isArray(rows) ? rows : []);
+      } catch (e) {
+        if (!alive) return;
+        setMyGyms([]);
       }
-    }));
-    setHasChanges(true);
-  };
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const applySameHours = () => {
-    if (!copyAllHours) return;
-    const newHours = {};
-    FULL_DAYS.forEach(day => {
-      newHours[day] = { ...baseHours };
-    });
-    setForm(prev => ({ ...prev, hours: newHours }));
-    setHasChanges(true);
-  };
-
-  const toggleAmenity = (amenity) => {
-    setForm(prev => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
-    setHasChanges(true);
-  };
-
-  const addEquipment = () => {
-    if (!newEquipment.name || !newEquipment.quantity) return;
-    setForm(prev => ({
-      ...prev,
-      equipments: [...prev.equipments, { id: Date.now(), ...newEquipment }]
-    }));
-    setNewEquipment({ name: "", quantity: "" });
-    setHasChanges(true);
-  };
-
-  const removeEquipment = (id) => {
-    setForm(prev => ({
-      ...prev,
-      equipments: prev.equipments.filter(e => e.id !== id)
-    }));
-    setHasChanges(true);
-  };
-
-  const handleSave = async () => {
-    const newErrors = {};
-    if (!form.name.trim()) newErrors.name = "Gym name is required";
-    if (!form.address.trim()) newErrors.address = "Address is required";
-    if (!form.contact_number.trim()) newErrors.contact_number = "Contact number is required";
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setActiveTab("basic");
+  useEffect(() => {
+    const q = String(form.address || "").trim();
+    if (!q || q.length < 3) {
+      setGeoSuggestions([]);
+      setGeoErr("");
+      setGeoLoading(false);
       return;
     }
 
+    let cancelled = false;
+    setGeoLoading(true);
+    setGeoErr("");
+
+    const t = setTimeout(async () => {
+      try {
+        const url =
+          `https://nominatim.openstreetmap.org/search?` +
+          new URLSearchParams({
+            q,
+            format: "json",
+            addressdetails: "1",
+            limit: "8",
+          }).toString();
+
+        const res = await fetch(url, { headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error(`Geocode failed (${res.status})`);
+        const json = await res.json();
+        if (cancelled) return;
+
+        const mapped = (Array.isArray(json) ? json : [])
+          .map((x) => {
+            const lat = Number(x.lat);
+            const lng = Number(x.lon);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+            const city =
+              x.address?.city ||
+              x.address?.town ||
+              x.address?.village ||
+              x.address?.municipality ||
+              x.address?.state ||
+              "";
+
+            return {
+              key: `geo-${x.place_id}-${lat}-${lng}`,
+              address: x.display_name || q,
+              city: String(city || "").trim(),
+              latitude: lat,
+              longitude: lng,
+              label: "Search result",
+            };
+          })
+          .filter(Boolean);
+
+        setGeoSuggestions(mapped);
+      } catch (e) {
+        if (cancelled) return;
+        setGeoSuggestions([]);
+        setGeoErr(e?.message || "Geocoding failed.");
+      } finally {
+        if (!cancelled) setGeoLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [form.address]);
+
+  const suggestionPool = useMemo(() => {
+    const list = [];
+
+    for (const g of geoSuggestions) list.push(g);
+
+    {
+      const lat = toFloatOrNull(form.latitude);
+      const lng = toFloatOrNull(form.longitude);
+      if (lat != null && lng != null && String(form.address || "").trim()) {
+        list.push({
+          key: `current-${lat}-${lng}`,
+          address: String(form.address || ""),
+          city: String(form.city || ""),
+          latitude: lat,
+          longitude: lng,
+          label: "Current location",
+        });
+      }
+    }
+
+    for (const g of myGyms) {
+      const lat = toFloatOrNull(g?.latitude);
+      const lng = toFloatOrNull(g?.longitude);
+      const addr = String(g?.address || "").trim();
+      if (lat == null || lng == null || !addr) continue;
+
+      list.push({
+        key: `gym-${normalizeGymId(g) ?? g?.id ?? addr}-${lat}-${lng}`,
+        address: addr,
+        city: String(g?.city || "").trim(),
+        latitude: lat,
+        longitude: lng,
+        label: String(g?.name || "Gym"),
+      });
+    }
+
+    return list;
+  }, [geoSuggestions, form.address, form.city, form.latitude, form.longitude, myGyms]);
+
+  const addressSuggestions = useMemo(() => {
+    const q = String(form.address || "").trim().toLowerCase();
+    if (!q) return [];
+
+    const filtered = suggestionPool.filter((x) => {
+      const a = String(x.address || "").toLowerCase();
+      const c = String(x.city || "").toLowerCase();
+      const l = String(x.label || "").toLowerCase();
+      return a.includes(q) || c.includes(q) || l.includes(q);
+    });
+
+    return filtered.slice(0, 8);
+  }, [form.address, suggestionPool]);
+
+  const applyAddressPick = (pick) => {
+    setForm((prev) => ({
+      ...prev,
+      address: pick.address || prev.address,
+      city: pick.city || prev.city,
+      latitude: String(pick.latitude),
+      longitude: String(pick.longitude),
+    }));
+    setHasChanges(true);
+    setErrors((prev) => ({ ...prev, address: "", location: "" }));
+    setMapCenter({ lat: pick.latitude, lng: pick.longitude });
+  };
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await getGym(id);
+        const g = res?.data ?? res;
+
+        const opening = hhmm(g?.opening_time, "06:00");
+        const closing = hhmm(g?.closing_time, "22:00");
+
+        const lat = g?.latitude ?? "";
+        const lng = g?.longitude ?? "";
+
+        const mapped = {
+          gym_id: normalizeGymId(g) ?? Number(id),
+          name: g?.name ?? "",
+          description: g?.description ?? "",
+          address: g?.address ?? "",
+          city: g?.city ?? "",
+          contact_number: g?.contact_number ?? "",
+          email: g?.email ?? "",
+          website: g?.website ?? "",
+          facebook_page: g?.facebook_page ?? "",
+          instagram_page: g?.instagram_page ?? "",
+          opening_time: opening,
+          closing_time: closing,
+          daily_price: g?.daily_price ?? "",
+          monthly_price: g?.monthly_price ?? "",
+          annual_price: g?.annual_price ?? "",
+          gym_type: g?.gym_type ?? "",
+          main_image_url: g?.main_image_url ?? "",
+          gallery_urls: Array.isArray(g?.gallery_urls) ? g.gallery_urls : [],
+          latitude: lat === null ? "" : String(lat),
+          longitude: lng === null ? "" : String(lng),
+          has_personal_trainers: Boolean(g?.has_personal_trainers),
+          has_classes: Boolean(g?.has_classes),
+          is_24_hours: Boolean(g?.is_24_hours),
+          is_airconditioned: Boolean(g?.is_airconditioned),
+        };
+
+        if (!alive) return;
+        setForm(mapped);
+        setHasChanges(false);
+        setErrors({});
+
+        const nlat = toFloatOrNull(mapped.latitude);
+        const nlng = toFloatOrNull(mapped.longitude);
+        if (nlat != null && nlng != null) setMapCenter({ lat: nlat, lng: nlng });
+      } catch (e) {
+        if (!alive) return;
+        console.error(e);
+        Swal.fire({ icon: "error", title: "Failed to load gym", text: extractCause(e) });
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  const setField = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const setBool = (field) => (e) => {
+    const v = !!e.target.checked;
+    setForm((prev) => ({ ...prev, [field]: v }));
+    setHasChanges(true);
+  };
+
+  const goBackToView = () => navigate(`/owner/view-gym/${id}`);
+
+  const validateBeforeSave = () => {
+    const newErrors = {};
+
+    if (!String(form.name || "").trim()) newErrors.name = "Gym name is required";
+    if (!String(form.address || "").trim()) newErrors.address = "Address is required";
+    if (!String(form.contact_number || "").trim()) newErrors.contact_number = "Contact number is required";
+
+    if (!isValidEmail(form.email)) newErrors.email = "Please enter a valid email (e.g., gym@email.com)";
+
+    // nullable but must be valid if provided
+    if (!isValidUrlNullable(form.website)) newErrors.website = "Please enter a valid website URL (e.g., www.site.com)";
+    if (!isValidUrlNullable(form.facebook_page)) newErrors.facebook_page = "Please enter a valid Facebook page URL";
+    if (!isValidUrlNullable(form.instagram_page)) newErrors.instagram_page = "Please enter a valid Instagram page URL";
+
+    const lat = toFloatOrNull(form.latitude);
+    const lng = toFloatOrNull(form.longitude);
+    if (lat == null || lng == null) newErrors.location = "Please pinpoint your gym on the map.";
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      if (
+        newErrors.name ||
+        newErrors.contact_number ||
+        newErrors.email ||
+        newErrors.website ||
+        newErrors.facebook_page ||
+        newErrors.instagram_page
+      )
+        setActiveTab("basic");
+      else if (newErrors.address || newErrors.location) setActiveTab("location");
+      Swal.fire({ icon: "warning", title: "Fix highlighted fields", text: "Some inputs are invalid." });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!validateBeforeSave()) return;
+
     setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setSaving(false);
-    setHasChanges(false);
-    
-    const notification = document.createElement('div');
-    notification.className = 'eg-success-toast';
-    notification.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Changes saved successfully!</span>';
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    try {
+      const payload = {
+        name: form.name,
+        description: form.description,
+        address: form.address,
+        city: form.city,
+        contact_number: form.contact_number,
+        email: String(form.email || "").trim() || null,
+
+        // nullable, but normalized to https:// if provided
+        website: normalizeUrlNullable(form.website),
+        facebook_page: normalizeUrlNullable(form.facebook_page),
+        instagram_page: normalizeUrlNullable(form.instagram_page),
+
+        gym_type: String(form.gym_type || "").trim() || null,
+
+        opening_time: hhmm(form.opening_time, "06:00"),
+        closing_time: hhmm(form.closing_time, "22:00"),
+
+        has_personal_trainers: !!form.has_personal_trainers,
+        has_classes: !!form.has_classes,
+        is_24_hours: !!form.is_24_hours,
+        is_airconditioned: !!form.is_airconditioned,
+
+        monthly_price: toNumberOrNull(form.monthly_price),
+        annual_price: toNumberOrNull(form.annual_price),
+
+        main_image_url: form.main_image_url || null,
+        gallery_urls: Array.isArray(form.gallery_urls) ? form.gallery_urls : [],
+        latitude: toFloatOrNull(form.latitude),
+        longitude: toFloatOrNull(form.longitude),
+      };
+
+      await updateGym(id, payload);
+
+      setHasChanges(false);
+
+      const notification = document.createElement("div");
+      notification.className = "eg-success-toast";
+      notification.innerHTML =
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Changes saved successfully!</span>';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: "error", title: "Save failed", text: extractCause(e) });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
     if (hasChanges) {
-      if (window.confirm("You have unsaved changes. Are you sure you want to leave?")) {
-        navigate(`/owner/gym/${id}`);
-      }
-    } else {
-      navigate(`/owner/gym/${id}`);
+      if (window.confirm("You have unsaved changes. Are you sure you want to leave?")) goBackToView();
+      return;
     }
+    goBackToView();
+  };
+
+  const removePhotoAt = (idx) => {
+    const list = [...rawPhotos];
+    list.splice(idx, 1);
+    const main = list[0] || "";
+    const gallery = list.slice(1);
+    setForm((prev) => ({ ...prev, main_image_url: main, gallery_urls: gallery }));
+    setHasChanges(true);
+  };
+
+  const onClickUpload = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const onFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+
+    setUploading(true);
+    try {
+      const uploadedUrls = [];
+
+      for (const file of files) {
+        const data = await uploadMedia({ file, type: "gyms", kind: "gallery" });
+        const url = data?.url || data?.path || data?.data?.url || data?.data?.path;
+        if (!url) throw new Error("Upload succeeded but server returned no url.");
+        uploadedUrls.push(String(url));
+      }
+
+      if (uploadedUrls.length) {
+        setForm((prev) => {
+          const currentRaw = [prev.main_image_url || null, ...(Array.isArray(prev.gallery_urls) ? prev.gallery_urls : [])].filter(Boolean);
+          const merged = [...currentRaw, ...uploadedUrls];
+          return { ...prev, main_image_url: merged[0] || "", gallery_urls: merged.slice(1) };
+        });
+        setHasChanges(true);
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire({ icon: "error", title: "Upload failed", text: extractCause(err) });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onMapDragEnd = (e) => {
+    const ll = e.target.getLatLng();
+    setField("latitude", String(ll.lat));
+    setField("longitude", String(ll.lng));
+    setMapCenter({ lat: ll.lat, lng: ll.lng });
+    setErrors((prev) => ({ ...prev, location: "" }));
+  };
+
+  const onMapPick = (ll) => {
+    setField("latitude", String(ll.lat));
+    setField("longitude", String(ll.lng));
+    setMapCenter({ lat: ll.lat, lng: ll.lng });
+    setErrors((prev) => ({ ...prev, location: "" }));
   };
 
   if (loading) {
@@ -199,14 +613,13 @@ export default function EditGym() {
       <Header />
 
       <div className="eg-container">
-
-        {/* Sticky Header */}
         <div className="eg-sticky-header">
           <div className="eg-header-content">
-            <button className="eg-back-btn" onClick={handleCancel}>
+            <button className="eg-back-btn" onClick={handleCancel} type="button">
               <ChevronLeft size={18} />
               Back
             </button>
+
             <div className="eg-header-info">
               <h1>Edit Gym</h1>
               {hasChanges && (
@@ -217,15 +630,12 @@ export default function EditGym() {
               )}
             </div>
           </div>
+
           <div className="eg-header-actions">
-            <button className="eg-btn-secondary" onClick={handleCancel}>
+            <button className="eg-btn-secondary" onClick={handleCancel} type="button">
               Cancel
             </button>
-            <button 
-              className="eg-btn-primary" 
-              onClick={handleSave}
-              disabled={!hasChanges || saving}
-            >
+            <button className="eg-btn-primary" onClick={handleSave} disabled={!hasChanges || saving} type="button">
               {saving ? (
                 <>
                   <div className="eg-btn-spinner"></div>
@@ -241,66 +651,45 @@ export default function EditGym() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="eg-tabs">
-          <button 
-            className={`eg-tab ${activeTab === "basic" ? "active" : ""}`}
-            onClick={() => setActiveTab("basic")}
-          >
+          <button className={`eg-tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => setActiveTab("basic")} type="button">
             <Phone size={18} />
             Basic Info
           </button>
-          <button 
-            className={`eg-tab ${activeTab === "location" ? "active" : ""}`}
-            onClick={() => setActiveTab("location")}
-          >
+
+          <button className={`eg-tab ${activeTab === "location" ? "active" : ""}`} onClick={() => setActiveTab("location")} type="button">
             <MapPin size={18} />
             Location
           </button>
-          <button 
-            className={`eg-tab ${activeTab === "hours" ? "active" : ""}`}
-            onClick={() => setActiveTab("hours")}
-          >
+
+          <button className={`eg-tab ${activeTab === "hours" ? "active" : ""}`} onClick={() => setActiveTab("hours")} type="button">
             <Clock size={18} />
             Hours
           </button>
-          <button 
-            className={`eg-tab ${activeTab === "pricing" ? "active" : ""}`}
-            onClick={() => setActiveTab("pricing")}
-          >
+
+          <button className={`eg-tab ${activeTab === "pricing" ? "active" : ""}`} onClick={() => setActiveTab("pricing")} type="button">
             <DollarSign size={18} />
             Pricing
           </button>
-          <button 
-            className={`eg-tab ${activeTab === "facilities" ? "active" : ""}`}
-            onClick={() => setActiveTab("facilities")}
-          >
-            <Dumbbell size={18} />
-            Facilities
-          </button>
-          <button 
-            className={`eg-tab ${activeTab === "media" ? "active" : ""}`}
-            onClick={() => setActiveTab("media")}
-          >
+
+          <button className={`eg-tab ${activeTab === "media" ? "active" : ""}`} onClick={() => setActiveTab("media")} type="button">
             <ImageIcon size={18} />
             Media
           </button>
         </div>
 
-        {/* Content */}
         <div className="eg-content">
-
           {activeTab === "basic" && (
             <div className="eg-tab-content">
               <div className="eg-section">
                 <h2>Gym Information</h2>
-                
+
                 <div className="eg-field">
                   <label>Gym Name *</label>
                   <input
                     type="text"
                     value={form.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
+                    onChange={(e) => setField("name", e.target.value)}
                     className={errors.name ? "error" : ""}
                     placeholder="Enter your gym name"
                   />
@@ -309,19 +698,19 @@ export default function EditGym() {
 
                 <div className="eg-field">
                   <label>Description</label>
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => handleChange("description", e.target.value)}
-                    rows={5}
-                    placeholder="Describe your gym, facilities, and what makes it unique..."
-                  />
-                  <span className="eg-char-count">{form.description.length} / 500</span>
+                  <textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={5} placeholder="Describe your gym..." />
+                  <span className="eg-char-count">{String(form.description || "").length} / 500</span>
+                </div>
+
+                <div className="eg-field">
+                  <label>Gym Type</label>
+                  <input type="text" value={form.gym_type} onChange={(e) => setField("gym_type", e.target.value)} placeholder="Boxing, Commercial, Crossfit..." />
                 </div>
               </div>
 
               <div className="eg-section">
-                <h2>Contact Information</h2>
-                
+                <h2>Contact + Social</h2>
+
                 <div className="eg-row-2">
                   <div className="eg-field">
                     <label>Phone Number *</label>
@@ -330,13 +719,14 @@ export default function EditGym() {
                       <input
                         type="text"
                         value={form.contact_number}
-                        onChange={(e) => handleChange("contact_number", e.target.value)}
+                        onChange={(e) => setField("contact_number", e.target.value)}
                         className={errors.contact_number ? "error" : ""}
                         placeholder="09XX XXX XXXX"
                       />
                     </div>
                     {errors.contact_number && <span className="eg-error">{errors.contact_number}</span>}
                   </div>
+
                   <div className="eg-field">
                     <label>Email Address</label>
                     <div className="eg-input-icon">
@@ -344,10 +734,12 @@ export default function EditGym() {
                       <input
                         type="email"
                         value={form.email}
-                        onChange={(e) => handleChange("email", e.target.value)}
+                        onChange={(e) => setField("email", e.target.value)}
+                        className={errors.email ? "error" : ""}
                         placeholder="gym@email.com"
                       />
                     </div>
+                    {errors.email && <span className="eg-error">{errors.email}</span>}
                   </div>
                 </div>
 
@@ -358,10 +750,83 @@ export default function EditGym() {
                     <input
                       type="text"
                       value={form.website}
-                      onChange={(e) => handleChange("website", e.target.value)}
+                      onChange={(e) => setField("website", e.target.value)}
+                      className={errors.website ? "error" : ""}
                       placeholder="www.yourgym.com"
                     />
                   </div>
+                  {errors.website && <span className="eg-error">{errors.website}</span>}
+                  {normalizeUrlNullable(form.website) && (
+                    <div style={{ marginTop: 6, fontSize: 12 }}>
+                      <a href={normalizeUrlNullable(form.website)} target="_blank" rel="noreferrer" style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}>
+                        Open website
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="eg-row-2">
+                  <div className="eg-field">
+                    <label>Facebook Page</label>
+                    <input
+                      type="text"
+                      value={form.facebook_page}
+                      onChange={(e) => setField("facebook_page", e.target.value)}
+                      className={errors.facebook_page ? "error" : ""}
+                      placeholder="facebook.com/yourgym"
+                    />
+                    {errors.facebook_page && <span className="eg-error">{errors.facebook_page}</span>}
+                    {normalizeUrlNullable(form.facebook_page) && (
+                      <div style={{ marginTop: 6, fontSize: 12 }}>
+                        <a href={normalizeUrlNullable(form.facebook_page)} target="_blank" rel="noreferrer" style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}>
+                          Open Facebook
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="eg-field">
+                    <label>Instagram Page</label>
+                    <input
+                      type="text"
+                      value={form.instagram_page}
+                      onChange={(e) => setField("instagram_page", e.target.value)}
+                      className={errors.instagram_page ? "error" : ""}
+                      placeholder="instagram.com/yourgym"
+                    />
+                    {errors.instagram_page && <span className="eg-error">{errors.instagram_page}</span>}
+                    {normalizeUrlNullable(form.instagram_page) && (
+                      <div style={{ marginTop: 6, fontSize: 12 }}>
+                        <a href={normalizeUrlNullable(form.instagram_page)} target="_blank" rel="noreferrer" style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}>
+                          Open Instagram
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="eg-row-2" style={{ marginTop: 6 }}>
+                  <label className="eg-check" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <input type="checkbox" checked={!!form.has_personal_trainers} onChange={setBool("has_personal_trainers")} />
+                    Has personal trainers
+                  </label>
+
+                  <label className="eg-check" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <input type="checkbox" checked={!!form.has_classes} onChange={setBool("has_classes")} />
+                    Has classes
+                  </label>
+                </div>
+
+                <div className="eg-row-2" style={{ marginTop: 6 }}>
+                  <label className="eg-check" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <input type="checkbox" checked={!!form.is_24_hours} onChange={setBool("is_24_hours")} />
+                    24 hours
+                  </label>
+
+                  <label className="eg-check" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <input type="checkbox" checked={!!form.is_airconditioned} onChange={setBool("is_airconditioned")} />
+                    Airconditioned
+                  </label>
                 </div>
               </div>
             </div>
@@ -370,39 +835,171 @@ export default function EditGym() {
           {activeTab === "location" && (
             <div className="eg-tab-content">
               <div className="eg-section">
-                <h2><MapPin size={20} /> Location Details</h2>
-                
-                <div className="eg-field">
-                  <label>Street Address *</label>
+                <h2>
+                  <MapPin size={20} /> Location Details
+                </h2>
+
+                {!hasPinnedLocation && (
+                  <div
+                    className="eg-pin-warning"
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                      padding: "12px 14px",
+                      borderRadius: 14,
+                      border: "1px solid rgba(255,140,0,0.35)",
+                      background: "rgba(255,140,0,0.10)",
+                      marginTop: 10,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <AlertTriangle size={18} style={{ marginTop: 1 }} />
+                    <div>
+                      <div style={{ fontWeight: 900 }}>Pinpoint required</div>
+                      <div style={{ opacity: 0.85, fontSize: 13 }}>
+                        Please drop the marker on the exact gym location (or pick an address suggestion) so users can find you correctly.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ✅ SEARCH ABOVE MAP + dropdown with zIndex 999 */}
+                <div className="eg-field" style={{ position: "relative", marginBottom: 12, zIndex: 999 }}>
+                  <label>Address *</label>
+
                   <input
                     type="text"
                     value={form.address}
-                    onChange={(e) => handleChange("address", e.target.value)}
+                    onChange={(e) => {
+                      setField("address", e.target.value);
+                      setAddressOpen(true);
+                      setAddressActiveIndex(-1);
+                    }}
+                    onFocus={() => setAddressOpen(true)}
+                    onBlur={() => {
+                      setTimeout(() => setAddressOpen(false), 150);
+                    }}
+                    onKeyDown={(e) => {
+                      if (!addressOpen || addressSuggestions.length === 0) return;
+
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setAddressActiveIndex((i) => Math.min(i + 1, addressSuggestions.length - 1));
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setAddressActiveIndex((i) => Math.max(i - 1, 0));
+                      } else if (e.key === "Enter") {
+                        e.preventDefault();
+                        const pick = addressSuggestions[addressActiveIndex] || addressSuggestions[0];
+                        if (pick) applyAddressPick(pick);
+                        setAddressOpen(false);
+                      } else if (e.key === "Escape") {
+                        setAddressOpen(false);
+                      }
+                    }}
                     className={errors.address ? "error" : ""}
-                    placeholder="123 Main Street, Building Name, Floor"
+                    placeholder="Search address..."
                   />
+
                   {errors.address && <span className="eg-error">{errors.address}</span>}
+                  {errors.location && <span className="eg-error">{errors.location}</span>}
+
+                  {addressOpen && geoLoading && <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Searching addresses...</div>}
+                  {addressOpen && geoErr && <div style={{ marginTop: 6, fontSize: 12, color: "#ff6b6b" }}>{geoErr}</div>}
+
+                  {addressOpen && addressSuggestions.length > 0 && (
+                    <div
+                      className="eg-address-dropdown"
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        marginTop: 6,
+                        borderRadius: 12,
+                        border: "1px solid rgba(0,0,0,0.10)",
+                        background: "#ffffff",
+                        color: "#111",
+                        overflow: "hidden",
+                        zIndex: 999,
+                        boxShadow: "0 18px 50px rgba(0,0,0,0.18)",
+                      }}
+                    >
+                      {addressSuggestions.map((s, idx) => {
+                        const active = idx === addressActiveIndex;
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              applyAddressPick(s);
+                              setAddressOpen(false);
+                            }}
+                            onMouseEnter={() => setAddressActiveIndex(idx)}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              padding: "10px 12px",
+                              background: active ? "rgba(255,140,0,0.12)" : "transparent",
+                              border: "none",
+                              color: "#111",
+                              cursor: "pointer",
+                              outline: "none",
+                              WebkitAppearance: "none",
+                            }}
+                          >
+                            <div style={{ fontWeight: 900, fontSize: 13, color: "#111" }}>{s.address}</div>
+                            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.60)" }}>
+                              {s.label ? `${s.label} • ` : ""}
+                              {s.city || "—"} • {Number(s.latitude).toFixed(6)}, {Number(s.longitude).toFixed(6)}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div className="eg-row-2">
                   <div className="eg-field">
-                    <label>City *</label>
-                    <input
-                      type="text"
-                      value={form.city}
-                      onChange={(e) => handleChange("city", e.target.value)}
-                      placeholder="Pasig City"
-                    />
+                    <label>City</label>
+                    <input type="text" value={form.city} onChange={(e) => setField("city", e.target.value)} placeholder="Quezon City" />
+                  </div>
+                </div>
+
+                <div className="eg-row-2">
+                  <div className="eg-field">
+                    <label>Latitude</label>
+                    <input type="text" value={form.latitude} readOnly />
                   </div>
                   <div className="eg-field">
-                    <label>Landmark</label>
-                    <input
-                      type="text"
-                      value={form.landmark}
-                      onChange={(e) => handleChange("landmark", e.target.value)}
-                      placeholder="Near SM Mall, beside 7-Eleven"
-                    />
+                    <label>Longitude</label>
+                    <input type="text" value={form.longitude} readOnly />
                   </div>
+                </div>
+
+                <div className="eg-media-helper" style={{ marginTop: 10 }}>
+                  Tip: Pick an address suggestion to auto-fill coordinates and move the map. You can also click on the map to set the marker.
+                </div>
+
+                <div style={{ marginTop: 12, borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <MapContainer center={markerPos || mapCenter} zoom={mapZoom} style={{ height: 360, width: "100%" }}>
+                    <Recenter center={markerPos || mapCenter} />
+                    <MapClick onPick={onMapPick} />
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+                    {(markerPos || mapCenter) && (
+                      <Marker
+                        position={markerPos || mapCenter}
+                        draggable
+                        eventHandlers={{
+                          dragend: onMapDragEnd,
+                        }}
+                      />
+                    )}
+                  </MapContainer>
                 </div>
               </div>
             </div>
@@ -411,60 +1008,20 @@ export default function EditGym() {
           {activeTab === "hours" && (
             <div className="eg-tab-content">
               <div className="eg-section">
-                <h2><Clock size={20} /> Operating Hours</h2>
-                
-                <div className="eg-quick-hours">
-                  <label className="eg-toggle-label">
-                    <input
-                      type="checkbox"
-                      checked={copyAllHours}
-                      onChange={(e) => setCopyAllHours(e.target.checked)}
-                    />
-                    <span>Same hours for all days</span>
-                  </label>
+                <h2>
+                  <Clock size={20} /> Operating Hours
+                </h2>
 
-                  {copyAllHours && (
-                    <div className="eg-base-hours">
-                      <input
-                        type="time"
-                        value={baseHours.open}
-                        onChange={(e) => setBaseHours(prev => ({ ...prev, open: e.target.value }))}
-                      />
-                      <span>to</span>
-                      <input
-                        type="time"
-                        value={baseHours.close}
-                        onChange={(e) => setBaseHours(prev => ({ ...prev, close: e.target.value }))}
-                      />
-                      <button className="eg-apply-btn" onClick={applySameHours}>
-                        Apply to All
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <div className="eg-row-2" style={{ marginTop: 10 }}>
+                  <div className="eg-field">
+                    <label>Opening Time</label>
+                    <input type="time" value={hhmm(form.opening_time, "06:00")} onChange={(e) => setField("opening_time", e.target.value)} />
+                  </div>
 
-                <div className="eg-hours-modern">
-                  {FULL_DAYS.map((day, i) => (
-                    <div key={day} className="eg-hour-card">
-                      <div className="eg-hour-day">
-                        <span className="eg-day-short">{DAYS[i]}</span>
-                        <span className="eg-day-full">{day}</span>
-                      </div>
-                      <div className="eg-hour-times">
-                        <input
-                          type="time"
-                          value={form.hours[day]?.open || "06:00"}
-                          onChange={(e) => handleHourChange(day, "open", e.target.value)}
-                        />
-                        <span>—</span>
-                        <input
-                          type="time"
-                          value={form.hours[day]?.close || "22:00"}
-                          onChange={(e) => handleHourChange(day, "close", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                  <div className="eg-field">
+                    <label>Closing Time</label>
+                    <input type="time" value={hhmm(form.closing_time, "22:00")} onChange={(e) => setField("closing_time", e.target.value)} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -473,109 +1030,38 @@ export default function EditGym() {
           {activeTab === "pricing" && (
             <div className="eg-tab-content">
               <div className="eg-section">
-                <h2><DollarSign size={20} /> Membership Pricing</h2>
-                
+                <h2>
+                  <DollarSign size={20} /> Membership Pricing
+                </h2>
+
                 <div className="eg-pricing-grid">
                   <div className="eg-price-card">
-                    <label>Day Pass</label>
+                    <label>Daily Price</label>
                     <div className="eg-price-input">
                       <span className="eg-currency">₱</span>
-                      <input
-                        type="number"
-                        value={form.pricing.day_pass}
-                        onChange={(e) => handleChange("pricing", { ...form.pricing, day_pass: e.target.value })}
-                        placeholder="150"
-                      />
+                      <input type="number" value={form.daily_price} disabled placeholder="150" />
+                    </div>
+                    <div className="eg-media-helper" style={{ marginTop: 6 }}>
+                      Disabled for now
                     </div>
                   </div>
 
                   <div className="eg-price-card featured">
                     <div className="eg-popular-badge">Most Popular</div>
-                    <label>Monthly</label>
+                    <label>Monthly Price</label>
                     <div className="eg-price-input">
                       <span className="eg-currency">₱</span>
-                      <input
-                        type="number"
-                        value={form.pricing.monthly}
-                        onChange={(e) => handleChange("pricing", { ...form.pricing, monthly: e.target.value })}
-                        placeholder="2500"
-                      />
+                      <input type="number" value={form.monthly_price} onChange={(e) => setField("monthly_price", e.target.value)} placeholder="2500" />
                     </div>
                   </div>
 
                   <div className="eg-price-card">
-                    <label>Quarterly</label>
+                    <label>Annual Price</label>
                     <div className="eg-price-input">
                       <span className="eg-currency">₱</span>
-                      <input
-                        type="number"
-                        value={form.pricing.quarterly}
-                        onChange={(e) => handleChange("pricing", { ...form.pricing, quarterly: e.target.value })}
-                        placeholder="6500"
-                      />
+                      <input type="number" value={form.annual_price} onChange={(e) => setField("annual_price", e.target.value)} placeholder="12000" />
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "facilities" && (
-            <div className="eg-tab-content">
-              <div className="eg-section">
-                <h2><CheckCircle size={20} /> Amenities</h2>
-                <div className="eg-amenities-modern">
-                  {AMENITY_OPTIONS.map(amenity => (
-                    <label key={amenity} className="eg-amenity-modern">
-                      <input
-                        type="checkbox"
-                        checked={form.amenities.includes(amenity)}
-                        onChange={() => toggleAmenity(amenity)}
-                      />
-                      <span>{amenity}</span>
-                      <CheckCircle className="eg-check-icon" size={18} />
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="eg-section">
-                <h2><Dumbbell size={20} /> Equipment</h2>
-                
-                <div className="eg-equipment-modern">
-                  {form.equipments.map(eq => (
-                    <div key={eq.id} className="eg-equipment-card">
-                      <div className="eg-equipment-details">
-                        <strong>{eq.name}</strong>
-                        <span>{eq.quantity} available</span>
-                      </div>
-                      <button
-                        className="eg-remove-btn"
-                        onClick={() => removeEquipment(eq.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="eg-add-equipment-modern">
-                  <input
-                    type="text"
-                    placeholder="Equipment name (e.g., Treadmill)"
-                    value={newEquipment.name}
-                    onChange={(e) => setNewEquipment(prev => ({ ...prev, name: e.target.value }))}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Qty"
-                    value={newEquipment.quantity}
-                    onChange={(e) => setNewEquipment(prev => ({ ...prev, quantity: e.target.value }))}
-                  />
-                  <button onClick={addEquipment}>
-                    <Plus size={18} />
-                    Add Equipment
-                  </button>
                 </div>
               </div>
             </div>
@@ -584,32 +1070,71 @@ export default function EditGym() {
           {activeTab === "media" && (
             <div className="eg-tab-content">
               <div className="eg-section">
-                <h2><ImageIcon size={20} /> Gym Photos</h2>
-                <p className="eg-media-helper">Upload high-quality photos that showcase your gym. Recommended: 1920x1080px</p>
-                
+                <h2>
+                  <ImageIcon size={20} /> Gym Photos
+                </h2>
+
+                <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} style={{ display: "none" }} />
+
                 <div className="eg-photos-modern">
-                  {form.photos.map((photo, i) => (
+                  {photos.map((photo, i) => (
                     <div key={i} className="eg-photo-card">
-                      <img src={photo} alt="" />
+                      <img
+                        src={photo}
+                        alt=""
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80";
+                        }}
+                      />
                       <div className="eg-photo-overlay">
-                        <button className="eg-photo-delete">
+                        <button className="eg-photo-delete" onClick={() => removePhotoAt(i)} type="button" title="Remove photo">
                           <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
                   ))}
-                  <button className="eg-photo-upload-modern">
+
+                  <button className="eg-photo-upload-modern" type="button" onClick={onClickUpload} disabled={uploading}>
                     <Upload size={32} />
-                    <span>Upload Photos</span>
+                    <span>{uploading ? "Uploading..." : "Upload Photos"}</span>
                     <small>JPG, PNG up to 10MB</small>
                   </button>
+                </div>
+
+                <div className="eg-section" style={{ marginTop: 16 }}>
+                  <h2>Photo URLs (manual)</h2>
+
+                  <div className="eg-field">
+                    <label>Main Image URL</label>
+                    <input
+                      type="text"
+                      value={form.main_image_url || ""}
+                      readOnly
+                      placeholder="/storage/... or https://..."
+                    />
+                    <div className="eg-media-helper" style={{ marginTop: 6 }}>
+                      Read-only. Upload photos above to update.
+                    </div>
+                  </div>
+
+                  <div className="eg-field">
+                    <label>Gallery URLs (one per line)</label>
+                    <textarea
+                      rows={5}
+                      value={(Array.isArray(form.gallery_urls) ? form.gallery_urls : []).join("\n")}
+                      readOnly
+                      placeholder={"/storage/...\nhttps://...\nhttps://..."}
+                    />
+                    <div className="eg-media-helper" style={{ marginTop: 6 }}>
+                      Read-only. Upload photos above to update.
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
           )}
-
         </div>
-
       </div>
 
       <Footer />

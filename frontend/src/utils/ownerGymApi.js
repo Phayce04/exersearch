@@ -10,6 +10,16 @@ export async function getMyGyms(page = 1) {
   return res.data;
 }
 
+export async function updateGym(gymId, payload) {
+  const res = await api.patch(`/gyms/${gymId}`, payload);
+  return res.data;
+}
+
+export async function deleteGym(gymId) {
+  const res = await api.delete(`/gyms/${gymId}`);
+  return res.data;
+}
+
 export async function addGymEquipment(gymId, payload) {
   const res = await api.post(`/gyms/${gymId}/equipments`, payload);
   return res.data;
@@ -49,7 +59,21 @@ export async function listAmenities() {
   const res = await api.get(`/amenities`);
   return res.data;
 }
+
 export async function getGymAnalytics(gymId) {
   const res = await api.get(`/gyms/${gymId}/analytics`);
+  return res.data;
+}
+
+export async function uploadMedia({ file, type, kind }) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("type", type);
+  if (kind) formData.append("kind", kind);
+
+  const res = await api.post(`/media/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
   return res.data;
 }

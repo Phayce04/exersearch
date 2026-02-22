@@ -1,4 +1,3 @@
-// src/pages/owner/ViewGym.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Header from "../user/Header-user";
@@ -37,19 +36,65 @@ import UpdateEquipment from "./UpdateEquip";
 import UpdateAmenities from "./UpdateAmenities";
 import "./Modals.css";
 
+import { api } from "../../utils/apiClient";
 import {
   getGym,
   updateGymEquipment,
   deleteGymEquipment,
-  // ✅ add this util below in the same file you shared
   getGymAnalytics,
 } from "../../utils/ownerGymApi";
 
 import { normalizeGymResponse } from "../../utils/gymViewUtils";
 
+async function fetchMeSafe() {
+  const candidates = ["/me", "/auth/me", "/users/me"];
+  let lastErr = null;
+
+  for (const path of candidates) {
+    try {
+      const res = await api.get(path);
+      const data = res?.data ?? res;
+      if (data) return data;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  throw lastErr || new Error("Failed to load current user");
+}
+
+function getMeRole(me) {
+  return me?.role || me?.user?.role || me?.data?.role || null;
+}
+
+function getMeUserId(me) {
+  const v =
+    me?.user_id ??
+    me?.id ??
+    me?.user?.user_id ??
+    me?.user?.id ??
+    me?.data?.user_id ??
+    me?.data?.id;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function getGymOwnerId(normalizedGym) {
+  const v =
+    normalizedGym?.owner_id ??
+    normalizedGym?.owner?.user_id ??
+    normalizedGym?.owner?.id ??
+    normalizedGym?.user_id ??
+    normalizedGym?.ownerId;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export default function ViewGym() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [me, setMe] = useState(null);
 
   const [gym, setGym] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +114,6 @@ export default function ViewGym() {
   }, [gym]);
 
   const enrichGymWithAnalytics = (normalized, analytics) => {
-    // normalized.analytics might already exist (mock), we override with real API values
     const a = analytics || {};
     return {
       ...normalized,
@@ -79,7 +123,6 @@ export default function ViewGym() {
         views_change: a.views_change ?? normalized?.analytics?.views_change ?? 0,
         total_saves: a.total_saves ?? normalized?.analytics?.total_saves ?? 0,
         saves_change: a.saves_change ?? normalized?.analytics?.saves_change ?? 0,
-        // keep any other fields you might already have:
         total_members: normalized?.analytics?.total_members ?? 0,
         new_members_this_month: normalized?.analytics?.new_members_this_month ?? 0,
         avg_rating: normalized?.analytics?.avg_rating ?? 0,
@@ -88,16 +131,35 @@ export default function ViewGym() {
     };
   };
 
-  const refreshGym = async () => {
+  const canViewGym = (meObj, normalizedGym) => {
+    const role = getMeRole(meObj);
+    if (role === "superadmin") return true;
+
+    const myId = getMeUserId(meObj);
+    const ownerId = getGymOwnerId(normalizedGym);
+
+    if (role === "owner" && myId != null && ownerId != null) {
+      return myId === ownerId;
+    }
+
+    return false;
+  };
+
+  const refreshGym = async (meObj) => {
     const res = await getGym(id);
     const normalized = normalizeGymResponse(res);
 
-    // ✅ pull analytics from backend
+    if (!canViewGym(meObj, normalized)) {
+      setGym(null);
+      setVisibility(true);
+      setCurrentPhoto(0);
+      return { allowed: false, normalized: null };
+    }
+
     let stats = null;
     try {
       stats = await getGymAnalytics(id);
-    } catch (e) {
-      // don’t break page if analytics endpoint fails
+    } catch {
       stats = null;
     }
 
@@ -106,6 +168,8 @@ export default function ViewGym() {
     setGym(merged);
     setVisibility(Boolean(merged.visibility));
     setCurrentPhoto(0);
+
+    return { allowed: true, normalized: merged };
   };
 
   useEffect(() => {
@@ -115,23 +179,16 @@ export default function ViewGym() {
       try {
         setLoading(true);
 
-        const res = await getGym(id);
+        const meObj = await fetchMeSafe();
+        if (!alive) return;
+        setMe(meObj);
+
+        const { allowed } = await refreshGym(meObj);
         if (!alive) return;
 
-        const normalized = normalizeGymResponse(res);
-
-        let stats = null;
-        try {
-          stats = await getGymAnalytics(id);
-        } catch (e) {
-          stats = null;
+        if (!allowed) {
+          setGym(null);
         }
-
-        const merged = enrichGymWithAnalytics(normalized, stats);
-
-        setGym(merged);
-        setVisibility(Boolean(merged.visibility));
-        setCurrentPhoto(0);
       } catch (err) {
         if (!alive) return;
         setGym(null);
@@ -145,7 +202,6 @@ export default function ViewGym() {
     };
   }, [id]);
 
-  // Auto-advance photos
   useEffect(() => {
     if (!safePhotos.length) return;
     const interval = setInterval(() => {
@@ -168,10 +224,10 @@ export default function ViewGym() {
     }
   };
 
-  // Equipment handlers
   const handleAddEquipmentSuccess = async () => {
     setShowAddEquipment(false);
-    await refreshGym();
+    const meObj = me || (await fetchMeSafe().catch(() => null));
+    if (meObj) await refreshGym(meObj);
   };
 
   const handleUpdateEquipmentClick = (equipment) => {
@@ -196,7 +252,9 @@ export default function ViewGym() {
 
     setShowUpdateEquipment(false);
     setSelectedEquipment(null);
-    await refreshGym();
+
+    const meObj = me || (await fetchMeSafe().catch(() => null));
+    if (meObj) await refreshGym(meObj);
   };
 
   const handleDeleteEquipment = async (equipmentId) => {
@@ -204,13 +262,16 @@ export default function ViewGym() {
     await deleteGymEquipment(gym.gym_id, equipmentId);
     setShowUpdateEquipment(false);
     setSelectedEquipment(null);
-    await refreshGym();
+
+    const meObj = me || (await fetchMeSafe().catch(() => null));
+    if (meObj) await refreshGym(meObj);
   };
 
-  // Amenities handlers
   const handleUpdateAmenitiesSuccess = async () => {
     setShowUpdateAmenities(false);
-    await refreshGym();
+
+    const meObj = me || (await fetchMeSafe().catch(() => null));
+    if (meObj) await refreshGym(meObj);
   };
 
   if (loading) {
@@ -230,7 +291,14 @@ export default function ViewGym() {
     return (
       <div className="vg-app">
         <Header />
-        <div className="vg-error">Gym not found</div>
+        <div className="vg-error">
+          You don’t have access to this gym.
+          <div style={{ marginTop: 12 }}>
+            <button className="vg-back" onClick={() => navigate(-1)} type="button">
+              <ChevronLeft size={16} /> Go Back
+            </button>
+          </div>
+        </div>
         <Footer />
       </div>
     );
@@ -241,7 +309,6 @@ export default function ViewGym() {
       <Header />
 
       <div className="vg-container">
-        {/* Floating Action Button */}
         <div className="vg-fab-container">
           <Link to={`/owner/edit-gym/${gym.gym_id}`} className="vg-fab">
             <Edit size={20} />
@@ -249,7 +316,6 @@ export default function ViewGym() {
           </Link>
         </div>
 
-        {/* Owner Header */}
         <div className="vg-owner-header">
           <button className="vg-back" onClick={() => navigate(-1)}>
             <ChevronLeft size={16} /> Back
@@ -298,7 +364,6 @@ export default function ViewGym() {
           </div>
         </div>
 
-        {/* Analytics Dashboard */}
         <div className="vg-analytics-section">
           <div className="vg-analytics-grid">
             <div className="vg-analytics-card">
@@ -330,7 +395,6 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* ✅ CHANGED: Monthly Revenue -> Gym Saved */}
             <div className="vg-analytics-card">
               <div className="vg-analytics-icon revenue">
                 <Star size={24} />
@@ -360,7 +424,6 @@ export default function ViewGym() {
           </div>
         </div>
 
-        {/* Photo Gallery */}
         <div className="vg-gallery-section">
           <div className="vg-gallery-main">
             <div className="vg-photo-slider">
@@ -404,9 +467,7 @@ export default function ViewGym() {
           </div>
         </div>
 
-        {/* Content Sections */}
         <div className="vg-content-grid">
-          {/* Main */}
           <div className="vg-main-column">
             <div className="vg-section-card">
               <h2 className="vg-section-heading">Gym Information</h2>
@@ -445,7 +506,6 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Operating Hours */}
             <div className="vg-section-card">
               <h2 className="vg-section-heading">
                 <Clock size={20} />
@@ -464,7 +524,6 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Equipment */}
             <div className="vg-section-card">
               <div className="vg-section-header-row">
                 <h2 className="vg-section-heading">
@@ -514,9 +573,7 @@ export default function ViewGym() {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="vg-sidebar-column">
-            {/* Recent Members */}
             <div className="vg-section-card">
               <div className="vg-section-header-row">
                 <h2 className="vg-section-heading">
@@ -546,7 +603,6 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Pricing */}
             <div className="vg-section-card vg-pricing-card">
               <h2 className="vg-section-heading">
                 <DollarSign size={20} />
@@ -575,7 +631,6 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Amenities */}
             <div className="vg-section-card">
               <div className="vg-section-header-row">
                 <h2 className="vg-section-heading">
@@ -600,7 +655,6 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="vg-section-card">
               <h2 className="vg-section-heading">Quick Actions</h2>
               <div className="vg-quick-actions-list">
@@ -624,7 +678,6 @@ export default function ViewGym() {
 
       <Footer />
 
-      {/* MODALS */}
       {showAddEquipment && (
         <AddEquipment
           gymId={gym.gym_id}
@@ -648,7 +701,7 @@ export default function ViewGym() {
       {showUpdateAmenities && (
         <UpdateAmenities
           gymId={gym.gym_id}
-          existingAmenities={gym.amenities} // ✅ objects
+          existingAmenities={gym.amenities}
           onClose={() => setShowUpdateAmenities(false)}
           onSuccess={handleUpdateAmenitiesSuccess}
         />
