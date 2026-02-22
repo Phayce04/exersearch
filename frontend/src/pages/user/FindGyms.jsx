@@ -1,12 +1,9 @@
-// ✅ WHOLE FILE: src/pages/user/FindGyms.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "./Homestyles.css";
-
-import { api } from "../../utils/apiClient"; // ✅ uses Bearer token via interceptor
 
 import {
   fetchAmenities,
@@ -29,13 +26,9 @@ import {
   saveUserProfileLocation,
 } from "../../utils/findGymsApi";
 
-// -----------------------
-// CONFIG: redirect route
-// -----------------------
 const RESULTS_ROUTE = "/home/gym-results";
 const MAIN_ORANGE = "#ff8c00";
 
-// Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -46,7 +39,6 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// -------- helpers: selectedItems -> payloads --------
 function buildBudget(selectedItems) {
   const k = Object.keys(selectedItems).find((x) => x.startsWith("budget:"));
   if (!k) return null;
@@ -73,20 +65,14 @@ function getSelectedLocationKey(selectedItems) {
   return k || null;
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
 export default function FindGyms() {
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Keys like: amenity:12, equipment:55, budget:200, gymtype:..., location:...
   const [selectedItems, setSelectedItems] = useState({});
 
-  // Location
   const [locationInput, setLocationInput] = useState("");
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -94,41 +80,27 @@ export default function FindGyms() {
   const [mapCenter, setMapCenter] = useState([14.5764, 121.0851]);
   const [mapKey, setMapKey] = useState(0);
 
-  // coords to backend
   const [locationMeta, setLocationMeta] = useState({
     address: "",
     lat: null,
     lng: null,
   });
 
-  // DB options
   const [amenities, setAmenities] = useState([]);
   const [equipments, setEquipments] = useState([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [optionsError, setOptionsError] = useState(null);
 
-  // Load state for existing picks
   const [prefsLoading, setPrefsLoading] = useState(false);
 
-  // Equipment preview modal
   const [previewEquip, setPreviewEquip] = useState(null);
 
-  // ✅ Loading effects
   const [savingPhase, setSavingPhase] = useState(false);
   const [rankingPhase, setRankingPhase] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // steps
-  const sections = [
-    "Location",
-    "Budget",
-    "Amenities",
-    "Gym Types",
-    "Machines",
-    "Free Weights",
-  ];
+  const sections = ["Location", "Budget", "Amenities", "Gym Types", "Machines", "Free Weights"];
 
-  // Static sections for now
   const sectionData = {
     Budget: [
       { label: "₱500", value: 500 },
@@ -136,7 +108,6 @@ export default function FindGyms() {
       { label: "₱1,500", value: 1500 },
       { label: "₱2,000 and above", value: 2000 },
     ],
-
     "Gym Types": [
       "Commercial Gym - Large gym with full equipment",
       "Local Gym - Small neighborhood gym",
@@ -146,7 +117,6 @@ export default function FindGyms() {
     ],
   };
 
-  // selection styling (works even without CSS updates)
   const selectedStyle = {
     border: `2px solid ${MAIN_ORANGE}`,
     background: "rgba(255,140,0,0.12)",
@@ -154,7 +124,6 @@ export default function FindGyms() {
 
   const isSelected = (key) => !!selectedItems[key];
 
-  // ---------- Load master options + user saved picks ----------
   useEffect(() => {
     let mounted = true;
 
@@ -169,7 +138,6 @@ export default function FindGyms() {
         setAmenities(amen || []);
         setEquipments(eq || []);
 
-        // user saved picks
         try {
           const [prefRes, eqRes, amRes, profileRes] = await Promise.all([
             getUserPreference(),
@@ -185,26 +153,22 @@ export default function FindGyms() {
 
           const nextSelected = {};
 
-          // budget
           const budget = pref?.budget;
           if (budget !== null && budget !== undefined && budget !== "") {
             const n = Number(budget);
             if (Number.isFinite(n)) nextSelected[`budget:${n}`] = true;
           }
 
-          // preferred equipments
           for (const e of preferredEquip) {
             const id = Number(e?.equipment_id ?? e?.id);
             if (Number.isFinite(id)) nextSelected[`equipment:${id}`] = true;
           }
 
-          // preferred amenities
           for (const a of preferredAmen) {
             const id = Number(a?.amenity_id ?? a?.id);
             if (Number.isFinite(id)) nextSelected[`amenity:${id}`] = true;
           }
 
-          // location from profile
           const addr = profile?.address || "";
           const lat = profile?.latitude;
           const lng = profile?.longitude;
@@ -251,7 +215,6 @@ export default function FindGyms() {
     };
   }, []);
 
-  // grouped by muscle groups
   const grouped = useMemo(() => groupEquipmentsByTypeAndMuscle(equipments), [equipments]);
 
   const openModal = () => {
@@ -260,7 +223,7 @@ export default function FindGyms() {
   };
 
   const closeModal = () => {
-    if (savingPhase || rankingPhase) return; // ✅ prevent closing while saving/ranking
+    if (savingPhase || rankingPhase) return;
     setIsModalOpen(false);
     setPreviewEquip(null);
     setShowSuggestions(false);
@@ -275,7 +238,6 @@ export default function FindGyms() {
   };
 
   const addSelected = (key) => {
-    // keep one location only
     if (key.startsWith("location:")) {
       const next = {};
       Object.keys(selectedItems).forEach((k) => {
@@ -286,7 +248,6 @@ export default function FindGyms() {
       return;
     }
 
-    // keep one budget only
     if (key.startsWith("budget:")) {
       const next = {};
       Object.keys(selectedItems).forEach((k) => {
@@ -297,7 +258,6 @@ export default function FindGyms() {
       return;
     }
 
-    // ✅ toggle for equipments/amenities feels better
     if (key.startsWith("equipment:") || key.startsWith("amenity:")) {
       setSelectedItems((prev) => {
         const next = { ...prev };
@@ -327,12 +287,8 @@ export default function FindGyms() {
     }
   };
 
-  // ✅ Apply at the END: SAVE to backend + SHORT loading + redirect
-  // ✅ Removed redundant "ranking/compute" here (Results page handles it)
-  // ✅ Removed extra delays before navigating
   const handleApply = async () => {
     try {
-      // ---- Phase 1: Saving ----
       setSavingPhase(true);
       setRankingPhase(false);
       setProgress(8);
@@ -364,14 +320,12 @@ export default function FindGyms() {
 
       setProgress(100);
 
-      // ✅ Immediately go to results (no redundant recommend call, no extra sleeps)
       setSavingPhase(false);
       setRankingPhase(false);
       setProgress(0);
 
       closeModal();
 
-      // ✅ Tell results page to refetch fresh (and you can clear cache there if you want)
       navigate(RESULTS_ROUTE, {
         replace: false,
         state: {
@@ -389,7 +343,6 @@ export default function FindGyms() {
     }
   };
 
-  // ---------- Location helpers ----------
   const photonSearch = async (q) => {
     const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(
       q
@@ -553,11 +506,9 @@ export default function FindGyms() {
     [amenities, equipments]
   );
 
-  // Equipment Preview
   const openEquipPreview = (equip) => setPreviewEquip(equip);
   const closeEquipPreview = () => setPreviewEquip(null);
 
-  // Equipment Group Renderer
   const renderEquipmentGroups = (entries) => {
     if (optionsLoading) return <p style={{ padding: 10 }}>Loading equipments…</p>;
     if (optionsError) return <p style={{ padding: 10, color: "red" }}>{optionsError}</p>;
@@ -567,9 +518,7 @@ export default function FindGyms() {
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {entries.map(([groupName, list]) => (
           <div key={groupName}>
-            <div style={{ fontWeight: 800, margin: "6px 0 10px", opacity: 0.9 }}>
-              {groupName}
-            </div>
+            <div style={{ fontWeight: 800, margin: "6px 0 10px", opacity: 0.9 }}>{groupName}</div>
 
             <div className="options-grid">
               {list.map((e) => {
@@ -619,7 +568,6 @@ export default function FindGyms() {
   const renderLeftPanel = () => {
     const currentSection = sections[currentStep];
 
-    // LOCATION
     if (currentSection === "Location") {
       return (
         <div className="location-section">
@@ -729,12 +677,7 @@ export default function FindGyms() {
               pointerEvents: savingPhase || rankingPhase ? "none" : "auto",
             }}
           >
-            <MapContainer
-              key={mapKey}
-              center={mapCenter}
-              zoom={16}
-              style={{ height: "100%", width: "100%" }}
-            >
+            <MapContainer key={mapKey} center={mapCenter} zoom={16} style={{ height: "100%", width: "100%" }}>
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -750,7 +693,6 @@ export default function FindGyms() {
       );
     }
 
-    // AMENITIES
     if (currentSection === "Amenities") {
       if (optionsLoading) return <p style={{ padding: 10 }}>Loading amenities…</p>;
       if (optionsError) return <p style={{ padding: 10, color: "red" }}>{optionsError}</p>;
@@ -778,13 +720,9 @@ export default function FindGyms() {
       );
     }
 
-    // MACHINES
     if (currentSection === "Machines") return renderEquipmentGroups(grouped.machines);
-
-    // FREE WEIGHTS
     if (currentSection === "Free Weights") return renderEquipmentGroups(grouped.freeWeights);
 
-    // DEFAULT: Budget + Gym Types
     const options = sectionData[currentSection] || [];
     return (
       <div className="options-grid" style={{ opacity: savingPhase || rankingPhase ? 0.7 : 1 }}>
@@ -818,9 +756,6 @@ export default function FindGyms() {
 
   const isLastStep = currentStep === sections.length - 1;
 
-  // -----------------------
-  // Overlay Component
-  // -----------------------
   const showOverlay = savingPhase || rankingPhase;
   const overlayTitle = savingPhase ? "Saving preferences…" : "Ranking gyms for you…";
   const overlaySub = savingPhase
@@ -839,30 +774,30 @@ export default function FindGyms() {
       </section>
 
       {isModalOpen && (
-        <div className="modal-bg" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="fg-modal-bg" onClick={closeModal}>
+          <div className="fg-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="fg-modal-header">
               <h2>{sections[currentStep]}</h2>
-              <button className="modal-close" onClick={closeModal} disabled={showOverlay}>
+              <button className="fg-modal-close" onClick={closeModal} disabled={showOverlay}>
                 ✖
               </button>
             </div>
 
-            <div className="modal-content">
-              <div className="left-panel">{renderLeftPanel()}</div>
+            <div className="fg-modal-content">
+              <div className="fg-left-panel">{renderLeftPanel()}</div>
 
-              <div className="right-panel">
+              <div className="fg-right-panel">
                 <h3>Selected Preferences</h3>
 
-                <div className="selected-list">
+                <div className="fg-selected-list">
                   {Object.keys(selectedItems).length === 0 ? (
-                    <p className="empty-message">No items selected yet</p>
+                    <p className="fg-empty-message">No items selected yet</p>
                   ) : (
                     Object.keys(selectedItems).map((key, index) => (
-                      <div key={index} className="selected-item">
+                      <div key={index} className="fg-selected-item">
                         <span>{prettySelectedLabel(key)}</span>
                         <button
-                          className="remove-btn"
+                          className="fg-remove-btn"
                           onClick={() => !(savingPhase || rankingPhase) && removeSelected(key)}
                           disabled={showOverlay}
                         >
@@ -875,48 +810,43 @@ export default function FindGyms() {
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button
-                className="nav-btn"
-                onClick={prevStep}
-                disabled={currentStep === 0 || showOverlay}
-              >
+            <div className="fg-modal-footer">
+              <button className="fg-nav-btn" onClick={prevStep} disabled={currentStep === 0 || showOverlay}>
                 <span className="arrow left"></span>
               </button>
 
-              <div className="step-indicator">
+              <div className="fg-step-indicator">
                 Step {currentStep + 1} of {sections.length}
               </div>
 
               {!isLastStep ? (
-                <button className="nav-btn" onClick={nextStep} disabled={showOverlay}>
+                <button className="fg-nav-btn" onClick={nextStep} disabled={showOverlay}>
                   <span className="arrow right"></span>
                 </button>
               ) : (
-                <button className="apply-btn apply-btn--compact" onClick={handleApply} disabled={showOverlay}>
+                <button className="fg-apply-btn fg-apply-btn--compact" onClick={handleApply} disabled={showOverlay}>
                   {savingPhase ? "SAVING..." : rankingPhase ? "RANKING..." : "APPLY"}
                 </button>
               )}
             </div>
 
-            {/* Equipment Preview Modal */}
             {previewEquip && !showOverlay && (
-              <div className="equip-preview-bg" onClick={closeEquipPreview}>
-                <div className="equip-preview" onClick={(e) => e.stopPropagation()}>
-                  <div className="equip-preview-head">
-                    <div className="equip-preview-title">{previewEquip.name}</div>
-                    <button className="equip-preview-close" onClick={closeEquipPreview}>
+              <div className="fg-equip-preview-bg" onClick={closeEquipPreview}>
+                <div className="fg-equip-preview" onClick={(e) => e.stopPropagation()}>
+                  <div className="fg-equip-preview-head">
+                    <div className="fg-equip-preview-title">{previewEquip.name}</div>
+                    <button className="fg-equip-preview-close" onClick={closeEquipPreview}>
                       ✖
                     </button>
                   </div>
 
                   {previewEquip.image_url ? (
-                    <div className="equip-preview-imgWrap">
+                    <div className="fg-equip-preview-imgWrap">
                       <img src={absoluteUrl(previewEquip.image_url)} alt={previewEquip.name} />
                     </div>
                   ) : null}
 
-                  <div className="equip-preview-meta">
+                  <div className="fg-equip-preview-meta">
                     <div>
                       <strong>Type:</strong> {prettyCategory(previewEquip.category) || "-"}
                     </div>
@@ -929,15 +859,15 @@ export default function FindGyms() {
                   </div>
 
                   {previewEquip.description ? (
-                    <div className="equip-preview-desc">
+                    <div className="fg-equip-preview-desc">
                       <strong>Description</strong>
                       <div>{previewEquip.description}</div>
                     </div>
                   ) : null}
 
-                  <div className="equip-preview-actions">
+                  <div className="fg-equip-preview-actions">
                     <button
-                      className="equip-preview-select"
+                      className="fg-equip-preview-select"
                       onClick={() => {
                         addSelected(`equipment:${previewEquip.equipment_id}`);
                         closeEquipPreview();
@@ -950,7 +880,6 @@ export default function FindGyms() {
               </div>
             )}
 
-            {/* ✅ Saving / Ranking Overlay */}
             {showOverlay && (
               <div
                 style={{
@@ -976,9 +905,7 @@ export default function FindGyms() {
                   }}
                 >
                   <div style={{ fontWeight: 950, fontSize: 18 }}>{overlayTitle}</div>
-                  <div style={{ opacity: 0.85, marginTop: 6, fontWeight: 700 }}>
-                    {overlaySub}
-                  </div>
+                  <div style={{ opacity: 0.85, marginTop: 6, fontWeight: 700 }}>{overlaySub}</div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
                     <div
