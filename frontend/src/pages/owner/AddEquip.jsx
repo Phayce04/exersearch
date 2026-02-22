@@ -1,96 +1,106 @@
-import React, { useState } from "react";
-import { X, Plus, Upload, Trash2, AlertCircle } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { X, AlertCircle, Save } from "lucide-react";
 import "./Modals.css";
 
+import { listEquipments, addGymEquipment } from "../../utils/ownerGymApi";
+
+function toInputDate(value) {
+  if (!value) return "";
+  const s = String(value).trim();
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : "";
+}
+
 export default function AddEquipment({ gymId, onClose, onSuccess }) {
-  const [equipment, setEquipment] = useState({
-    name: "",
+  const [allEquipments, setAllEquipments] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
+
+  const [form, setForm] = useState({
+    equipment_id: "",
     quantity: 1,
-    image: null,
-    imagePreview: null,
+    status: "available",
+    date_purchased: "",
+    last_maintenance: "",
+    next_maintenance: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Image must be less than 5MB");
-        return;
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLoadingList(true);
+        const res = await listEquipments();
+        const rows = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        if (!alive) return;
+        setAllEquipments(rows);
+      } catch {
+        if (!alive) return;
+        setAllEquipments([]);
+        setError("Failed to load equipment list.");
+      } finally {
+        if (alive) setLoadingList(false);
       }
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEquipment({
-          ...equipment,
-          image: file,
-          imagePreview: reader.result,
-        });
-        setError("");
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+    })();
 
-  const handleSubmit = async (e) => {
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const selectedEquipment = useMemo(() => {
+    const id = Number(form.equipment_id);
+    return allEquipments.find((e) => Number(e.equipment_id ?? e.id) === id) || null;
+  }, [form.equipment_id, allEquipments]);
+
+  const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const submit = async (e) => {
     e.preventDefault();
-    
-    if (!equipment.name.trim()) {
-      setError("Equipment name is required");
-      return;
-    }
-
-    if (equipment.quantity < 1) {
-      setError("Quantity must be at least 1");
-      return;
-    }
-
-    setLoading(true);
     setError("");
 
+    if (!form.equipment_id) {
+      setError("Please select an equipment.");
+      return;
+    }
+
+    const qty = Number(form.quantity);
+    if (!Number.isFinite(qty) || qty < 0) {
+      setError("Quantity must be 0 or higher.");
+      return;
+    }
+
+    const payload = {
+      equipment_id: Number(form.equipment_id),
+      quantity: qty,
+      status: form.status || "available",
+      date_purchased: form.date_purchased || null,
+      last_maintenance: form.last_maintenance || null,
+      next_maintenance: form.next_maintenance || null,
+    };
+
     try {
-      const formData = new FormData();
-      formData.append("gym_id", gymId);
-      formData.append("name", equipment.name);
-      formData.append("quantity", equipment.quantity);
-      if (equipment.image) {
-        formData.append("image", equipment.image);
-      }
-
-      // API call here
-      // const response = await axios.post('/api/equipment', formData);
-      
-      // Mock success
-      setTimeout(() => {
-        onSuccess && onSuccess();
-        setLoading(false);
-      }, 1000);
-
+      setLoading(true);
+      await addGymEquipment(gymId, payload);
+      onSuccess?.();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add equipment");
+      setError(err?.response?.data?.message || "Failed to add equipment.");
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleRemoveImage = () => {
-    setEquipment({
-      ...equipment,
-      image: null,
-      imagePreview: null,
-    });
-  };
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        
+    <div className="modal-overlay" onMouseDown={onClose}>
+      <div className="modal-content" onMouseDown={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
             <h2>Add Equipment</h2>
-            <p>Add new equipment to your gym</p>
+            <p>Select from equipment list</p>
           </div>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} type="button">
             <X size={24} />
           </button>
         </div>
@@ -102,133 +112,120 @@ export default function AddEquipment({ gymId, onClose, onSuccess }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          
-          {/* Equipment Image Upload */}
+        <form onSubmit={submit} className="modal-form">
           <div className="form-group">
-            <label>Equipment Image</label>
-            {equipment.imagePreview ? (
-              <div className="image-preview-container">
-                <img 
-                  src={equipment.imagePreview} 
-                  alt="Equipment preview" 
-                  className="equipment-preview"
-                />
-                <button 
-                  type="button" 
-                  className="remove-image-btn"
-                  onClick={handleRemoveImage}
-                >
-                  <Trash2 size={18} />
-                  Remove
-                </button>
-              </div>
+            <label>
+              Equipment <span className="required">*</span>
+            </label>
+
+            {loadingList ? (
+              <div className="helper-text">Loading equipment list...</div>
             ) : (
-              <label className="upload-zone">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="file-input"
-                />
-                <div className="upload-content">
-                  <Upload size={32} />
-                  <span>Click to upload image</span>
-                  <small>PNG, JPG up to 5MB</small>
-                </div>
-              </label>
+              <select
+                className="form-input"
+                value={form.equipment_id}
+                onChange={(e) => setField("equipment_id", e.target.value)}
+                required
+              >
+                <option value="">Select equipment...</option>
+                {allEquipments.map((e) => {
+                  const id = e.equipment_id ?? e.id;
+                  return (
+                    <option key={id} value={id}>
+                      {e.name}
+                    </option>
+                  );
+                })}
+              </select>
             )}
+
+            {selectedEquipment ? (
+              <div className="helper-text">
+                {selectedEquipment.category ? `Category: ${selectedEquipment.category}` : ""}
+                {selectedEquipment.target_muscle_group ? ` • Target: ${selectedEquipment.target_muscle_group}` : ""}
+                {selectedEquipment.difficulty ? ` • Difficulty: ${selectedEquipment.difficulty}` : ""}
+              </div>
+            ) : null}
           </div>
 
-          {/* Equipment Name */}
           <div className="form-group">
-            <label htmlFor="equipment-name">
-              Equipment Name <span className="required">*</span>
+            <label>
+              Quantity <span className="required">*</span>
             </label>
             <input
-              id="equipment-name"
-              type="text"
-              placeholder="e.g., Treadmill, Dumbbells, Bench Press"
-              value={equipment.name}
-              onChange={(e) => setEquipment({ ...equipment, name: e.target.value })}
+              type="number"
+              min="0"
               className="form-input"
+              value={form.quantity}
+              onChange={(e) => setField("quantity", e.target.value)}
               required
             />
           </div>
 
-          {/* Quantity */}
           <div className="form-group">
-            <label htmlFor="equipment-quantity">
-              Quantity <span className="required">*</span>
-            </label>
-            <div className="quantity-controls">
-              <button
-                type="button"
-                className="quantity-btn"
-                onClick={() => setEquipment({ 
-                  ...equipment, 
-                  quantity: Math.max(1, equipment.quantity - 1) 
-                })}
-                disabled={equipment.quantity <= 1}
-              >
-                −
-              </button>
+            <label>Status</label>
+            <select className="form-input" value={form.status} onChange={(e) => setField("status", e.target.value)}>
+              <option value="available">available</option>
+              <option value="maintenance">maintenance</option>
+              <option value="broken">broken</option>
+              <option value="retired">retired</option>
+            </select>
+          </div>
+
+          <div className="form-grid-3">
+            <div className="form-group">
+              <label>Date Purchased</label>
               <input
-                id="equipment-quantity"
-                type="number"
-                min="1"
-                value={equipment.quantity}
-                onChange={(e) => setEquipment({ 
-                  ...equipment, 
-                  quantity: parseInt(e.target.value) || 1 
-                })}
-                className="quantity-input"
-                required
+                type="date"
+                className="form-input"
+                value={toInputDate(form.date_purchased)}
+                onChange={(e) => setField("date_purchased", e.target.value)}
               />
-              <button
-                type="button"
-                className="quantity-btn"
-                onClick={() => setEquipment({ 
-                  ...equipment, 
-                  quantity: equipment.quantity + 1 
-                })}
-              >
-                +
-              </button>
+            </div>
+
+            <div className="form-group">
+              <label>Last Maintenance</label>
+              <input
+                type="date"
+                className="form-input"
+                value={toInputDate(form.last_maintenance)}
+                onChange={(e) => setField("last_maintenance", e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Next Maintenance</label>
+              <input
+                type="date"
+                className="form-input"
+                value={toInputDate(form.next_maintenance)}
+                onChange={(e) => setField("next_maintenance", e.target.value)}
+              />
             </div>
           </div>
 
-          {/* Form Actions */}
           <div className="form-actions">
-            <button 
-              type="button" 
-              className="btn-secondary" 
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="btn-primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <div className="btn-spinner"></div>
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <Plus size={18} />
-                  Add Equipment
-                </>
-              )}
-            </button>
+            <div />
+            <div className="action-group">
+              <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" disabled={loading || loadingList}>
+                {loading ? (
+                  <>
+                    <div className="btn-spinner"></div>
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    Add Equipment
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-
         </form>
-
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import Index from "./pages/index";
-import Login from "./pages/auth/Login";
+import Login from "./pages/auth/login";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import UserHome from "./pages/user/Home";
 import Profile from "./pages/user/Profile";
@@ -75,7 +75,6 @@ function App() {
       <Route path="/test-gym-results" element={<GymResults />} />
       <Route path="/become-an-owner" element={<BecomeOwner />} />
       <Route path="/owner-application" element={<OwnerApplication />} />
-      <Route path="/view-gym" element={<ViewGym />} />
       <Route path="/edit-gym" element={<EditGym />} />
       <Route path="/view-stats" element={<ViewStats />} />
       <Route path="/owner-home" element={<OwnerHome />} />
@@ -94,8 +93,10 @@ function App() {
         <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
       </Route>
 
-      <Route path="/owner" element={<OwnerLayout />}>
+      <Route path="/owner/*" element={<OwnerLayout />}>
         <Route path="dashboard" element={<OwnerDashboard />} />
+        <Route path="view-gym/:id" element={<ViewGym />} />
+
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>

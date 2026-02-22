@@ -1,150 +1,177 @@
-import React, { useState, useEffect } from "react";
+// src/pages/owner/ViewGym.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Header from "../user/Header-user";
 import Footer from "../user/Footer";
 import "./ViewGym.css";
 import {
-  MapPin, Clock, DollarSign, Dumbbell,
-  ChevronLeft, ChevronRight, Edit, BarChart3,
-  Phone, Mail, CheckCircle, X, Star,
-  User, Users, Eye, Calendar, TrendingUp,
-  TrendingDown, Bell, Settings, Trash2, Plus, Download,
-  AlertTriangle, Image as ImageIcon, ToggleLeft, ToggleRight,
-  BadgeCheck, MoreVertical, ExternalLink, Copy, Share2
+  MapPin,
+  Clock,
+  DollarSign,
+  Dumbbell,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  BarChart3,
+  Phone,
+  Mail,
+  CheckCircle,
+  Star,
+  Users,
+  Eye,
+  Calendar,
+  TrendingUp,
+  TrendingDown,
+  ToggleLeft,
+  ToggleRight,
+  BadgeCheck,
+  ExternalLink,
+  Copy,
+  Share2,
+  Plus,
+  Download,
 } from "lucide-react";
 
-// Import modals with correct file names
 import AddEquipment from "./AddEquip";
 import UpdateEquipment from "./UpdateEquip";
-import AddAmenities from "./AddAmenities";
 import UpdateAmenities from "./UpdateAmenities";
 import "./Modals.css";
 
-const API_BASE = "https://exersearch.test";
+import {
+  getGym,
+  updateGymEquipment,
+  deleteGymEquipment,
+  // ✅ add this util below in the same file you shared
+  getGymAnalytics,
+} from "../../utils/ownerGymApi";
 
-// Mock data for gym owner
-const MOCK_GYM_OWNER = {
-  id: 1,
-  name: "IronForge Fitness",
-  owner_id: 1,
-  status: "active",
-  verified: true,
-  description: "Premier strength training facility in the heart of Pasig City. We offer state-of-the-art equipment, experienced trainers, and a motivating atmosphere for all fitness levels.",
-  address: "123 Kapitolyo Street, Barangay Kapitolyo",
-  city: "Pasig City",
-  landmark: "Near SM Pasig, 2nd Floor",
-  lat: 14.5764,
-  lng: 121.0851,
-  contact_number: "09171234567",
-  email: "info@ironforge.ph",
-  website: "www.ironforge.ph",
-  photos: [
-    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
-    "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1200&q=80",
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1200&q=80",
-    "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80",
-    "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=1200&q=80",
-  ],
-  hours: {
-    Monday: { open: "6:00 AM", close: "10:00 PM" },
-    Tuesday: { open: "6:00 AM", close: "10:00 PM" },
-    Wednesday: { open: "6:00 AM", close: "10:00 PM" },
-    Thursday: { open: "6:00 AM", close: "10:00 PM" },
-    Friday: { open: "6:00 AM", close: "10:00 PM" },
-    Saturday: { open: "8:00 AM", close: "8:00 PM" },
-    Sunday: { open: "8:00 AM", close: "6:00 PM" },
-  },
-  pricing: {
-    day_pass: 150,
-    monthly: 2500,
-    quarterly: 6500,
-  },
-  amenities: ["Shower Rooms", "Locker Rooms", "Parking", "Air Conditioning", "WiFi", "Personal Training", "Cardio Area", "Free Weights"],
-  equipments: [
-    { id: 1, name: "Treadmill", image: "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400&q=80", quantity: 8 },
-    { id: 2, name: "Dumbbells", image: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&q=80", quantity: 20 },
-    { id: 3, name: "Bench Press", image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=400&q=80", quantity: 4 },
-    { id: 4, name: "Squat Rack", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80", quantity: 3 },
-  ],
-  analytics: {
-    total_views: 1247,
-    views_this_week: 89,
-    views_change: 12.5,
-    total_members: 156,
-    new_members_this_month: 12,
-    members_change: 8.3,
-    revenue_this_month: 389000,
-    revenue_change: -3.2,
-    avg_rating: 4.8,
-    total_reviews: 127,
-    reviews_change: 15.2,
-  },
-  recent_members: [
-    { name: "Maria Santos", joined: "2 days ago", plan: "Monthly", avatar: "MS" },
-    { name: "Juan Cruz", joined: "5 days ago", plan: "Quarterly", avatar: "JC" },
-    { name: "Carlo Reyes", joined: "1 week ago", plan: "Monthly", avatar: "CR" },
-    { name: "Anna Lopez", joined: "2 weeks ago", plan: "Day Pass", avatar: "AL" },
-  ],
-  pending_reviews: 3,
-  visibility: true,
-  featured: false,
-};
+import { normalizeGymResponse } from "../../utils/gymViewUtils";
 
 export default function ViewGym() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [gym, setGym] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPhoto, setCurrentPhoto] = useState(0);
-  const [selectedTab, setSelectedTab] = useState('overview');
   const [visibility, setVisibility] = useState(true);
-  const [showMenu, setShowMenu] = useState(false);
 
-  // Modal states
   const [showAddEquipment, setShowAddEquipment] = useState(false);
   const [showUpdateEquipment, setShowUpdateEquipment] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [showUpdateAmenities, setShowUpdateAmenities] = useState(false);
 
+  const safePhotos = useMemo(() => {
+    const p = gym?.photos ?? [];
+    return p.length
+      ? p
+      : ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80"];
+  }, [gym]);
+
+  const enrichGymWithAnalytics = (normalized, analytics) => {
+    // normalized.analytics might already exist (mock), we override with real API values
+    const a = analytics || {};
+    return {
+      ...normalized,
+      analytics: {
+        ...(normalized.analytics || {}),
+        total_views: a.total_views ?? normalized?.analytics?.total_views ?? 0,
+        views_change: a.views_change ?? normalized?.analytics?.views_change ?? 0,
+        total_saves: a.total_saves ?? normalized?.analytics?.total_saves ?? 0,
+        saves_change: a.saves_change ?? normalized?.analytics?.saves_change ?? 0,
+        // keep any other fields you might already have:
+        total_members: normalized?.analytics?.total_members ?? 0,
+        new_members_this_month: normalized?.analytics?.new_members_this_month ?? 0,
+        avg_rating: normalized?.analytics?.avg_rating ?? 0,
+        total_reviews: normalized?.analytics?.total_reviews ?? 0,
+      },
+    };
+  };
+
+  const refreshGym = async () => {
+    const res = await getGym(id);
+    const normalized = normalizeGymResponse(res);
+
+    // ✅ pull analytics from backend
+    let stats = null;
+    try {
+      stats = await getGymAnalytics(id);
+    } catch (e) {
+      // don’t break page if analytics endpoint fails
+      stats = null;
+    }
+
+    const merged = enrichGymWithAnalytics(normalized, stats);
+
+    setGym(merged);
+    setVisibility(Boolean(merged.visibility));
+    setCurrentPhoto(0);
+  };
+
   useEffect(() => {
-    setTimeout(() => {
-      setGym(MOCK_GYM_OWNER);
-      setVisibility(MOCK_GYM_OWNER.visibility);
-      setLoading(false);
-    }, 500);
+    let alive = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+
+        const res = await getGym(id);
+        if (!alive) return;
+
+        const normalized = normalizeGymResponse(res);
+
+        let stats = null;
+        try {
+          stats = await getGymAnalytics(id);
+        } catch (e) {
+          stats = null;
+        }
+
+        const merged = enrichGymWithAnalytics(normalized, stats);
+
+        setGym(merged);
+        setVisibility(Boolean(merged.visibility));
+        setCurrentPhoto(0);
+      } catch (err) {
+        if (!alive) return;
+        setGym(null);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, [id]);
 
   // Auto-advance photos
   useEffect(() => {
-    if (!gym) return;
+    if (!safePhotos.length) return;
     const interval = setInterval(() => {
-      setCurrentPhoto((p) => (p + 1) % gym.photos.length);
+      setCurrentPhoto((p) => (p + 1) % safePhotos.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [gym]);
+  }, [safePhotos.length]);
 
-  const nextPhoto = () => {
-    if (gym) setCurrentPhoto((p) => (p + 1) % gym.photos.length);
-  };
+  const nextPhoto = () => setCurrentPhoto((p) => (p + 1) % safePhotos.length);
+  const prevPhoto = () => setCurrentPhoto((p) => (p - 1 + safePhotos.length) % safePhotos.length);
 
-  const prevPhoto = () => {
-    if (gym) setCurrentPhoto((p) => (p - 1 + gym.photos.length) % gym.photos.length);
-  };
+  const toggleVisibility = () => setVisibility((v) => !v);
 
-  const toggleVisibility = () => {
-    setVisibility(!visibility);
-  };
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert('Link copied to clipboard!');
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard!");
+    } catch {
+      alert("Failed to copy link.");
+    }
   };
 
   // Equipment handlers
-  const handleAddEquipmentSuccess = () => {
+  const handleAddEquipmentSuccess = async () => {
     setShowAddEquipment(false);
-    // Refresh equipment list here
-    console.log('Equipment added successfully!');
+    await refreshGym();
   };
 
   const handleUpdateEquipmentClick = (equipment) => {
@@ -152,34 +179,38 @@ export default function ViewGym() {
     setShowUpdateEquipment(true);
   };
 
-  const handleUpdateEquipmentSuccess = (updatedEquipment) => {
-    setGym({
-      ...gym,
-      equipments: gym.equipments.map(e => 
-        e.id === updatedEquipment.id ? updatedEquipment : e
-      )
-    });
+  const handleUpdateEquipmentSuccess = async (updatedEquipment) => {
+    if (!gym) return;
+
+    const gymId = gym.gym_id;
+    const equipmentId = updatedEquipment?.equipment_id ?? updatedEquipment?.id;
+
+    const payload = {};
+    if (updatedEquipment?.pivot?.quantity != null) payload.quantity = updatedEquipment.pivot.quantity;
+    if (updatedEquipment?.pivot?.status != null) payload.status = updatedEquipment.pivot.status;
+    if (updatedEquipment?.pivot?.date_purchased != null) payload.date_purchased = updatedEquipment.pivot.date_purchased;
+    if (updatedEquipment?.pivot?.last_maintenance != null) payload.last_maintenance = updatedEquipment.pivot.last_maintenance;
+    if (updatedEquipment?.pivot?.next_maintenance != null) payload.next_maintenance = updatedEquipment.pivot.next_maintenance;
+
+    await updateGymEquipment(gymId, equipmentId, payload);
+
     setShowUpdateEquipment(false);
-    console.log('Equipment updated successfully!');
+    setSelectedEquipment(null);
+    await refreshGym();
   };
 
-  const handleDeleteEquipment = (equipmentId) => {
-    setGym({
-      ...gym,
-      equipments: gym.equipments.filter(e => e.id !== equipmentId)
-    });
+  const handleDeleteEquipment = async (equipmentId) => {
+    if (!gym) return;
+    await deleteGymEquipment(gym.gym_id, equipmentId);
     setShowUpdateEquipment(false);
-    console.log('Equipment deleted successfully!');
+    setSelectedEquipment(null);
+    await refreshGym();
   };
 
   // Amenities handlers
-  const handleUpdateAmenitiesSuccess = (updatedAmenities) => {
-    setGym({
-      ...gym,
-      amenities: updatedAmenities
-    });
+  const handleUpdateAmenitiesSuccess = async () => {
     setShowUpdateAmenities(false);
-    console.log('Amenities updated successfully!');
+    await refreshGym();
   };
 
   if (loading) {
@@ -210,10 +241,9 @@ export default function ViewGym() {
       <Header />
 
       <div className="vg-container">
-
         {/* Floating Action Button */}
         <div className="vg-fab-container">
-          <Link to={`/owner/gym/${gym.id}/edit`} className="vg-fab">
+          <Link to={`/owner/edit-gym/${gym.gym_id}`} className="vg-fab">
             <Edit size={20} />
             <span>Edit Gym</span>
           </Link>
@@ -230,34 +260,37 @@ export default function ViewGym() {
               <h1 className="vg-owner-title">{gym.name}</h1>
               <div className="vg-owner-meta">
                 <span className={`vg-status-badge ${gym.status}`}>
-                  {gym.status === 'active' && <CheckCircle size={14} />}
+                  {gym.status === "active" && <CheckCircle size={14} />}
                   {gym.status}
                 </span>
+
                 {gym.verified && (
                   <span className="vg-verified-badge">
                     <BadgeCheck size={14} /> Verified
                   </span>
                 )}
-                <button 
-                  className={`vg-visibility-toggle ${visibility ? 'visible' : 'hidden'}`}
+
+                <button
+                  className={`vg-visibility-toggle ${visibility ? "visible" : "hidden"}`}
                   onClick={toggleVisibility}
+                  type="button"
                 >
                   {visibility ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                  {visibility ? 'Live' : 'Hidden'}
+                  {visibility ? "Live" : "Hidden"}
                 </button>
               </div>
             </div>
 
             <div className="vg-header-actions">
-              <button className="vg-action-btn-ghost" onClick={copyLink}>
+              <button className="vg-action-btn-ghost" onClick={copyLink} type="button">
                 <Copy size={18} />
                 Copy Link
               </button>
-              <button className="vg-action-btn-ghost">
+              <button className="vg-action-btn-ghost" type="button">
                 <ExternalLink size={18} />
                 Preview
               </button>
-              <Link to={`/owner/gym/${gym.id}/stats`} className="vg-action-btn-primary">
+              <Link to={`/owner/view-stats/${gym.gym_id}`} className="vg-action-btn-primary">
                 <BarChart3 size={18} />
                 Full Analytics
               </Link>
@@ -274,10 +307,12 @@ export default function ViewGym() {
               </div>
               <div className="vg-analytics-content">
                 <span className="vg-analytics-label">Profile Views</span>
-                <h3 className="vg-analytics-value">{gym.analytics.total_views.toLocaleString()}</h3>
-                <span className={`vg-change ${gym.analytics.views_change > 0 ? 'positive' : 'negative'}`}>
-                  {gym.analytics.views_change > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {Math.abs(gym.analytics.views_change)}% this week
+                <h3 className="vg-analytics-value">
+                  {Number(gym.analytics?.total_views || 0).toLocaleString()}
+                </h3>
+                <span className={`vg-change ${(gym.analytics?.views_change || 0) > 0 ? "positive" : "negative"}`}>
+                  {(gym.analytics?.views_change || 0) > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {Math.abs(gym.analytics?.views_change || 0)}% this week
                 </span>
               </div>
             </div>
@@ -288,24 +323,26 @@ export default function ViewGym() {
               </div>
               <div className="vg-analytics-content">
                 <span className="vg-analytics-label">Active Members</span>
-                <h3 className="vg-analytics-value">{gym.analytics.total_members}</h3>
-                <span className={`vg-change positive`}>
-                  <TrendingUp size={14} />
-                  +{gym.analytics.new_members_this_month} this month
+                <h3 className="vg-analytics-value">{gym.analytics?.total_members || 0}</h3>
+                <span className="vg-change positive">
+                  <TrendingUp size={14} />+{gym.analytics?.new_members_this_month || 0} this month
                 </span>
               </div>
             </div>
 
+            {/* ✅ CHANGED: Monthly Revenue -> Gym Saved */}
             <div className="vg-analytics-card">
               <div className="vg-analytics-icon revenue">
-                <DollarSign size={24} />
+                <Star size={24} />
               </div>
               <div className="vg-analytics-content">
-                <span className="vg-analytics-label">Monthly Revenue</span>
-                <h3 className="vg-analytics-value">₱{(gym.analytics.revenue_this_month / 1000).toFixed(0)}K</h3>
-                <span className={`vg-change ${gym.analytics.revenue_change > 0 ? 'positive' : 'negative'}`}>
-                  {gym.analytics.revenue_change > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {Math.abs(gym.analytics.revenue_change)}% vs last month
+                <span className="vg-analytics-label">Gym Saved</span>
+                <h3 className="vg-analytics-value">
+                  {Number(gym.analytics?.total_saves || 0).toLocaleString()}
+                </h3>
+                <span className={`vg-change ${(gym.analytics?.saves_change || 0) > 0 ? "positive" : "negative"}`}>
+                  {(gym.analytics?.saves_change || 0) > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {Math.abs(gym.analytics?.saves_change || 0)}% vs last month
                 </span>
               </div>
             </div>
@@ -316,10 +353,8 @@ export default function ViewGym() {
               </div>
               <div className="vg-analytics-content">
                 <span className="vg-analytics-label">Average Rating</span>
-                <h3 className="vg-analytics-value">{gym.analytics.avg_rating}/5.0</h3>
-                <span className="vg-change positive">
-                  {gym.analytics.total_reviews} reviews
-                </span>
+                <h3 className="vg-analytics-value">{gym.analytics?.avg_rating || 0}/5.0</h3>
+                <span className="vg-change positive">{gym.analytics?.total_reviews || 0} reviews</span>
               </div>
             </div>
           </div>
@@ -329,31 +364,39 @@ export default function ViewGym() {
         <div className="vg-gallery-section">
           <div className="vg-gallery-main">
             <div className="vg-photo-slider">
-              {gym.photos.map((photo, i) => (
-                <img 
+              {safePhotos.map((photo, i) => (
+                <img
                   key={i}
-                  src={photo} 
+                  src={photo}
                   alt={`${gym.name} - ${i + 1}`}
-                  className={`vg-slide ${i === currentPhoto ? 'active' : ''}`}
+                  className={`vg-slide ${i === currentPhoto ? "active" : ""}`}
                 />
               ))}
             </div>
-            <button className="vg-photo-nav vg-photo-prev" onClick={prevPhoto}>
+
+            <button className="vg-photo-nav vg-photo-prev" onClick={prevPhoto} type="button">
               <ChevronLeft size={24} />
             </button>
-            <button className="vg-photo-nav vg-photo-next" onClick={nextPhoto}>
+            <button className="vg-photo-nav vg-photo-next" onClick={nextPhoto} type="button">
               <ChevronRight size={24} />
             </button>
+
             <div className="vg-photo-counter">
-              {currentPhoto + 1} / {gym.photos.length}
+              {currentPhoto + 1} / {safePhotos.length}
             </div>
           </div>
+
           <div className="vg-gallery-thumbs">
-            {gym.photos.map((photo, i) => (
+            {safePhotos.map((photo, i) => (
               <div
                 key={i}
                 className={`vg-thumb ${i === currentPhoto ? "active" : ""}`}
                 onClick={() => setCurrentPhoto(i)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") setCurrentPhoto(i);
+                }}
               >
                 <img src={photo} alt="" />
               </div>
@@ -363,21 +406,22 @@ export default function ViewGym() {
 
         {/* Content Sections */}
         <div className="vg-content-grid">
-          
-          {/* Main Content */}
+          {/* Main */}
           <div className="vg-main-column">
-            
-            {/* Basic Info */}
             <div className="vg-section-card">
               <h2 className="vg-section-heading">Gym Information</h2>
+
               <div className="vg-info-block">
                 <div className="vg-info-row">
                   <MapPin size={18} className="vg-info-icon" />
                   <div className="vg-info-text">
                     <strong>{gym.address}</strong>
-                    <span>{gym.city} • {gym.landmark}</span>
+                    <span>
+                      {gym.city} • {gym.landmark}
+                    </span>
                   </div>
                 </div>
+
                 <div className="vg-info-row">
                   <Phone size={18} className="vg-info-icon" />
                   <div className="vg-info-text">
@@ -385,6 +429,7 @@ export default function ViewGym() {
                     <span>Contact Number</span>
                   </div>
                 </div>
+
                 <div className="vg-info-row">
                   <Mail size={18} className="vg-info-icon" />
                   <div className="vg-info-text">
@@ -393,6 +438,7 @@ export default function ViewGym() {
                   </div>
                 </div>
               </div>
+
               <div className="vg-description-block">
                 <label>Description</label>
                 <p>{gym.description}</p>
@@ -405,56 +451,71 @@ export default function ViewGym() {
                 <Clock size={20} />
                 Operating Hours
               </h2>
+
               <div className="vg-hours-list">
-                {Object.entries(gym.hours).map(([day, hours]) => (
+                {Object.entries(gym.hours || {}).map(([day, hrs]) => (
                   <div key={day} className="vg-hour-row">
                     <span className="vg-day">{day}</span>
-                    <span className="vg-hours">{hours.open} - {hours.close}</span>
+                    <span className="vg-hours">
+                      {hrs?.open} – {hrs?.close}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Equipment - WITH MODAL TRIGGERS */}
+            {/* Equipment */}
             <div className="vg-section-card">
               <div className="vg-section-header-row">
                 <h2 className="vg-section-heading">
                   <Dumbbell size={20} />
-                  Equipment ({gym.equipments.length})
+                  Equipment ({Array.isArray(gym.equipments) ? gym.equipments.length : 0})
                 </h2>
-                <button 
-                  className="vg-add-btn"
-                  onClick={() => setShowAddEquipment(true)}
-                >
+
+                <button className="vg-add-btn" onClick={() => setShowAddEquipment(true)} type="button">
                   <Plus size={16} /> Add Equipment
                 </button>
               </div>
+
               <div className="vg-equipment-showcase">
-                {gym.equipments.map((e) => (
-                  <div 
-                    key={e.id} 
-                    className="vg-equipment-item clickable"
-                    onClick={() => handleUpdateEquipmentClick(e)}
-                  >
-                    <img src={e.image} alt={e.name} />
-                    <div className="vg-equipment-info">
-                      <strong>{e.name}</strong>
-                      <span>{e.quantity} available</span>
+                {Array.isArray(gym.equipments) && gym.equipments.length > 0 ? (
+                  gym.equipments.map((e) => (
+                    <div
+                      key={e.equipment_id}
+                      className="vg-equipment-item clickable"
+                      onClick={() => handleUpdateEquipmentClick(e)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") handleUpdateEquipmentClick(e);
+                      }}
+                    >
+                      <img
+                        src={
+                          e.image_url ||
+                          "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&q=80"
+                        }
+                        alt={e.name}
+                      />
+                      <div className="vg-equipment-info">
+                        <strong>{e.name}</strong>
+                        <span>{e.pivot?.quantity ?? 0} available</span>
+                      </div>
+                      <div className="vg-equipment-edit-overlay">
+                        <Edit size={16} />
+                        Click to edit
+                      </div>
                     </div>
-                    <div className="vg-equipment-edit-overlay">
-                      <Edit size={16} />
-                      Click to edit
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="vg-empty-state">No equipment added yet</div>
+                )}
               </div>
             </div>
-
           </div>
 
           {/* Sidebar */}
           <div className="vg-sidebar-column">
-
             {/* Recent Members */}
             <div className="vg-section-card">
               <div className="vg-section-header-row">
@@ -462,19 +523,26 @@ export default function ViewGym() {
                   <Users size={20} />
                   Recent Members
                 </h2>
-                <Link to="/members" className="vg-view-all">View all</Link>
+                <Link to="/members" className="vg-view-all">
+                  View all
+                </Link>
               </div>
+
               <div className="vg-members-compact">
-                {gym.recent_members.map((member, i) => (
-                  <div key={i} className="vg-member-compact">
-                    <div className="vg-member-avatar-small">{member.avatar}</div>
-                    <div className="vg-member-details">
-                      <strong>{member.name}</strong>
-                      <span>{member.joined}</span>
+                {Array.isArray(gym.recent_members) && gym.recent_members.length > 0 ? (
+                  gym.recent_members.map((member, i) => (
+                    <div key={i} className="vg-member-compact">
+                      <div className="vg-member-avatar-small">{member.avatar}</div>
+                      <div className="vg-member-details">
+                        <strong>{member.name}</strong>
+                        <span>{member.joined}</span>
+                      </div>
+                      <span className="vg-member-badge">{member.plan}</span>
                     </div>
-                    <span className="vg-member-badge">{member.plan}</span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="vg-empty-state">No members yet</div>
+                )}
               </div>
             </div>
 
@@ -484,20 +552,21 @@ export default function ViewGym() {
                 <DollarSign size={20} />
                 Pricing
               </h2>
+
               <div className="vg-pricing-options">
-                {gym.pricing.day_pass && (
+                {gym?.pricing?.day_pass != null && (
                   <div className="vg-price-option">
                     <span>Day Pass</span>
                     <strong>₱{gym.pricing.day_pass}</strong>
                   </div>
                 )}
-                {gym.pricing.monthly && (
+                {gym?.pricing?.monthly != null && (
                   <div className="vg-price-option featured">
                     <span>Monthly</span>
                     <strong>₱{gym.pricing.monthly}</strong>
                   </div>
                 )}
-                {gym.pricing.quarterly && (
+                {gym?.pricing?.quarterly != null && (
                   <div className="vg-price-option">
                     <span>Quarterly</span>
                     <strong>₱{gym.pricing.quarterly}</strong>
@@ -506,24 +575,28 @@ export default function ViewGym() {
               </div>
             </div>
 
-            {/* Amenities - WITH MODAL TRIGGER */}
+            {/* Amenities */}
             <div className="vg-section-card">
               <div className="vg-section-header-row">
                 <h2 className="vg-section-heading">
                   <CheckCircle size={20} />
                   Amenities
                 </h2>
-                <button 
-                  className="vg-edit-btn-small"
-                  onClick={() => setShowUpdateAmenities(true)}
-                >
+                <button className="vg-edit-btn-small" onClick={() => setShowUpdateAmenities(true)} type="button">
                   <Edit size={14} /> Edit
                 </button>
               </div>
+
               <div className="vg-amenities-compact">
-                {gym.amenities.map((a, i) => (
-                  <span key={i} className="vg-amenity-badge">{a}</span>
-                ))}
+                {Array.isArray(gym.amenities) && gym.amenities.length > 0 ? (
+                  gym.amenities.map((a) => (
+                    <span key={a.amenity_id} className="vg-amenity-badge">
+                      {a.name}
+                    </span>
+                  ))
+                ) : (
+                  <div className="vg-empty-state">No amenities yet</div>
+                )}
               </div>
             </div>
 
@@ -531,25 +604,22 @@ export default function ViewGym() {
             <div className="vg-section-card">
               <h2 className="vg-section-heading">Quick Actions</h2>
               <div className="vg-quick-actions-list">
-                <button className="vg-quick-action">
+                <button className="vg-quick-action" type="button">
                   <Download size={18} />
                   <span>Export Data</span>
                 </button>
-                <button className="vg-quick-action">
+                <button className="vg-quick-action" type="button">
                   <Calendar size={18} />
                   <span>Bookings</span>
                 </button>
-                <button className="vg-quick-action">
+                <button className="vg-quick-action" type="button">
                   <Share2 size={18} />
                   <span>Share Gym</span>
                 </button>
               </div>
             </div>
-
           </div>
-
         </div>
-
       </div>
 
       <Footer />
@@ -557,7 +627,7 @@ export default function ViewGym() {
       {/* MODALS */}
       {showAddEquipment && (
         <AddEquipment
-          gymId={gym.id}
+          gymId={gym.gym_id}
           onClose={() => setShowAddEquipment(false)}
           onSuccess={handleAddEquipmentSuccess}
         />
@@ -577,8 +647,8 @@ export default function ViewGym() {
 
       {showUpdateAmenities && (
         <UpdateAmenities
-          gymId={gym.id}
-          existingAmenities={gym.amenities}
+          gymId={gym.gym_id}
+          existingAmenities={gym.amenities} // ✅ objects
           onClose={() => setShowUpdateAmenities(false)}
           onSuccess={handleUpdateAmenitiesSuccess}
         />

@@ -45,6 +45,7 @@ use App\Http\Controllers\DatabaseBackupController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
+use App\Http\Controllers\GymAnalyticsController;
 
 Route::prefix('v1')->group(function () {
 
@@ -53,12 +54,14 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [UserAuthController::class, 'login']);
     Route::post('/auth/register', [UserAuthController::class, 'register']);
     Route::post('/auth/google', [UserAuthController::class, 'google']);
+
     Route::get('/gyms', [GymController::class, 'index']);
     Route::get('/gyms/{gym}', [GymController::class, 'show'])->whereNumber('gym');
+
     Route::get('/gyms/{gym}/equipments', [GymController::class, 'equipments'])->whereNumber('gym');
-    Route::get('/gyms/{gym}/equipments/{equipment}', [GymController::class, 'equipmentDetail'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/equipments/{equipment}', [GymController::class, 'equipmentDetail'])->whereNumber('gym')->whereNumber('equipment');
     Route::get('/gyms/{gym}/amenities', [GymController::class, 'amenities'])->whereNumber('gym');
-    Route::get('/gyms/{gym}/amenities/{amenity}', [GymController::class, 'amenityDetail'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/amenities/{amenity}', [GymController::class, 'amenityDetail'])->whereNumber('gym')->whereNumber('amenity');
 
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{id}', [EquipmentController::class, 'show'])->whereNumber('id');
@@ -70,40 +73,40 @@ Route::prefix('v1')->group(function () {
     Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
     Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show'])->whereNumber('id');
 
-Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
 
-    if (!URL::hasValidSignature($request)) {
+        if (!URL::hasValidSignature($request)) {
+            return response()->view('email-verify-result', [
+                'ok' => false,
+                'title' => 'Invalid or expired link',
+                'message' => 'This verification link is invalid or has expired. Please request a new verification email from the app.',
+            ], 403);
+        }
+
+        $user = User::findOrFail((int)$id);
+
+        if (!hash_equals(sha1($user->getEmailForVerification()), (string)$hash)) {
+            return response()->view('email-verify-result', [
+                'ok' => false,
+                'title' => 'Invalid link',
+                'message' => 'This verification link is invalid. Please request a new verification email from the app.',
+            ], 403);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
         return response()->view('email-verify-result', [
-            'ok' => false,
-            'title' => 'Invalid or expired link',
-            'message' => 'This verification link is invalid or has expired. Please request a new verification email from the app.',
-        ], 403);
-    }
+            'ok' => true,
+            'title' => 'Email verified',
+            'message' => 'Your email has been verified successfully. You can now go back and log in.',
+        ], 200);
 
-    $user = User::findOrFail((int)$id);
-
-    if (!hash_equals(sha1($user->getEmailForVerification()), (string)$hash)) {
-        return response()->view('email-verify-result', [
-            'ok' => false,
-            'title' => 'Invalid link',
-            'message' => 'This verification link is invalid. Please request a new verification email from the app.',
-        ], 403);
-    }
-
-    if (!$user->hasVerifiedEmail()) {
-        $user->markEmailAsVerified();
-    }
-
-    return response()->view('email-verify-result', [
-        'ok' => true,
-        'title' => 'Email verified',
-        'message' => 'Your email has been verified successfully. You can now go back and log in.',
-    ], 200);
-
-})->middleware('signed')->name('verification.verify');
+    })->middleware('signed')->name('verification.verify');
 
     Route::middleware('auth:sanctum')->group(function () {
-
+        
         Route::post('/email/verification-notification', function (Request $request) {
             if ($request->user()->hasVerifiedEmail()) {
                 return response()->json(['message' => 'Email already verified.'], 200);
@@ -115,7 +118,8 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
         Route::get('/me', MeController::class);
 
         Route::middleware('verified')->group(function () {
-
+Route::get('/gyms/{gym}/analytics', [GymAnalyticsController::class, 'show'])
+    ->whereNumber('gym');
             Route::post('/me/avatar', [ProfilePhotoController::class, 'upload']);
             Route::delete('/me/avatar', [ProfilePhotoController::class, 'remove']);
 
@@ -180,6 +184,20 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
             Route::post('/gyms', [GymController::class, 'store']);
             Route::match(['put', 'patch'], '/gyms/{gym}', [GymController::class, 'update'])->whereNumber('gym');
             Route::delete('/gyms/{gym}', [GymController::class, 'destroy'])->whereNumber('gym');
+
+            Route::post('/gyms/{gym}/equipments', [GymEquipmentController::class, 'store'])
+                ->whereNumber('gym');
+            Route::match(['put', 'patch'], '/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'update'])
+                ->whereNumber('gym')->whereNumber('equipment');
+            Route::delete('/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'destroy'])
+                ->whereNumber('gym')->whereNumber('equipment');
+
+            Route::post('/gyms/{gym}/amenities', [GymAmenityController::class, 'store'])
+                ->whereNumber('gym');
+            Route::match(['put', 'patch'], '/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'update'])
+                ->whereNumber('gym')->whereNumber('amenity');
+            Route::delete('/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'destroy'])
+                ->whereNumber('gym')->whereNumber('amenity');
 
             Route::get('/owner/profile', [OwnerProfileController::class, 'show']);
             Route::post('/owner/profile', [OwnerProfileController::class, 'storeOrUpdate']);
@@ -254,7 +272,5 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
                 Route::get('/admin/db/backups/{name}/download', [DatabaseBackupController::class, 'download']);
             });
         });
-
     });
-
 });
