@@ -603,4 +603,39 @@
   .ao-searchInput {
     width: 240px;
   }
+} 
+/* ================================
+   STATUS PILLS
+================================ */
+
+.ae-pill {
+  background: rgba(46, 160, 67, 0.15);
+  color: #2ea043;
+  border: 1px solid rgba(46, 160, 67, 0.35);
+  font-weight: 600;
+}
+
+.ae-pillMuted {
+  background: rgba(255, 193, 7, 0.15);
+  color: #c69000;
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  font-weight: 600;
+}
+
+.ae-pillDanger {
+  background: rgba(220, 53, 69, 0.15);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.35);
+  font-weight: 600;
+}
+
+/* pill base */
+.ae-pill,
+.ae-pillMuted,
+.ae-pillDanger {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  text-transform: capitalize;
 }

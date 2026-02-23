@@ -17,7 +17,7 @@ class GymAnalyticsController extends Controller
 
         $gym = Gym::findOrFail((int) $gymId);
 
-        $ownerId = $gym->owner_user_id ?? $gym->user_id ?? null;
+        $ownerId = $gym->owner_id ?? null;
 
         $isAdmin = in_array($user->role ?? '', ['admin', 'superadmin'], true);
         if (!$isAdmin && $ownerId !== null && (int) $ownerId !== (int) $user->user_id) {
@@ -81,7 +81,7 @@ class GymAnalyticsController extends Controller
 
         $isAdmin = in_array($user->role ?? '', ['admin', 'superadmin'], true);
 
-        $ownerColumn = 'owner_user_id';
+        $ownerColumn = 'owner_id';
         $gymPk = 'gym_id';
 
         $rows = DB::table('gym_interactions as gi')

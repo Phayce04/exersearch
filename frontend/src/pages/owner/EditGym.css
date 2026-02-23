@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
 
+:root{
+  --eg-topbar: 68px;     /* matches .eg-app padding-top */
+  --eg-header-h: 86px;   /* adjust if your sticky header is taller/shorter */
+}
+
 .eg-app {
   font-family: 'Montserrat', sans-serif;
   background: #fafafa;
@@ -16,8 +21,8 @@
 /* STICKY HEADER */
 .eg-sticky-header {
   position: sticky;
-  top: 68px;
-  z-index: 50;
+  top: var(--eg-topbar);
+  z-index: 3000;
   background: white;
   padding: 1.5rem 2rem;
   margin: -2rem -3rem 2rem;
@@ -149,13 +154,17 @@
 .eg-tabs {
   display: flex;
   gap: 0.5rem;
-  background: white;
+  background: rgba(255,255,255,0.98);
   padding: 0.5rem;
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   margin-bottom: 2rem;
   overflow-x: auto;
   scrollbar-width: none;
+
+  position: sticky;
+  top: calc(var(--eg-topbar) + var(--eg-header-h));
+  z-index: 2900;
 }
 
 .eg-tabs::-webkit-scrollbar {
@@ -193,6 +202,8 @@
 /* CONTENT */
 .eg-tab-content {
   animation: fadeIn 0.4s ease;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes fadeIn {
@@ -206,6 +217,8 @@
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 .eg-section:last-child {
@@ -312,6 +325,55 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
+}
+
+/* ✅ Make <select> match your input styling */
+.eg-field select {
+  width: 100%;
+  height: 48px;
+  padding: 0 44px 0 14px;
+  border-radius: 14px;
+  border: 2px solid #e5e5e5;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+  font-weight: 700;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(0,0,0,0.55) 50%),
+    linear-gradient(135deg, rgba(0,0,0,0.55) 50%, transparent 50%),
+    linear-gradient(to right, rgba(0,0,0,0.08), rgba(0,0,0,0.08));
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%,
+    calc(100% - 42px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px,
+    1px 22px;
+  background-repeat: no-repeat;
+}
+
+.eg-field select:hover {
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.eg-field select:focus {
+  border-color: rgba(210,63,11,0.55);
+  box-shadow: 0 0 0 4px rgba(210,63,11,0.12);
+}
+
+.eg-field select.error {
+  border-color: rgba(255, 90, 90, 0.60);
+  box-shadow: 0 0 0 4px rgba(255, 90, 90, 0.14);
+}
+
+.eg-field select option {
+  font-weight: 700;
+  color: #111;
 }
 
 /* HOURS MODERN */
@@ -794,7 +856,7 @@
   font-weight: 700;
   font-size: 0.9rem;
   animation: slideIn 0.4s ease;
-  z-index: 1000;
+  z-index: 5000;
 }
 
 @keyframes slideIn {
@@ -825,6 +887,23 @@
   font-size: 1rem;
   font-weight: 700;
   color: #666;
+}
+
+/* ✅ LEAFLET Z-INDEX FIX (map stays behind sticky header/tabs) */
+.leaflet-container { z-index: 0 !important; }
+.leaflet-pane { z-index: 0 !important; }
+.leaflet-marker-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane { z-index: 10 !important; }
+.leaflet-control-container { z-index: 20 !important; }
+.leaflet-popup-pane { z-index: 30 !important; }
+
+/* optional: make map look nicer + not collapsed */
+.eg-section .leaflet-container{
+  width: 100%;
+  min-height: 320px;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 /* RESPONSIVE */

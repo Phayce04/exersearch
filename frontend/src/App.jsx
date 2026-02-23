@@ -20,6 +20,7 @@ import "leaflet/dist/leaflet.css";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
 import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
+import AdminGymApplications from "./pages/admin/AdminGymApplications";
 import AdminProfile from "./pages/admin/Profile";
 import GymResults from "./pages/user/GymResults";
 import GymDetailAdmin from "./pages/admin/GymDetails";
@@ -44,6 +45,7 @@ import OwnerHome from "./pages/owner/OwnerHome";
 import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
 import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
 import OwnerMembers from "./pages/owner/OwnerMembers";
+import OwnerGymApplication from "./pages/owner/OwnerGymApplication";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -89,13 +91,16 @@ function App() {
         <Route path="workout" element={<WorkoutWeek />} />
         <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
       </Route>
-<Route path="/owner/*" element={<OwnerLayout />}>
-  <Route path="home" element={<OwnerHome />} />
-  <Route path="members/:id" element={<OwnerMembers />} />
-  <Route path="view-gym/:id" element={<ViewGym />} />
-  <Route path="edit-gym/:id" element={<EditGym />} />
-  <Route path="view-stats/:id" element={<ViewStats />} />
-</Route>
+
+      <Route path="/owner/*" element={<OwnerLayout />}>
+        <Route path="home" element={<OwnerHome />} />
+        <Route path="members/:id" element={<OwnerMembers />} />
+        <Route path="view-gym/:id" element={<ViewGym />} />
+        <Route path="edit-gym/:id" element={<EditGym />} />
+        <Route path="view-stats/:id" element={<ViewStats />} />
+                <Route path="gym-application" element={<OwnerGymApplication />} />
+
+      </Route>
 
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
@@ -106,6 +111,7 @@ function App() {
         <Route path="admins" element={<AdminAdmins />} />
         <Route path="map" element={<AdminPasigGymsMap />} />
         <Route path="applications" element={<AdminOwnerApplications />} />
+        <Route path="gym-applications" element={<AdminGymApplications />} />
         <Route path="profile" element={<AdminProfile />} />
         <Route path="gyms/:gymId" element={<GymDetailAdmin />} />
         <Route path="settings" element={<AdminSettings />} />

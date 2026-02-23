@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Gym;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +20,7 @@ class GymInteractionController extends Controller
             'event' => ['required', 'string', 'max:30'],
             'source' => ['nullable', 'string', 'max:30'],
             'session_id' => ['nullable', 'string', 'max:64'],
-            'meta' => ['nullable'], // ✅ accept array OR object OR string JSON
+            'meta' => ['nullable'],
         ]);
 
         $allowed = ['view', 'click', 'save', 'contact', 'visit', 'subscribe'];
@@ -27,11 +28,18 @@ class GymInteractionController extends Controller
             return response()->json(['message' => 'Invalid event'], 422);
         }
 
+        $gym = Gym::where('gym_id', (int)$validated['gym_id'])
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$gym) {
+            return response()->json(['message' => 'Gym not found'], 404);
+        }
+
         $meta = $validated['meta'] ?? null;
         if (is_array($meta)) $meta = json_encode($meta);
         if (is_object($meta)) $meta = json_encode($meta);
         if (is_string($meta) && $meta !== '') {
-            // keep string as-is (already JSON or just text)
         }
 
         DB::table('gym_interactions')->insert([

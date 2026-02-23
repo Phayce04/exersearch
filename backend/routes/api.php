@@ -129,6 +129,7 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/gyms/{gym}/analytics', [GymAnalyticsController::class, 'show'])->whereNumber('gym');
             Route::get('/owner/activities', [GymAnalyticsController::class, 'activities']);
+
             Route::post('/me/avatar', [ProfilePhotoController::class, 'upload']);
             Route::delete('/me/avatar', [ProfilePhotoController::class, 'remove']);
 
@@ -222,14 +223,15 @@ Route::prefix('v1')->group(function () {
             Route::get('/owner/gyms/{gymId}/free-visits', [GymFreeVisitController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/free-visits/{freeVisitId}/use', [GymFreeVisitController::class, 'ownerMarkUsed'])->whereNumber('freeVisitId');
             Route::patch('/owner/gyms/{gymId}/free-visit-enabled', [GymFreeVisitController::class, 'ownerToggleEnabled'])->whereNumber('gymId');
-        Route::get('/owner/gyms/{gymId}/members/combined', [OwnerManualMemberController::class, 'combined']);
-        Route::post('/owner/gyms/{gymId}/manual-members/import', [OwnerManualMemberController::class, 'import']);
-Route::patch('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'update']);
-    Route::get('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'index']);
-    Route::post('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'store']);
-    Route::get('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'show']);
-    Route::patch('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'update']);
-    Route::delete('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'destroy']);
+
+            Route::get('/owner/gyms/{gymId}/members/combined', [OwnerManualMemberController::class, 'combined'])->whereNumber('gymId');
+            Route::post('/owner/gyms/{gymId}/manual-members/import', [OwnerManualMemberController::class, 'import'])->whereNumber('gymId');
+            Route::get('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'index'])->whereNumber('gymId');
+            Route::post('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'store'])->whereNumber('gymId');
+            Route::get('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'show'])->whereNumber('gymId')->whereNumber('manualMemberId');
+            Route::patch('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'update'])->whereNumber('gymId')->whereNumber('manualMemberId');
+            Route::delete('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'destroy'])->whereNumber('gymId')->whereNumber('manualMemberId');
+
             Route::get('/owner/gyms/{gymId}/inquiries', [GymInquiryController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/inquiries/{inquiryId}/answer', [GymInquiryController::class, 'ownerAnswer'])->whereNumber('inquiryId');
 
@@ -263,6 +265,11 @@ Route::patch('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManual
                 Route::get('/admin/owner-applications/{id}', [GymOwnerApplicationController::class, 'show'])->whereNumber('id');
                 Route::patch('/admin/owner-applications/{id}/approve', [GymOwnerApplicationController::class, 'approve'])->whereNumber('id');
                 Route::patch('/admin/owner-applications/{id}/reject', [GymOwnerApplicationController::class, 'reject'])->whereNumber('id');
+
+                Route::get('/admin/gyms', [GymController::class, 'adminIndex']);
+                Route::get('/admin/gyms/{gym}', [GymController::class, 'adminShow'])->whereNumber('gym');
+                Route::patch('/admin/gyms/{gym}/approve', [GymController::class, 'adminApprove'])->whereNumber('gym');
+                Route::patch('/admin/gyms/{gym}/reject', [GymController::class, 'adminReject'])->whereNumber('gym');
 
                 Route::patch('/admin/owner-profiles/{user_id}/verify', [OwnerProfileController::class, 'verify'])->whereNumber('user_id');
 

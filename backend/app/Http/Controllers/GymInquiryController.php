@@ -15,7 +15,7 @@ class GymInquiryController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        $gym = Gym::where('gym_id', $gymId)->first();
+        $gym = Gym::where('gym_id', $gymId)->where('status', 'approved')->first();
         if (!$gym) return response()->json(['message' => 'Gym not found'], 404);
 
         $request->validate([

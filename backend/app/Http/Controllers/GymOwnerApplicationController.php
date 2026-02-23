@@ -21,20 +21,16 @@ class GymOwnerApplicationController extends Controller
             'address'   => 'required|string',
             'latitude'  => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-
             'document_path' => 'nullable|string|max:2048',
             'main_image_url' => 'nullable|string|max:2048',
             'gallery_urls' => 'nullable|array',
             'gallery_urls.*' => 'string|max:2048',
-
             'description' => 'nullable|string',
             'contact_number' => 'nullable|string|max:50',
             'company_name' => 'nullable|string|max:255',
-
             'daily_price' => 'nullable|numeric|min:0',
             'monthly_price' => 'nullable|numeric|min:0',
             'quarterly_price' => 'nullable|numeric|min:0',
-
             'amenity_ids' => 'nullable|array',
             'amenity_ids.*' => 'integer|min:1',
         ]);
@@ -51,15 +47,12 @@ class GymOwnerApplicationController extends Controller
             'latitude'  => $data['latitude'],
             'longitude' => $data['longitude'],
             'status'    => 'pending',
-
             'document_path' => $data['document_path'] ?? ($application?->document_path),
             'main_image_url' => array_key_exists('main_image_url', $data) ? $data['main_image_url'] : ($application?->main_image_url),
             'gallery_urls' => array_key_exists('gallery_urls', $data) ? array_values(array_filter($data['gallery_urls'] ?? [])) : ($application?->gallery_urls),
-
             'description' => array_key_exists('description', $data) ? $data['description'] : ($application?->description),
             'contact_number' => array_key_exists('contact_number', $data) ? $data['contact_number'] : ($application?->contact_number),
             'company_name' => array_key_exists('company_name', $data) ? $data['company_name'] : ($application?->company_name),
-
             'daily_price' => array_key_exists('daily_price', $data) ? $data['daily_price'] : ($application?->daily_price),
             'monthly_price' => array_key_exists('monthly_price', $data) ? $data['monthly_price'] : ($application?->monthly_price),
             'quarterly_price' => array_key_exists('quarterly_price', $data) ? $data['quarterly_price'] : ($application?->quarterly_price),
@@ -152,8 +145,9 @@ class GymOwnerApplicationController extends Controller
         $mailTo = null;
         $mailName = 'Applicant';
         $mailGym = 'Your Gym';
+        $approverId = auth()->user()?->user_id;
 
-        DB::transaction(function () use ($id, &$mailTo, &$mailName, &$mailGym) {
+        DB::transaction(function () use ($id, &$mailTo, &$mailName, &$mailGym, $approverId) {
             $application = GymOwnerApplication::with('user')
                 ->where('id', $id)
                 ->lockForUpdate()
@@ -184,18 +178,18 @@ class GymOwnerApplicationController extends Controller
                 'address' => $application->address,
                 'latitude' => $application->latitude,
                 'longitude' => $application->longitude,
-
                 'daily_price' => $application->daily_price ?? null,
                 'monthly_price' => $application->monthly_price ?? 0.00,
-
                 'main_image_url' => $application->main_image_url ?? null,
                 'gallery_urls' => $application->gallery_urls ?? [],
-
                 'gym_type' => $gym?->gym_type ?? 'General',
                 'has_personal_trainers' => $gym?->has_personal_trainers ?? false,
                 'has_classes' => $gym?->has_classes ?? false,
                 'is_24_hours' => $gym?->is_24_hours ?? false,
                 'is_airconditioned' => $gym?->is_airconditioned ?? true,
+                'status' => 'approved',
+                'approved_at' => now(),
+                'approved_by' => $approverId,
             ];
 
             if ($gym) {

@@ -37,6 +37,9 @@ class Gym extends Model
         'is_airconditioned',
         'free_first_visit_enabled',
         'free_first_visit_enabled_at',
+        'status',
+        'approved_at',
+        'approved_by',
     ];
 
     protected $casts = [
@@ -52,6 +55,7 @@ class Gym extends Model
         'is_airconditioned' => 'boolean',
         'free_first_visit_enabled' => 'boolean',
         'free_first_visit_enabled_at' => 'datetime',
+        'approved_at' => 'datetime',
         'opening_time' => 'datetime:H:i',
         'closing_time' => 'datetime:H:i',
     ];
@@ -60,6 +64,11 @@ class Gym extends Model
     {
         return $this->belongsTo(User::class, 'owner_id')
             ->where('role', 'owner');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by', 'user_id');
     }
 
     public function ownerProfile()
@@ -179,10 +188,9 @@ class Gym extends Model
     {
         return $this->hasMany(\App\Models\GymRating::class, 'gym_id', 'gym_id');
     }
+
     public function manualMembers()
-{
-    return $this->hasMany(\App\Models\GymManualMember::class, 'gym_id', 'gym_id');
-}
-
-
+    {
+        return $this->hasMany(\App\Models\GymManualMember::class, 'gym_id', 'gym_id');
+    }
 }

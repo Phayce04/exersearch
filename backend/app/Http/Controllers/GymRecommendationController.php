@@ -53,6 +53,7 @@ class GymRecommendationController extends Controller
                 'monthly_price',
                 'annual_price',
             ])
+            ->where('status', 'approved')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->get();
@@ -83,7 +84,6 @@ class GymRecommendationController extends Controller
                 'budget'    => $preferences->budget,
                 'plan_type' => $preferences->plan_type,
                 'mode'      => $mode,
-
                 'preferred_equipments' => $preferredEquipments,
                 'preferred_amenities'  => $preferredAmenities,
             ],

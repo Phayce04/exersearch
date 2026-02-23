@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import Header from "../user/Header-user";
+import Header from "./Header-owner";
 import Footer from "../user/Footer";
 import "./ViewGym.css";
 import {

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Header from "../user/Header-user";
+import Header from "./Header-owner";
 import Footer from "../user/Footer";
 import "./OwnerHome.css";
 
@@ -623,13 +623,12 @@ export default function OwnerHome() {
                     <ChevronDown size={18} />
                   </span>
                 </h2>
-
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Link to="/owner/gyms/add" className="od-add-btn">
-                    <Plus size={18} />
-                    Add Gym
-                  </Link>
-                </div>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Link to="/owner/gym-application" className="od-add-btn">
+              <Plus size={18} />
+              Add Gym
+            </Link>
+          </div>
               </div>
 
               <div className={`od-collapse-body ${gymsOpen ? "open" : ""}`}>
