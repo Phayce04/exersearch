@@ -43,6 +43,7 @@ import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
 import OwnerHome from "./pages/owner/OwnerHome";
 import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
 import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
+import OwnerMembers from "./pages/owner/OwnerMembers";
 
 function ProtectedRoutes({ children }) {
   const [role, setRole] = useState(getUserRole());
@@ -88,14 +89,13 @@ function App() {
         <Route path="workout" element={<WorkoutWeek />} />
         <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
       </Route>
-
-      <Route path="/owner/*" element={<OwnerLayout />}>
-                <Route path="home" element={<OwnerHome />} />
-
-        <Route path="view-gym/:id" element={<ViewGym />} />
-        <Route path="edit-gym/:id" element={<EditGym />} />
-        <Route path="view-stats/:id" element={<ViewStats />} />
-      </Route>
+<Route path="/owner/*" element={<OwnerLayout />}>
+  <Route path="home" element={<OwnerHome />} />
+  <Route path="members/:id" element={<OwnerMembers />} />
+  <Route path="view-gym/:id" element={<ViewGym />} />
+  <Route path="edit-gym/:id" element={<EditGym />} />
+  <Route path="view-stats/:id" element={<ViewStats />} />
+</Route>
 
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />

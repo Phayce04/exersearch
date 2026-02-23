@@ -51,6 +51,7 @@ use App\Http\Controllers\GymMembershipController;
 use App\Http\Controllers\GymFreeVisitController;
 use App\Http\Controllers\GymInquiryController;
 use App\Http\Controllers\GymRatingController;
+use App\Http\Controllers\OwnerManualMemberController;
 
 Route::prefix('v1')->group(function () {
 
@@ -128,7 +129,6 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/gyms/{gym}/analytics', [GymAnalyticsController::class, 'show'])->whereNumber('gym');
             Route::get('/owner/activities', [GymAnalyticsController::class, 'activities']);
-
             Route::post('/me/avatar', [ProfilePhotoController::class, 'upload']);
             Route::delete('/me/avatar', [ProfilePhotoController::class, 'remove']);
 
@@ -222,7 +222,14 @@ Route::prefix('v1')->group(function () {
             Route::get('/owner/gyms/{gymId}/free-visits', [GymFreeVisitController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/free-visits/{freeVisitId}/use', [GymFreeVisitController::class, 'ownerMarkUsed'])->whereNumber('freeVisitId');
             Route::patch('/owner/gyms/{gymId}/free-visit-enabled', [GymFreeVisitController::class, 'ownerToggleEnabled'])->whereNumber('gymId');
-
+        Route::get('/owner/gyms/{gymId}/members/combined', [OwnerManualMemberController::class, 'combined']);
+        Route::post('/owner/gyms/{gymId}/manual-members/import', [OwnerManualMemberController::class, 'import']);
+Route::patch('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'update']);
+    Route::get('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'index']);
+    Route::post('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'store']);
+    Route::get('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'show']);
+    Route::patch('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'update']);
+    Route::delete('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'destroy']);
             Route::get('/owner/gyms/{gymId}/inquiries', [GymInquiryController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/inquiries/{inquiryId}/answer', [GymInquiryController::class, 'ownerAnswer'])->whereNumber('inquiryId');
 

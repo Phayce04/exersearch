@@ -35,7 +35,7 @@ import {
 
 import {
   getMe,
-  getMyGyms,
+  getAllMyGyms,
   getGymAnalytics,
   getOwnerActivities,
 } from "../../utils/ownerDashboardApi";
@@ -223,7 +223,7 @@ export default function OwnerHome() {
             : "—",
         });
 
-        const gymsRes = await getMyGyms();
+        const gymsRes = await getAllMyGyms();
         const list = safeArr(gymsRes).map(mapGym);
 
         if (!alive) return;

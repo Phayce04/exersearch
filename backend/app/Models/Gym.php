@@ -179,4 +179,10 @@ class Gym extends Model
     {
         return $this->hasMany(\App\Models\GymRating::class, 'gym_id', 'gym_id');
     }
+    public function manualMembers()
+{
+    return $this->hasMany(\App\Models\GymManualMember::class, 'gym_id', 'gym_id');
+}
+
+
 }

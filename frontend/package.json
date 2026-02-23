@@ -15,6 +15,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.563.0",
     "maplibre-gl": "^5.16.0",
+    "papaparse": "^5.5.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-icons": "^5.5.0",
@@ -22,7 +23,8 @@
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^7.12.0",
     "sweetalert2": "^11.26.18",
-    "sweetalert2-react-content": "^5.1.1"
+    "sweetalert2-react-content": "^5.1.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

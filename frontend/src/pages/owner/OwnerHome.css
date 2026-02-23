@@ -1467,7 +1467,7 @@
 /* ✅ important: allow shadows / last card to not crop */
 .od-collapse-body.open {
   overflow: visible;
-  max-height: 10000px;
+  max-height: 100000px;
   opacity: 1;
   transform: translateY(0);
 }

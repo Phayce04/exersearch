@@ -24,9 +24,6 @@ import {
   ToggleLeft,
   ToggleRight,
   BadgeCheck,
-  ExternalLink,
-  Copy,
-  Share2,
   Plus,
   Download,
 } from "lucide-react";
@@ -215,15 +212,6 @@ export default function ViewGym() {
 
   const toggleVisibility = () => setVisibility((v) => !v);
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
-    } catch {
-      alert("Failed to copy link.");
-    }
-  };
-
   const handleAddEquipmentSuccess = async () => {
     setShowAddEquipment(false);
     const meObj = me || (await fetchMeSafe().catch(() => null));
@@ -348,14 +336,11 @@ export default function ViewGym() {
             </div>
 
             <div className="vg-header-actions">
-              <button className="vg-action-btn-ghost" onClick={copyLink} type="button">
-                <Copy size={18} />
-                Copy Link
-              </button>
-              <button className="vg-action-btn-ghost" type="button">
-                <ExternalLink size={18} />
-                Preview
-              </button>
+              <Link to={`/owner/members/${gym.gym_id}`} className="vg-action-btn-primary">
+                <Users size={18} />
+                Manage Members
+              </Link>
+
               <Link to={`/owner/view-stats/${gym.gym_id}`} className="vg-action-btn-primary">
                 <BarChart3 size={18} />
                 Full Analytics
@@ -665,10 +650,6 @@ export default function ViewGym() {
                 <button className="vg-quick-action" type="button">
                   <Calendar size={18} />
                   <span>Bookings</span>
-                </button>
-                <button className="vg-quick-action" type="button">
-                  <Share2 size={18} />
-                  <span>Share Gym</span>
                 </button>
               </div>
             </div>
