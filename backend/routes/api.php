@@ -54,6 +54,7 @@ use App\Http\Controllers\GymRatingController;
 use App\Http\Controllers\OwnerManualMemberController;
 
 use App\Models\Meal;
+use App\Http\Controllers\MealController;
 
 Route::prefix('v1')->group(function () {
 
@@ -83,10 +84,13 @@ Route::prefix('v1')->group(function () {
     Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
     Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show'])->whereNumber('id');
 
-    
-    Route::get('/meals', function () {
-            return Meal::where('is_active', true)->get();
-        });
+
+    Route::prefix('meals')->group(function () {
+    Route::get('/', [MealController::class, 'index']);
+    Route::get('/type/{type}', [MealController::class, 'getByType']);
+    Route::post('/filter', [MealController::class, 'filterByDiet']);
+    Route::get('/stats', [MealController::class, 'stats']);
+});
 
     Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
 
