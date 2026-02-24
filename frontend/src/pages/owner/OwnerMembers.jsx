@@ -32,6 +32,7 @@ import {
   normalizeCombinedMembersResponse,
   normalizeMembershipListResponse,
 } from "../../utils/gymMembershipApi";
+import { ownerExpireCheckGymMemberships } from "../../utils/gymMembershipApi";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -74,6 +75,45 @@ function badgeClass(status) {
   if (status === "cancelled") return "om-badge cancelled";
   if (status === "rejected") return "om-badge rejected";
   return "om-badge";
+}
+
+function getMembershipId(m) {
+  return (
+    m?.membership_id ??
+    m?.membershipId ??
+    m?.membership?.membership_id ??
+    m?.membership?.id ??
+    m?.id ??
+    null
+  );
+}
+
+function isoToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addToISODate(isoDate, { months = 0, years = 0, days = 0 } = {}) {
+  const base = isoDate ? new Date(isoDate + "T00:00:00") : new Date();
+  if (Number.isNaN(base.getTime())) return isoDate;
+
+  const d = new Date(base);
+  const origDay = d.getDate();
+
+  if (years) d.setFullYear(d.getFullYear() + years);
+
+  if (months) {
+    const targetMonth = d.getMonth() + months;
+    d.setMonth(targetMonth, 1);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(origDay, lastDay));
+  }
+
+  if (days) d.setDate(d.getDate() + days);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function Modal({ open, title, subtitle, onClose, children, actions }) {
@@ -309,16 +349,31 @@ export default function OwnerMembers() {
   }, [meta, filteredRows.length]);
 
   function openActivate(m) {
-    setActivateRow(m);
+    if (m?.source === "manual") {
+      Swal.fire({
+        icon: "info",
+        title: "Manual member",
+        text: "Manual members don’t use the intent activation flow. Edit their dates instead.",
+      });
+      return;
+    }
 
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const membershipId = getMembershipId(m);
+    if (!membershipId) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing membership id",
+        text: "This row does not include membership_id. Fix the combined API mapping/normalizer.",
+      });
+      return;
+    }
+
+    setActivateRow({ ...m, membership_id: membershipId });
+
+    const todayStr = isoToday();
     setAStart(todayStr);
 
-    const end = new Date(today);
+    const end = new Date(todayStr + "T00:00:00");
     end.setMonth(end.getMonth() + 1);
     const eyyyy = end.getFullYear();
     const emm = String(end.getMonth() + 1).padStart(2, "0");
@@ -341,8 +396,23 @@ export default function OwnerMembers() {
   }
 
   function openExtend(m) {
-    setExtendRow(m);
-    const endVal = m?.end_date ? String(m.end_date).slice(0, 10) : "";
+    if (m?.source === "manual") {
+      Swal.fire({ icon: "info", title: "Manual member", text: "Use Edit for manual members." });
+      return;
+    }
+
+    const membershipId = getMembershipId(m);
+    if (!membershipId) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing membership id",
+        text: "This row does not include membership_id. Fix the combined API mapping/normalizer.",
+      });
+      return;
+    }
+
+    setExtendRow({ ...m, membership_id: membershipId });
+    const endVal = m?.end_date ? String(m.end_date).slice(0, 10) : isoToday();
     setEEnd(endVal);
     setENotes("");
     setExtendOpen(true);
@@ -406,9 +476,19 @@ export default function OwnerMembers() {
       return;
     }
 
+    const membershipId = getMembershipId(activateRow);
+    if (!membershipId) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing membership id",
+        text: "This row does not include membership_id. Fix the combined API mapping/normalizer.",
+      });
+      return;
+    }
+
     setASaving(true);
     try {
-      await ownerActivateMembership(activateRow.membership_id, {
+      await ownerActivateMembership(membershipId, {
         start_date: aStart,
         end_date: aEnd,
         plan_type: aPlan || null,
@@ -434,6 +514,15 @@ export default function OwnerMembers() {
   }
 
   async function doUpdateStatus(membershipId, payload, successTitle) {
+    if (!membershipId) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing membership id",
+        text: "Cannot update because membership_id is missing from this row.",
+      });
+      return;
+    }
+
     try {
       await ownerUpdateMembership(membershipId, payload);
       Swal.fire({
@@ -463,6 +552,16 @@ export default function OwnerMembers() {
       return;
     }
 
+    const membershipId = getMembershipId(m);
+    if (!membershipId) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing membership id",
+        text: "This row does not include membership_id. Fix the combined API mapping/normalizer.",
+      });
+      return;
+    }
+
     const user = m.user || {};
     const name = user?.name || user?.email || "this member";
 
@@ -476,7 +575,7 @@ export default function OwnerMembers() {
       });
       if (!r.isConfirmed) return;
       return doUpdateStatus(
-        m.membership_id,
+        membershipId,
         { status: MEMBERSHIP_STATUS.REJECTED },
         "Rejected"
       );
@@ -492,7 +591,7 @@ export default function OwnerMembers() {
       });
       if (!r.isConfirmed) return;
       return doUpdateStatus(
-        m.membership_id,
+        membershipId,
         { status: MEMBERSHIP_STATUS.CANCELLED },
         "Cancelled"
       );
@@ -508,7 +607,7 @@ export default function OwnerMembers() {
       });
       if (!r.isConfirmed) return;
       return doUpdateStatus(
-        m.membership_id,
+        membershipId,
         { status: MEMBERSHIP_STATUS.EXPIRED },
         "Expired"
       );
@@ -528,9 +627,19 @@ export default function OwnerMembers() {
       return;
     }
 
+    const membershipId = getMembershipId(extendRow);
+    if (!membershipId) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing membership id",
+        text: "This row does not include membership_id. Fix the combined API mapping/normalizer.",
+      });
+      return;
+    }
+
     setESaving(true);
     try {
-      await ownerUpdateMembership(extendRow.membership_id, {
+      await ownerUpdateMembership(membershipId, {
         status: MEMBERSHIP_STATUS.ACTIVE,
         end_date: eEnd,
         notes: eNotes || null,
@@ -573,7 +682,18 @@ export default function OwnerMembers() {
           notes: editNotes || null,
         });
       } else {
-        await ownerUpdateMembership(editRow.membership_id, {
+        const membershipId = getMembershipId(editRow);
+        if (!membershipId) {
+          setEditSaving(false);
+          Swal.fire({
+            icon: "error",
+            title: "Missing membership id",
+            text: "This row does not include membership_id. Fix the combined API mapping/normalizer.",
+          });
+          return;
+        }
+
+        await ownerUpdateMembership(membershipId, {
           status: editStatus,
           start_date: editStart || null,
           end_date: editEnd || null,
@@ -843,6 +963,32 @@ export default function OwnerMembers() {
               >
                 <Plus size={18} /> Add Manual Member
               </button>
+
+              <button
+                className="om-btn warn"
+                type="button"
+                onClick={async () => {
+                  try {
+                    const r = await ownerExpireCheckGymMemberships(selectedGymId);
+                    Swal.fire({
+                      icon: "success",
+                      title: "Checked expirations",
+                      text: `${r?.expired_count ?? 0} membership(s) set to expired.`,
+                    });
+                    setPage(1);
+                    fetchList({ page: 1, status: tab });
+                  } catch (e) {
+                    Swal.fire({
+                      icon: "error",
+                      title: "Expire check failed",
+                      text: e?.response?.data?.message || e?.message || "Something went wrong",
+                    });
+                  }
+                }}
+              >
+                <Calendar size={18} /> Check Expired
+              </button>
+
               <select value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>
                 {[10, 15, 20, 30, 50].map((n) => (
                   <option key={n} value={n}>
@@ -893,15 +1039,24 @@ export default function OwnerMembers() {
                     const source = m.source || "app_user";
                     const isManual = source === "manual";
 
-                    const name = isManual ? m.display_name : m.user?.name || "-";
-                    const email = isManual ? m.email || "-" : m.user?.email || "-";
-                    const sub = isManual ? m.contact_number || "Manual member" : "App user";
+                    const name = isManual
+                      ? (m.display_name ?? "-")
+                      : (m.user?.name ?? m.display_name ?? "-");
+
+                    const email = isManual
+                      ? (m.email ?? "-")
+                      : (m.user?.email ?? m.email ?? "-");
+
+                    const sub = isManual
+                      ? (m.contact_number ?? "Manual member")
+                      : (m.user?.contact_number ?? m.contact_number ?? "App user");
 
                     const status = m.status;
                     const isIntent = status === MEMBERSHIP_STATUS.INTENT && !isManual;
                     const isActive = status === MEMBERSHIP_STATUS.ACTIVE && !isManual;
 
-                    const key = isManual ? `manual-${m.id}` : `app-${m.membership_id ?? m.id}`;
+                    const membershipId = !isManual ? getMembershipId(m) : null;
+                    const key = isManual ? `manual-${m.id}` : `app-${membershipId ?? "missing"}`;
 
                     return (
                       <tr key={key}>
@@ -934,10 +1089,18 @@ export default function OwnerMembers() {
 
                             {isIntent ? (
                               <>
-                                <button className="om-btn primary" type="button" onClick={() => openActivate(m)}>
+                                <button
+                                  className="om-btn primary"
+                                  type="button"
+                                  onClick={() => openActivate(m)}
+                                >
                                   <CheckCircle2 size={16} /> Activate
                                 </button>
-                                <button className="om-btn danger" type="button" onClick={() => confirmAndUpdate(m, "reject")}>
+                                <button
+                                  className="om-btn danger"
+                                  type="button"
+                                  onClick={() => confirmAndUpdate(m, "reject")}
+                                >
                                   <XCircle size={16} /> Reject
                                 </button>
                               </>
@@ -948,10 +1111,18 @@ export default function OwnerMembers() {
                                 <button className="om-btn" type="button" onClick={() => openExtend(m)}>
                                   <TimerReset size={16} /> Extend
                                 </button>
-                                <button className="om-btn warn" type="button" onClick={() => confirmAndUpdate(m, "expire")}>
+                                <button
+                                  className="om-btn warn"
+                                  type="button"
+                                  onClick={() => confirmAndUpdate(m, "expire")}
+                                >
                                   <Calendar size={16} /> Expire
                                 </button>
-                                <button className="om-btn danger" type="button" onClick={() => confirmAndUpdate(m, "cancel")}>
+                                <button
+                                  className="om-btn danger"
+                                  type="button"
+                                  onClick={() => confirmAndUpdate(m, "cancel")}
+                                >
                                   <Ban size={16} /> Cancel
                                 </button>
                               </>
@@ -1063,6 +1234,33 @@ export default function OwnerMembers() {
             </>
           }
         >
+          <div className="form-group">
+            <label>Quick extend</label>
+            <div className="om-quick-extend">
+              <button
+                type="button"
+                className="om-btn"
+                onClick={() => setEEnd((cur) => addToISODate(cur || isoToday(), { months: 1 }))}
+              >
+                +1 Month
+              </button>
+              <button
+                type="button"
+                className="om-btn"
+                onClick={() => setEEnd((cur) => addToISODate(cur || isoToday(), { months: 3 }))}
+              >
+                +3 Months
+              </button>
+              <button
+                type="button"
+                className="om-btn"
+                onClick={() => setEEnd((cur) => addToISODate(cur || isoToday(), { years: 1 }))}
+              >
+                +1 Year
+              </button>
+            </div>
+          </div>
+
           <div className="form-group">
             <label>
               New end date <span className="required">*</span>

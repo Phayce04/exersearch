@@ -47,6 +47,18 @@ export default function Login() {
 
   const hasUiChoice = (role) => (allowedUiModes(role) || []).length > 1;
 
+  const handleAxiosError = (err, fallbackMsg = "Server error") => {
+    const status = err?.response?.status;
+
+    if (status === 503) {
+      navigate("/maintenance", { replace: true });
+      return true;
+    }
+
+    alert(err?.response?.data?.message || fallbackMsg);
+    return true;
+  };
+
   const fetchMe = async (token) => {
     const res = await axios.get(`${API_BASE}/me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -89,7 +101,7 @@ export default function Login() {
 
       await finalizeAuth(token);
     } catch (err) {
-      alert(err?.response?.data?.message || "Google sign-in failed");
+      handleAxiosError(err, "Google sign-in failed");
     } finally {
       setLoading(false);
     }
@@ -133,7 +145,7 @@ export default function Login() {
 
       await finalizeAuth(token);
     } catch (err) {
-      alert(err?.response?.data?.message || "Server error");
+      handleAxiosError(err, "Server error");
     } finally {
       setLoading(false);
     }
@@ -144,7 +156,11 @@ export default function Login() {
     if (!token) return;
 
     setAuthToken(token);
-    finalizeAuth(token).catch(() => {
+    finalizeAuth(token).catch((err) => {
+      if (err?.response?.status === 503) {
+        navigate("/maintenance", { replace: true });
+        return;
+      }
       localStorage.removeItem("token");
       setUser(null);
       setAuthToken(null);

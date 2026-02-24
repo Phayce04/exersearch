@@ -1,9 +1,9 @@
+// src/utils/apiClient.js
 import axios from "axios";
 import Swal from "sweetalert2";
 
 const API_BASE = "https://exersearch.test";
 const TOKEN_KEY = "token";
-
 const ROLE_KEY = "role";
 
 function authHeaders() {
@@ -30,21 +30,27 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const status = error?.response?.status;
+    const msg = String(error?.response?.data?.message || "").toLowerCase();
 
-    // ✅ Maintenance detector (reliable)
-    if (status === 503 && !handlingMaintenance) {
+    const isMaintenance =
+      status === 503 ||
+      msg.includes("under maintenance") ||
+      msg.includes("maintenance mode") ||
+      msg === "system is under maintenance.";
+
+    if (isMaintenance && !handlingMaintenance) {
       handlingMaintenance = true;
 
       const role = localStorage.getItem(ROLE_KEY);
       const isAdmin = role === "admin" || role === "superadmin";
 
-      // ✅ Users/owners/guests get redirected to /maintenance
       if (!isAdmin) {
-        window.location.replace("/maintenance");
-        return new Promise(() => {});
+        if (window.location.pathname !== "/maintenance") {
+          window.location.replace("/maintenance");
+        }
+        return Promise.reject(error);
       }
 
-      // ✅ Admins stay in admin panel (optional popup)
       await Swal.fire({
         title: "Maintenance Mode",
         text: "Maintenance is enabled. Users/owners are blocked.",
@@ -54,7 +60,6 @@ api.interceptors.response.use(
         allowEscapeKey: false,
       });
 
-      // keep original error behavior for admins
       return Promise.reject(error);
     }
 

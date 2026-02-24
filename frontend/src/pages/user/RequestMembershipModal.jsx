@@ -1,0 +1,166 @@
+import React, { useMemo, useState } from "react";
+import { X, AlertCircle, Send, CalendarDays } from "lucide-react";
+import "./modaluser.css";
+import Swal from "sweetalert2";
+import { api } from "../../utils/apiClient";
+
+function toInputDate(value) {
+  if (!value) return "";
+  const s = String(value).trim();
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : "";
+}
+
+export default function RequestMembershipModal({ gym, onClose, onSuccess }) {
+  const gymId = gym?.gym_id ?? gym?.id;
+
+  const planOptions = useMemo(() => {
+    const out = [];
+    const daily = Number(gym?.daily_price || 0) > 0;
+    const monthly = Number(gym?.monthly_price || 0) > 0;
+    const annual = Number(gym?.annual_price || 0) > 0;
+    if (daily) out.push({ value: "daily", label: "Daily" });
+    if (monthly) out.push({ value: "monthly", label: "Monthly" });
+    if (annual) out.push({ value: "annual", label: "Annual" });
+    if (!out.length) {
+      out.push({ value: "monthly", label: "Monthly" });
+      out.push({ value: "daily", label: "Daily" });
+      out.push({ value: "annual", label: "Annual" });
+    }
+    return out;
+  }, [gym]);
+
+  const [form, setForm] = useState({
+    plan_type: planOptions[0]?.value || "monthly",
+    desired_start_date: "",
+    note: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!gymId) {
+      setError("Missing gym id.");
+      return;
+    }
+    if (!form.plan_type) {
+      setError("Please choose a plan.");
+      return;
+    }
+
+    const payload = {
+      plan_type: form.plan_type,
+      desired_start_date: form.desired_start_date || null,
+      note: form.note || null,
+    };
+
+    try {
+      setLoading(true);
+      await api.post(`/gyms/${gymId}/membership/intent`, payload);
+      Swal.fire("Sent!", "Your membership intent was sent to the gym owner.", "success");
+      onSuccess?.();
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Failed to send membership intent.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onMouseDown={onClose}>
+      <div className="modal-content" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <h2>Get Membership</h2>
+            <p>{gym?.name || "Gym"}</p>
+          </div>
+          <button className="modal-close" onClick={onClose} type="button">
+            <X size={24} />
+          </button>
+        </div>
+
+        {error ? (
+          <div className="error-banner">
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        ) : null}
+
+        <form onSubmit={submit} className="modal-form">
+          <div className="form-group">
+            <label>Plan</label>
+            <select
+              className="form-input"
+              value={form.plan_type}
+              onChange={(e) => setField("plan_type", e.target.value)}
+              required
+            >
+              {planOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Desired start date</label>
+            <div className="input-with-icon">
+              <span className="input-icon">
+                <CalendarDays size={18} />
+              </span>
+              <input
+                type="date"
+                className="form-input"
+                value={toInputDate(form.desired_start_date)}
+                onChange={(e) => setField("desired_start_date", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Message</label>
+            <textarea
+              className="form-input"
+              rows={4}
+              value={form.note}
+              onChange={(e) => setField("note", e.target.value)}
+              placeholder="Optional note for the owner (e.g. preferred schedule, questions)"
+            />
+          </div>
+
+          <div className="form-actions">
+            <div />
+            <div className="action-group">
+              <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="btn-spinner"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    Send Intent
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="modal-footnote">This will notify the gym owner. Payment is handled directly at the gym.</div>
+        </form>
+      </div>
+    </div>
+  );
+}

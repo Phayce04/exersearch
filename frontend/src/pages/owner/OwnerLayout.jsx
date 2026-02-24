@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import axios from "axios";
 import OwnerLoading from "./OwnerLoading";
-import HeaderOwner from "./Header-owner"; // <-- adjust path/name if needed
+import HeaderOwner from "./Header-owner"; 
 
 export default function OwnerLayout() {
   const [ready, setReady] = useState(false);

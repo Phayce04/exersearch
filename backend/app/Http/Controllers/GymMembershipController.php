@@ -220,4 +220,34 @@ class GymMembershipController extends Controller
             'membership' => $membership->fresh(),
         ]);
     }
+    public function myForGym(Request $request, $gymId)
+{
+    $user = Auth::user();
+    if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
+
+    $m = GymMembership::where('gym_id', $gymId)
+        ->where('user_id', $user->user_id)
+        ->orderByDesc('created_at')
+        ->first();
+
+    return response()->json(['membership' => $m], 200);
+}
+
+public function expireCheck($gymId)
+{
+    $count = GymMembership::where('gym_id', $gymId)
+        ->where('status', 'active')
+        ->whereNotNull('end_date')
+        ->whereDate('end_date', '<', now()->toDateString())
+        ->update([
+            'status' => 'expired',
+            'updated_at' => now(),
+        ]);
+
+    return response()->json([
+        'message' => 'Expire check completed',
+        'expired_count' => $count,
+    ]);
+}
+
 }

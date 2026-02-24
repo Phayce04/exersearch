@@ -202,7 +202,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/gyms/{gym}/amenities', [GymAmenityController::class, 'store'])->whereNumber('gym');
             Route::match(['put', 'patch'], '/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'update'])->whereNumber('gym')->whereNumber('amenity');
             Route::delete('/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'destroy'])->whereNumber('gym')->whereNumber('amenity');
-
+            Route::get('/gyms/{gymId}/membership/me', [GymMembershipController::class, 'myForGym'])->whereNumber('gymId');
             Route::post('/gyms/{gymId}/membership/intent', [GymMembershipController::class, 'intent'])->whereNumber('gymId');
             Route::get('/me/memberships', [GymMembershipController::class, 'myMemberships']);
 
@@ -215,7 +215,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/me/ratings', [GymRatingController::class, 'myRatings']);
             Route::get('/gyms/{gymId}/ratings/can-rate', [GymRatingController::class, 'canRate'])->whereNumber('gymId');
             Route::post('/gyms/{gymId}/ratings', [GymRatingController::class, 'upsertMyRating'])->whereNumber('gymId');
-
+            Route::post('/owner/gyms/{gymId}/memberships/expire-check', [GymMembershipController::class, 'expireCheck']);
             Route::get('/owner/gyms/{gymId}/memberships', [GymMembershipController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/memberships/{membershipId}/activate', [GymMembershipController::class, 'ownerActivate'])->whereNumber('membershipId');
             Route::patch('/owner/memberships/{membershipId}', [GymMembershipController::class, 'ownerUpdateStatus'])->whereNumber('membershipId');

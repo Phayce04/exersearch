@@ -15,6 +15,7 @@ import FindGyms from "./pages/user/FindGyms";
 import GymResults from "./pages/user/GymResults";
 import GymResultsMatching from "./pages/user/GymResultMatching";
 import GymDetails from "./pages/user/GymDetails";
+import Memberships from "./pages/user/Memberships";
 import SavedGyms from "./pages/user/SavedGyms";
 import WorkoutWeek from "./pages/user/WorkoutWeek";
 import WorkoutDayDetails from "./pages/user/WorkoutDayDetails";
@@ -80,6 +81,7 @@ function App() {
         <Route path="profile" element={<Profile />} />
         <Route path="find-gyms" element={<FindGyms />} />
         <Route path="gym/:id" element={<GymDetails />} />
+        <Route path="memberships" element={<Memberships />} />
         <Route path="gym-results" element={<GymResultsMatching />} />
         <Route path="saved-gyms" element={<SavedGyms />} />
         <Route path="workout" element={<WorkoutWeek />} />

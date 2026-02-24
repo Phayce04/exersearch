@@ -112,7 +112,12 @@
   transform: translateY(-1px);
   box-shadow: 0 10px 26px rgba(210,63,11,0.28);
 }
-
+.om-right-tools{
+  display: flex;
+  align-items: center;
+  gap: 14px;        /* spacing between buttons + select */
+  flex-wrap: wrap;  /* prevents “cramped” on smaller widths */
+}
 .om-right-tools select {
   padding: 0.85rem 1rem;
   border-radius: 12px;

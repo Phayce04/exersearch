@@ -161,3 +161,9 @@ export function normalizeCombinedMembersResponse(resData) {
 
   return { rows: [], meta: resData.meta || null };
 }
+
+export async function ownerExpireCheckGymMemberships(gymId) {
+  if (!gymId) throw new Error("gymId is required");
+  const res = await api.post(`/owner/gyms/${gymId}/memberships/expire-check`);
+  return res.data;
+}

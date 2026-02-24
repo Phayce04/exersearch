@@ -1035,4 +1035,51 @@
   .form-actions {
     padding: 1.5rem;
   }
+}/* ==========================================
+   MODAL SHIELD (prevents global CSS bleed)
+   Put this at the very bottom of the file
+========================================== */
+.modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.modal-content {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 650px !important;
+  max-height: calc(100dvh - 4rem) !important; /* better than 100vh on mobile */
+}
+
+.modal-form {
+  display: block !important;
+  width: 100% !important;
+
+  /* block CSS multi-columns */
+  columns: auto !important;
+  column-count: 1 !important;
+  column-width: auto !important;
+
+  /* block grid overrides */
+  grid-template-columns: none !important;
+}
+
+/* make sure children don't float into 2 columns */
+.modal-form > *,
+.form-group,
+.form-section {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* If a global rule is forcing ALL buttons/inputs weirdly */
+.modal-content button,
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
+  font-family: 'Montserrat', sans-serif !important;
 }
