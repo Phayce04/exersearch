@@ -1,36 +1,71 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import HeaderUser from "./Header-user";
 import Footer from "./Footer";
-import Home from "./Home"; // Homepage WITHOUT any header
 import UserLoading from "./UserLoading";
+import { api } from "../../utils/apiClient";
 
-// =======================
-// DUMMY USER FOR TESTING
-// =======================
-const DUMMY_USER = {
-  id: 1,
-  name: "John",
-  email: "test@example.com",
-  role: "user",
+const ROLE_LEVEL = {
+  user: 1,
+  owner: 2,
+  admin: 3,
+  superadmin: 4,
 };
+
+function hasAtLeastRole(role, required) {
+  return (ROLE_LEVEL[role] || 0) >= (ROLE_LEVEL[required] || 0);
+}
 
 export default function UserLayout() {
   const [ready, setReady] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Quick initialization
-    setReady(true);
-  }, []);
+    let alive = true;
+
+    const run = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const minDelay = new Promise((r) => setTimeout(r, 800));
+        const meReq = api.get("/me");
+
+        const [meRes] = await Promise.all([meReq, minDelay]);
+        const fetchedUser = meRes.data?.user ?? meRes.data;
+
+        if (!hasAtLeastRole(fetchedUser?.role, "user")) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        if (!alive) return;
+        setReady(true);
+      } catch (err) {
+        if (err?.response?.status === 503) {
+          navigate("/maintenance", { replace: true });
+          return;
+        }
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+      }
+    };
+
+    run();
+    return () => {
+      alive = false;
+    };
+  }, [navigate]);
 
   if (!ready) return <UserLoading />;
 
   return (
     <>
-      {/* NO HEADER HERE - Home page handles its own hero/top section */}
-      
-      {/* Main Content - Homepage */}
-      <Home user={DUMMY_USER} />
-
-      {/* Footer */}
+      <HeaderUser />
+      <Outlet />
       <Footer />
     </>
   );

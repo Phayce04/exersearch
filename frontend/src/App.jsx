@@ -1,66 +1,62 @@
-import React, { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Index from "./pages/index";
 import Login from "./pages/auth/login";
 import VerifyEmail from "./pages/auth/VerifyEmail";
-import UserHome from "./pages/user/Home"; // 
-import Profile from "./pages/user/Profile";
-import AdminDashboard from "./pages/admin/Dashboard";
 
-import AdminLayout from "./pages/admin/AdminLayout";
-import UserLayout from "./pages/user/UserLayout";
-import OwnerLayout from "./pages/owner/OwnerLayout";
-import FindGyms from "./pages/user/FindGyms";
-import { getUserRole } from "./utils/auth";
-import AdminEquipments from "./pages/admin/AdminEquipments";
-import AdminAmenities from "./pages/admin/AdminAmenities";
-import AdminGyms from "./pages/admin/AdminGyms";
-import "leaflet/dist/leaflet.css";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
-import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
-import AdminGymApplications from "./pages/admin/AdminGymApplications";
-import AdminProfile from "./pages/admin/Profile";
-import GymResults from "./pages/user/GymResults";
-import GymDetailAdmin from "./pages/admin/GymDetails";
-import AdminAdmins from "./pages/admin/AdminAdmins";
-import Onboarding from "./pages/user/Onboarding";
-import GymResultsMatching from "./pages/user/GymResultMatching";
 import Maintenance from "./pages/Maintenance";
-import AdminSettings from "./pages/admin/AdminSettings";
+
+import UserLayout from "./pages/user/UserLayout";
+import UserHome from "./pages/user/Home";
+import Profile from "./pages/user/Profile";
+import Onboarding from "./pages/user/Onboarding";
+import FindGyms from "./pages/user/FindGyms";
+import GymResults from "./pages/user/GymResults";
+import GymResultsMatching from "./pages/user/GymResultMatching";
 import GymDetails from "./pages/user/GymDetails";
 import SavedGyms from "./pages/user/SavedGyms";
 import WorkoutWeek from "./pages/user/WorkoutWeek";
 import WorkoutDayDetails from "./pages/user/WorkoutDayDetails";
 import BecomeOwner from "./pages/user/BecomeOwner";
 import OwnerApplication from "./pages/user/OwnerApplication";
+
+import OwnerLayout from "./pages/owner/OwnerLayout";
+import OwnerHome from "./pages/owner/OwnerHome";
+import OwnerMembers from "./pages/owner/OwnerMembers";
 import ViewGym from "./pages/owner/ViewGym";
 import EditGym from "./pages/owner/EditGym";
 import ViewStats from "./pages/owner/ViewStats";
+import OwnerGymApplication from "./pages/owner/OwnerGymApplication";
+
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminEquipments from "./pages/admin/AdminEquipments";
+import AdminAmenities from "./pages/admin/AdminAmenities";
+import AdminGyms from "./pages/admin/AdminGyms";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminAdmins from "./pages/admin/AdminAdmins";
+import AdminPasigGymsMap from "./pages/admin/PasigGymsMap";
+import AdminOwnerApplications from "./pages/admin/AdminOwnerApplications";
+import AdminGymApplications from "./pages/admin/AdminGymApplications";
+import AdminProfile from "./pages/admin/Profile";
+import GymDetailAdmin from "./pages/admin/GymDetails";
+import AdminSettings from "./pages/admin/AdminSettings";
 import AdminExercises from "./pages/admin/AdminExercises";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates";
 import AdminTemplateDays from "./pages/admin/AdminTemplateDays";
-import OwnerHome from "./pages/owner/OwnerHome";
 import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
 import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
-import OwnerMembers from "./pages/owner/OwnerMembers";
-import OwnerGymApplication from "./pages/owner/OwnerGymApplication";
 
-function ProtectedRoutes({ children }) {
-  const [role, setRole] = useState(getUserRole());
-  const navigate = useNavigate();
+import { getUserRole } from "./utils/auth";
+import "leaflet/dist/leaflet.css";
 
-  useEffect(() => {
-    const r = getUserRole();
-    setRole(r);
-
-    if (r === "user") navigate("/home");
-    else if (r === "owner") navigate("/owner/home");
-    else if (r === "superadmin") navigate("/admin/dashboard");
-  }, [navigate]);
-
-  return children;
+function RoleLanding() {
+  const r = getUserRole();
+  if (r === "user") return <Navigate to="/home" replace />;
+  if (r === "owner") return <Navigate to="/owner/home" replace />;
+  if (r === "superadmin") return <Navigate to="/admin/dashboard" replace />;
+  return <Index />;
 }
 
 function App() {
@@ -68,20 +64,17 @@ function App() {
     <Routes>
       <Route path="/maintenance" element={<Maintenance />} />
 
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<RoleLanding />} />
       <Route path="/login" element={<Login />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
 
       <Route path="/onboarding" element={<Onboarding />} />
-      <Route path="/test-find-gyms" element={<FindGyms />} />
-      <Route path="/test-gym-results" element={<GymResults />} />
+
       <Route path="/become-an-owner" element={<BecomeOwner />} />
       <Route path="/owner-application" element={<OwnerApplication />} />
-      <Route path="/profile" element={<Profile />} />
 
       <Route path="/home/*" element={<UserLayout />}>
-      <Route index element={<UserHome />} /> 
-
+        <Route index element={<UserHome />} />
         <Route path="becomeowner" element={<BecomeOwner />} />
         <Route path="applyowner" element={<OwnerApplication />} />
         <Route path="profile" element={<Profile />} />
@@ -91,6 +84,7 @@ function App() {
         <Route path="saved-gyms" element={<SavedGyms />} />
         <Route path="workout" element={<WorkoutWeek />} />
         <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
+        <Route path="test-gym-results" element={<GymResults />} />
       </Route>
 
       <Route path="/owner/*" element={<OwnerLayout />}>
@@ -99,11 +93,10 @@ function App() {
         <Route path="view-gym/:id" element={<ViewGym />} />
         <Route path="edit-gym/:id" element={<EditGym />} />
         <Route path="view-stats/:id" element={<ViewStats />} />
-                <Route path="gym-application" element={<OwnerGymApplication />} />
-
+        <Route path="gym-application" element={<OwnerGymApplication />} />
       </Route>
 
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/admin/*" element={<AdminLayout />}>
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="equipments" element={<AdminEquipments />} />
         <Route path="amenities" element={<AdminAmenities />} />

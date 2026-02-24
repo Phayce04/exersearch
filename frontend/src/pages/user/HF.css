@@ -477,3 +477,30 @@
 .mobile-menu .logout-link:hover {
   background: #f5f5f5;
 }
+.uhv-chip--find {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+.uhv-chip--find:hover {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.uhv-header__search-wrap {
+  flex: 1;
+  max-width: 440px;
+  margin-left: 10px;
+}
+
+.uhv-header__actions {
+  margin-left: auto;
+}

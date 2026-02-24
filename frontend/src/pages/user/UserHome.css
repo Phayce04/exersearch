@@ -565,4 +565,7 @@
   .uhv-hero__stats { width: 100%; }
   .uhv-support-grid { grid-template-columns: 1fr; }
   .uhv-cta-banner__inner { flex-direction: column; align-items: flex-start; }
+}.uhv-hero{
+  margin-top: -62px;
+  padding-top: calc(2.5rem + 62px);
 }

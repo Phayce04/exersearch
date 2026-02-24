@@ -4,6 +4,19 @@ import "./HF.css";
 import fallbackLogo from "../../assets/exersearchlogo.png";
 import { useAuth } from "../../authcon";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  Search,
+  X,
+  Flame,
+  Utensils,
+  Bell,
+  ChevronDown,
+  UserCircle,
+  Heart,
+  Settings,
+  LogOut,
+  Dumbbell,
+} from "lucide-react";
 
 const API_BASE = "https://exersearch.test";
 const FALLBACK_AVATAR = "https://i.pravatar.cc/60?img=12";
@@ -43,7 +56,7 @@ function allowedUiModesForRole(role) {
 }
 
 function routeForUiMode(mode) {
-  if (mode === "owner") return "/owner/dashboard";
+  if (mode === "owner") return "/owner/home";
   if (mode === "superadmin") return "/admin/dashboard";
   return "/home";
 }
@@ -56,8 +69,14 @@ function labelForUiMode(mode) {
 
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileDropdown, setProfileDropdown] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const notifRef = useRef(null);
+  const profileRef = useRef(null);
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -66,9 +85,25 @@ export default function HeaderUser() {
   const [meLoading, setMeLoading] = useState(false);
   const [userLogoUrl, setUserLogoUrl] = useState("");
 
-  const containerRef = useRef(null);
   const token = localStorage.getItem(TOKEN_KEY);
   const effectiveUser = user || me;
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: "n1",
+      unread: true,
+      icon: Flame,
+      title: "Workout Plan",
+      message: "Your plan is ready. Start today!",
+    },
+    {
+      id: "n2",
+      unread: false,
+      icon: Heart,
+      title: "Saved Gyms",
+      message: "You saved a gym recently.",
+    },
+  ]);
 
   useEffect(() => {
     let mounted = true;
@@ -143,12 +178,15 @@ export default function HeaderUser() {
   const displayEmail = effectiveUser?.email || "";
 
   const isOwnerPlus = hasAtLeastRole(effectiveUser?.role, "owner");
-  const switchModes = isOwnerPlus ? allowedUiModesForRole(effectiveUser?.role) : [];
+  const switchModes = isOwnerPlus
+    ? allowedUiModesForRole(effectiveUser?.role)
+    : [];
 
   const handleSwitchUi = useCallback(
     (mode) => {
       localStorage.setItem(UI_MODE_KEY, mode);
-      setProfileDropdown(false);
+      setProfileOpen(false);
+      setNotifOpen(false);
       setMobileMenuOpen(false);
       navigate(routeForUiMode(mode));
     },
@@ -158,7 +196,8 @@ export default function HeaderUser() {
   const handleLogout = useCallback(
     (e) => {
       if (e?.preventDefault) e.preventDefault();
-      setProfileDropdown(false);
+      setProfileOpen(false);
+      setNotifOpen(false);
       setMobileMenuOpen(false);
       logout();
       navigate("/login", { replace: true });
@@ -167,18 +206,21 @@ export default function HeaderUser() {
   );
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (
-        profileDropdown &&
-        containerRef.current &&
-        !containerRef.current.contains(e.target)
-      ) {
-        setProfileDropdown(false);
+    function onDocClick(e) {
+      if (notifOpen && notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
       }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [profileDropdown]);
+      if (
+        profileOpen &&
+        profileRef.current &&
+        !profileRef.current.contains(e.target)
+      ) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [notifOpen, profileOpen]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.pageYOffset > 50);
@@ -196,7 +238,8 @@ export default function HeaderUser() {
             style={{ cursor: "pointer" }}
             onClick={() => {
               setMobileMenuOpen(false);
-              setProfileDropdown(false);
+              setNotifOpen(false);
+              setProfileOpen(false);
               navigate("/home");
             }}
           >
@@ -216,7 +259,8 @@ export default function HeaderUser() {
           className="logo"
           onClick={() => {
             setMobileMenuOpen(false);
-            setProfileDropdown(false);
+            setNotifOpen(false);
+            setProfileOpen(false);
             navigate("/home");
           }}
           style={{ cursor: "pointer" }}
@@ -230,104 +274,323 @@ export default function HeaderUser() {
           />
         </div>
 
-        <nav className="nav-links">
-          <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>
-            SAVED GYMS
-          </Link>
-
-          <Link to="/home/find-gyms" onClick={() => setMobileMenuOpen(false)}>
-            FIND GYMS
-          </Link>
-
-          <Link to="/home/workout" onClick={() => setMobileMenuOpen(false)}>
-            WORKOUT PLAN
-          </Link>
-
-          <div className="header-profile" ref={containerRef}>
+        <div className="uhv-header__search-wrap">
+          <Search size={14} className="uhv-header__search-icon" />
+          <input
+            className="uhv-header__search-input"
+            type="text"
+            placeholder="Search gyms, areas, tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
             <button
-              className="profile-btn"
+              className="uhv-header__search-clear"
               type="button"
-              onClick={() => setProfileDropdown((p) => !p)}
+              onClick={() => setSearchQuery("")}
             >
-              <img
-                className="profile-avatar"
-                src={avatarSrc}
-                alt="profile"
-                onError={(e) => (e.currentTarget.src = FALLBACK_AVATAR)}
-              />
-              <span className={`dropdown-arrow ${profileDropdown ? "open" : ""}`}>
-                ▾
-              </span>
+              <X size={12} />
+            </button>
+          )}
+        </div>
+
+        <div className="uhv-header__actions">
+          <Link
+            to="/home/workout"
+            className="uhv-chip uhv-chip--fire"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Flame size={12} /> Workout Plan
+          </Link>
+
+          <Link
+            to="/home/find-gyms"
+            className="uhv-chip uhv-chip--find"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Dumbbell size={12} /> Find Gyms
+          </Link>
+
+          <Link
+            to="/home/meal-plan"
+            className="uhv-chip uhv-chip--meal"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Utensils size={12} /> Meal Plan
+          </Link>
+
+          <div className="uhv-notif-wrap" ref={notifRef}>
+            <button
+              type="button"
+              className={
+                "uhv-notif" +
+                (notifications.some((n) => n.unread) ? " has-unread" : "")
+              }
+              onClick={() => {
+                setNotifOpen((o) => !o);
+                setProfileOpen(false);
+              }}
+            >
+              <Bell size={16} />
+              {notifications.some((n) => n.unread) && (
+                <span className="uhv-notif__dot" />
+              )}
             </button>
 
-            <div className={`profile-dropdown ${profileDropdown ? "open" : ""}`}>
-              <div className="profile-header">
-                <img
-                  className="dropdown-avatar"
-                  src={avatarSrc}
-                  alt="profile"
-                  onError={(e) => (e.currentTarget.src = FALLBACK_AVATAR)}
-                />
-                <div>
-                  <div className="profile-name">{displayName}</div>
-                  <div className="profile-email">{displayEmail || " "}</div>
+            {notifOpen && (
+              <div className="uhv-notif-pop">
+                <div className="uhv-notif-pop__hdr">
+                  <span>Notifications</span>
+                  <div className="uhv-notif-actions">
+                    <button
+                      type="button"
+                      className="uhv-notif-clear"
+                      onClick={() => setNotifications([])}
+                    >
+                      Clear all
+                    </button>
+                    <button
+                      type="button"
+                      className="uhv-notif-close"
+                      onClick={() => setNotifOpen(false)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="uhv-notif-pop__list">
+                  {notifications.length === 0 && (
+                    <div className="uhv-notif-empty">
+                      <svg
+                        className="lucide-empty-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M20 13V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8m16 0H4m16 0l-2 7H6l-2-7"
+                        />
+                      </svg>
+                      All caught up!
+                    </div>
+                  )}
+
+                  {notifications.map((n) => {
+                    const Icon = n.icon;
+                    return (
+                      <button
+                        key={n.id}
+                        type="button"
+                        className={"uhv-notif-item" + (n.unread ? " unread" : "")}
+                        onClick={() =>
+                          setNotifications((prev) =>
+                            prev.map((x) =>
+                              x.id === n.id ? { ...x, unread: false } : x
+                            )
+                          )
+                        }
+                      >
+                        <div className="uhv-notif-icon">
+                          <Icon size={14} />
+                        </div>
+                        <div className="uhv-notif-body">
+                          <p>{n.title}</p>
+                          <span>{n.message}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-
-              <div className="dropdown-divider" />
-
-              <Link to="/home/profile" onClick={() => setProfileDropdown(false)}>
-                My Profile
-              </Link>
-
-              <Link
-                to="/home/saved-gyms"
-                onClick={() => setProfileDropdown(false)}
-              >
-                Saved Gyms
-              </Link>
-
-              <Link to="/home/workout" onClick={() => setProfileDropdown(false)}>
-                Workout Plan
-              </Link>
-
-              <Link
-                to="/home/settings"
-                onClick={() => setProfileDropdown(false)}
-              >
-                Settings
-              </Link>
-
-              {isOwnerPlus && switchModes.length > 0 && (
-                <>
-                  <div className="dropdown-divider" />
-                  {switchModes.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      className="dropdown-btn"
-                      onClick={() => handleSwitchUi(m)}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        background: "transparent",
-                        border: "none",
-                        padding: "10px 12px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Switch to {labelForUiMode(m)}
-                    </button>
-                  ))}
-                </>
-              )}
-
-              <Link to="/login" onClick={handleLogout}>
-                Logout
-              </Link>
-            </div>
+            )}
           </div>
-        </nav>
+
+          <div className="uhv-profile-wrap" ref={profileRef}>
+            <button
+              type="button"
+              className="uhv-profile-btn"
+              onClick={() => {
+                setProfileOpen((o) => !o);
+                setNotifOpen(false);
+              }}
+            >
+              <div className="uhv-profile-avatar">
+                <img
+                  src={avatarSrc}
+                  alt="Profile"
+                  className="uhv-profile-avatar__img"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    if (e.currentTarget.nextSibling) {
+                      e.currentTarget.nextSibling.style.display = "flex";
+                    }
+                  }}
+                />
+                <span className="uhv-profile-avatar__fallback">
+                  {String(displayName || "U").trim().charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <ChevronDown
+                size={13}
+                className={"uhv-profile-chevron" + (profileOpen ? " open" : "")}
+              />
+            </button>
+
+            {profileOpen && (
+              <div className="uhv-profile-pop">
+                <div className="uhv-profile-pop__top">
+                  <div className="uhv-profile-pop__bigavatar">
+                    <img
+                      src={avatarSrc}
+                      alt="Profile"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        if (e.currentTarget.nextSibling) {
+                          e.currentTarget.nextSibling.style.display = "flex";
+                        }
+                      }}
+                    />
+                    <span>
+                      {String(displayName || "U").trim().charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="uhv-profile-pop__name">{displayName}</p>
+                    <p className="uhv-profile-pop__email">{displayEmail || " "}</p>
+                  </div>
+                </div>
+
+                <div className="uhv-profile-pop__menu">
+                  <Link
+                    to="/home/profile"
+                    className="uhv-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#eff6ff", color: "#3b82f6" }}
+                    >
+                      <UserCircle size={15} />
+                    </div>
+                    My Profile
+                  </Link>
+
+                  <Link
+                    to="/home/workout"
+                    className="uhv-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#fff7ed", color: "#ea580c" }}
+                    >
+                      <Flame size={15} />
+                    </div>
+                    Workout Plan
+                  </Link>
+
+                  <Link
+                    to="/home/find-gyms"
+                    className="uhv-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#eff6ff", color: "#2563eb" }}
+                    >
+                      <Dumbbell size={15} />
+                    </div>
+                    Find Gyms
+                  </Link>
+
+                  <Link
+                    to="/home/meal-plan"
+                    className="uhv-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#f0fdf4", color: "#16a34a" }}
+                    >
+                      <Utensils size={15} />
+                    </div>
+                    Meal Plan
+                  </Link>
+
+                  <Link
+                    to="/home/saved-gyms"
+                    className="uhv-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#fef2f2", color: "#ef4444" }}
+                    >
+                      <Heart size={15} />
+                    </div>
+                    Saved Gyms
+                  </Link>
+
+                  <Link
+                    to="/home/settings"
+                    className="uhv-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#f5f3ff", color: "#8b5cf6" }}
+                    >
+                      <Settings size={15} />
+                    </div>
+                    Settings
+                  </Link>
+
+                  {isOwnerPlus && switchModes.length > 0 && (
+                    <>
+                      <div className="uhv-profile-pop__divider" />
+                      {switchModes.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          className="uhv-profile-menu-item"
+                          onClick={() => handleSwitchUi(m)}
+                        >
+                          <div
+                            className="uhv-pmi-icon"
+                            style={{ background: "#f3f4f6", color: "#111827" }}
+                          >
+                            <Settings size={15} />
+                          </div>
+                          Switch to {labelForUiMode(m)}
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  <div className="uhv-profile-pop__divider" />
+                  <button
+                    type="button"
+                    className="uhv-profile-menu-item uhv-profile-menu-item--logout"
+                    onClick={handleLogout}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#fef2f2", color: "#ef4444" }}
+                    >
+                      <LogOut size={15} />
+                    </div>
+                    Log Out
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="hamburger" onClick={() => setMobileMenuOpen((p) => !p)}>
           <span />
@@ -353,12 +616,16 @@ export default function HeaderUser() {
           WORKOUT PLAN
         </Link>
 
+        <Link to="/home/meal-plan" onClick={() => setMobileMenuOpen(false)}>
+          MEAL PLAN
+        </Link>
+
         <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>
-          My Profile
+          MY PROFILE
         </Link>
 
         <Link to="/home/settings" onClick={() => setMobileMenuOpen(false)}>
-          Settings
+          SETTINGS
         </Link>
 
         {isOwnerPlus &&
@@ -381,7 +648,7 @@ export default function HeaderUser() {
           ))}
 
         <Link to="/login" onClick={handleLogout}>
-          Logout
+          LOGOUT
         </Link>
       </div>
     </>
