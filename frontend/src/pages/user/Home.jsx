@@ -58,6 +58,7 @@ import {
   UserCircle,
   Settings,
   LogOut,
+  
 } from "lucide-react";
 
 const API_BASE = "https://exersearch.test";
@@ -878,7 +879,19 @@ export default function Home() {
                     </div>
                     Meal Plan
                   </Link>
-
+                      <Link
+                    to="/home/memberships"
+                    className="uhv-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div
+                      className="uhv-pmi-icon"
+                      style={{ background: "#fff7ed", color: "#f59e0b" }}
+                    >
+                      <Trophy size={15} />
+                    </div>
+                    Memberships
+                  </Link>  
                   <Link to="/home/saved-gyms" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
                     <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
                       <Heart size={15} />

@@ -46,6 +46,9 @@ class GymResource extends JsonResource
             'is_24_hours' => (bool) $this->is_24_hours,
             'is_airconditioned' => (bool) $this->is_airconditioned,
 
+            'free_first_visit_enabled' => (bool) $this->free_first_visit_enabled,
+            'free_first_visit_enabled_at' => $this->free_first_visit_enabled_at,
+
             'status' => $this->status,
             'approved_at' => $this->approved_at,
             'approved_by' => $this->approved_by,
@@ -53,8 +56,13 @@ class GymResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 
-            'equipments' => EquipmentResource::collection($this->whenLoaded('equipments')),
-            'amenities' => AmenityResource::collection($this->whenLoaded('amenities')),
+            'equipments' => EquipmentResource::collection(
+                $this->whenLoaded('equipments')
+            ),
+
+            'amenities' => AmenityResource::collection(
+                $this->whenLoaded('amenities')
+            ),
         ];
     }
 }

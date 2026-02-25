@@ -16,6 +16,7 @@ import {
   Settings,
   LogOut,
   Dumbbell,
+  Trophy, // ✅ added for Memberships
 } from "lucide-react";
 
 const API_BASE = "https://exersearch.test";
@@ -178,9 +179,7 @@ export default function HeaderUser() {
   const displayEmail = effectiveUser?.email || "";
 
   const isOwnerPlus = hasAtLeastRole(effectiveUser?.role, "owner");
-  const switchModes = isOwnerPlus
-    ? allowedUiModesForRole(effectiveUser?.role)
-    : [];
+  const switchModes = isOwnerPlus ? allowedUiModesForRole(effectiveUser?.role) : [];
 
   const handleSwitchUi = useCallback(
     (mode) => {
@@ -210,11 +209,7 @@ export default function HeaderUser() {
       if (notifOpen && notifRef.current && !notifRef.current.contains(e.target)) {
         setNotifOpen(false);
       }
-      if (
-        profileOpen &&
-        profileRef.current &&
-        !profileRef.current.contains(e.target)
-      ) {
+      if (profileOpen && profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
       }
     }
@@ -322,19 +317,14 @@ export default function HeaderUser() {
           <div className="uhv-notif-wrap" ref={notifRef}>
             <button
               type="button"
-              className={
-                "uhv-notif" +
-                (notifications.some((n) => n.unread) ? " has-unread" : "")
-              }
+              className={"uhv-notif" + (notifications.some((n) => n.unread) ? " has-unread" : "")}
               onClick={() => {
                 setNotifOpen((o) => !o);
                 setProfileOpen(false);
               }}
             >
               <Bell size={16} />
-              {notifications.some((n) => n.unread) && (
-                <span className="uhv-notif__dot" />
-              )}
+              {notifications.some((n) => n.unread) && <span className="uhv-notif__dot" />}
             </button>
 
             {notifOpen && (
@@ -342,18 +332,10 @@ export default function HeaderUser() {
                 <div className="uhv-notif-pop__hdr">
                   <span>Notifications</span>
                   <div className="uhv-notif-actions">
-                    <button
-                      type="button"
-                      className="uhv-notif-clear"
-                      onClick={() => setNotifications([])}
-                    >
+                    <button type="button" className="uhv-notif-clear" onClick={() => setNotifications([])}>
                       Clear all
                     </button>
-                    <button
-                      type="button"
-                      className="uhv-notif-close"
-                      onClick={() => setNotifOpen(false)}
-                    >
+                    <button type="button" className="uhv-notif-close" onClick={() => setNotifOpen(false)}>
                       <X size={14} />
                     </button>
                   </div>
@@ -389,9 +371,7 @@ export default function HeaderUser() {
                         className={"uhv-notif-item" + (n.unread ? " unread" : "")}
                         onClick={() =>
                           setNotifications((prev) =>
-                            prev.map((x) =>
-                              x.id === n.id ? { ...x, unread: false } : x
-                            )
+                            prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x))
                           )
                         }
                       >
@@ -426,19 +406,14 @@ export default function HeaderUser() {
                   className="uhv-profile-avatar__img"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
-                    if (e.currentTarget.nextSibling) {
-                      e.currentTarget.nextSibling.style.display = "flex";
-                    }
+                    if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "flex";
                   }}
                 />
                 <span className="uhv-profile-avatar__fallback">
                   {String(displayName || "U").trim().charAt(0).toUpperCase()}
                 </span>
               </div>
-              <ChevronDown
-                size={13}
-                className={"uhv-profile-chevron" + (profileOpen ? " open" : "")}
-              />
+              <ChevronDown size={13} className={"uhv-profile-chevron" + (profileOpen ? " open" : "")} />
             </button>
 
             {profileOpen && (
@@ -450,14 +425,10 @@ export default function HeaderUser() {
                       alt="Profile"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
-                        if (e.currentTarget.nextSibling) {
-                          e.currentTarget.nextSibling.style.display = "flex";
-                        }
+                        if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "flex";
                       }}
                     />
-                    <span>
-                      {String(displayName || "U").trim().charAt(0).toUpperCase()}
-                    </span>
+                    <span>{String(displayName || "U").trim().charAt(0).toUpperCase()}</span>
                   </div>
                   <div>
                     <p className="uhv-profile-pop__name">{displayName}</p>
@@ -466,85 +437,55 @@ export default function HeaderUser() {
                 </div>
 
                 <div className="uhv-profile-pop__menu">
-                  <Link
-                    to="/home/profile"
-                    className="uhv-profile-menu-item"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <div
-                      className="uhv-pmi-icon"
-                      style={{ background: "#eff6ff", color: "#3b82f6" }}
-                    >
+                  <Link to="/home/profile" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhv-pmi-icon" style={{ background: "#eff6ff", color: "#3b82f6" }}>
                       <UserCircle size={15} />
                     </div>
                     My Profile
                   </Link>
 
-                  <Link
-                    to="/home/workout"
-                    className="uhv-profile-menu-item"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <div
-                      className="uhv-pmi-icon"
-                      style={{ background: "#fff7ed", color: "#ea580c" }}
-                    >
+                  <Link to="/home/workout" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhv-pmi-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>
                       <Flame size={15} />
                     </div>
                     Workout Plan
                   </Link>
 
-                  <Link
-                    to="/home/find-gyms"
-                    className="uhv-profile-menu-item"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <div
-                      className="uhv-pmi-icon"
-                      style={{ background: "#eff6ff", color: "#2563eb" }}
-                    >
+                  <Link to="/home/find-gyms" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhv-pmi-icon" style={{ background: "#eff6ff", color: "#2563eb" }}>
                       <Dumbbell size={15} />
                     </div>
                     Find Gyms
                   </Link>
 
-                  <Link
-                    to="/home/meal-plan"
-                    className="uhv-profile-menu-item"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <div
-                      className="uhv-pmi-icon"
-                      style={{ background: "#f0fdf4", color: "#16a34a" }}
-                    >
+                  <Link to="/home/meal-plan" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhv-pmi-icon" style={{ background: "#f0fdf4", color: "#16a34a" }}>
                       <Utensils size={15} />
                     </div>
                     Meal Plan
                   </Link>
 
-                  <Link
-                    to="/home/saved-gyms"
-                    className="uhv-profile-menu-item"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <div
-                      className="uhv-pmi-icon"
-                      style={{ background: "#fef2f2", color: "#ef4444" }}
-                    >
+                  <Link to="/home/saved-gyms" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
                       <Heart size={15} />
                     </div>
                     Saved Gyms
                   </Link>
 
+                  {/* ✅ NEW: Memberships */}
                   <Link
-                    to="/home/settings"
+                    to="/home/memberships"
                     className="uhv-profile-menu-item"
                     onClick={() => setProfileOpen(false)}
                   >
-                    <div
-                      className="uhv-pmi-icon"
-                      style={{ background: "#f5f3ff", color: "#8b5cf6" }}
-                    >
+                    <div className="uhv-pmi-icon" style={{ background: "#fff7ed", color: "#f59e0b" }}>
+                      <Trophy size={15} />
+                    </div>
+                    Memberships
+                  </Link>
+
+                  <Link to="/home/settings" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhv-pmi-icon" style={{ background: "#f5f3ff", color: "#8b5cf6" }}>
                       <Settings size={15} />
                     </div>
                     Settings
@@ -560,10 +501,7 @@ export default function HeaderUser() {
                           className="uhv-profile-menu-item"
                           onClick={() => handleSwitchUi(m)}
                         >
-                          <div
-                            className="uhv-pmi-icon"
-                            style={{ background: "#f3f4f6", color: "#111827" }}
-                          >
+                          <div className="uhv-pmi-icon" style={{ background: "#f3f4f6", color: "#111827" }}>
                             <Settings size={15} />
                           </div>
                           Switch to {labelForUiMode(m)}
@@ -578,10 +516,7 @@ export default function HeaderUser() {
                     className="uhv-profile-menu-item uhv-profile-menu-item--logout"
                     onClick={handleLogout}
                   >
-                    <div
-                      className="uhv-pmi-icon"
-                      style={{ background: "#fef2f2", color: "#ef4444" }}
-                    >
+                    <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
                       <LogOut size={15} />
                     </div>
                     Log Out
@@ -618,6 +553,10 @@ export default function HeaderUser() {
 
         <Link to="/home/meal-plan" onClick={() => setMobileMenuOpen(false)}>
           MEAL PLAN
+        </Link>
+
+        <Link to="/home/memberships" onClick={() => setMobileMenuOpen(false)}>
+          MEMBERSHIPS
         </Link>
 
         <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>

@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Homestyles.css";
 import { api } from "../../utils/apiClient";
 import { absoluteUrl } from "../../utils/findGymsData";
 import RequestMembershipModal from "./RequestMembershipModal";
+import GiftRevealModal from "./GiftRevealModal";
+import { claimFreeVisit, getMyFreeVisits, findMyFreeVisitForGym } from "../../utils/gymFreeVisitApi";
 
 const GYM_SHOW_ENDPOINT = (id) => `/gyms/${id}`;
 
@@ -52,6 +54,10 @@ export default function GymDetails() {
   const preferredPlan = location?.state?.plan_type || null;
 
   const [showMembershipModal, setShowMembershipModal] = useState(false);
+
+  const [freeVisitsRes, setFreeVisitsRes] = useState(null);
+  const [freeVisitBusy, setFreeVisitBusy] = useState(false);
+  const [showGiftModal, setShowGiftModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,6 +214,60 @@ export default function GymDetails() {
     if (statsRef.current) observer.observe(statsRef.current);
     return () => observer.disconnect();
   }, [gym, hasAnimated]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMyFreeVisits() {
+      if (!gym?.gym_id) return;
+      if (!gym?.free_first_visit_enabled) return;
+
+      try {
+        const res = await getMyFreeVisits({ perPage: 50, page: 1 });
+        if (!cancelled) setFreeVisitsRes(res);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadMyFreeVisits();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gym?.gym_id, gym?.free_first_visit_enabled]);
+
+  const myFreeVisitRow = useMemo(() => {
+    return findMyFreeVisitForGym(freeVisitsRes, gym?.gym_id);
+  }, [freeVisitsRes, gym?.gym_id]);
+
+  const freeVisitStatus = String(myFreeVisitRow?.status || "");
+  const hasFreeVisit = !!myFreeVisitRow;
+  const freeVisitUsed = freeVisitStatus === "used";
+
+  async function onFreePassClick() {
+    if (!gym?.free_first_visit_enabled) return;
+
+    if (hasFreeVisit) {
+      setShowGiftModal(true);
+      return;
+    }
+
+    try {
+      setFreeVisitBusy(true);
+      await claimFreeVisit(gym.gym_id);
+
+      setShowGiftModal(true);
+
+      const res = await getMyFreeVisits({ perPage: 50, page: 1 });
+      setFreeVisitsRes(res);
+    } catch (e) {
+      console.error(e);
+      alert(e?.message || "Failed to claim free pass");
+    } finally {
+      setFreeVisitBusy(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -472,10 +532,13 @@ export default function GymDetails() {
                   <span className="action-icon">🎫</span>
                   Get Membership
                 </button>
-                <button className="action-btn secondary" type="button">
-                  <span className="action-icon">📅</span>
-                  Book a Trainer
-                </button>
+
+                {gym?.free_first_visit_enabled ? (
+                  <button className="action-btn secondary" type="button" onClick={onFreePassClick} disabled={freeVisitBusy} title="Free First Visit">
+                    <span className="action-icon">🎁</span>
+                    {freeVisitBusy ? "Claiming…" : freeVisitUsed ? "Pass Used" : hasFreeVisit ? "View 1st Visit Free Pass" : "Free  1st Visit Free Pass"}
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
@@ -483,10 +546,16 @@ export default function GymDetails() {
       </div>
 
       {showMembershipModal ? (
-        <RequestMembershipModal
-          gym={gym}
-          onClose={() => setShowMembershipModal(false)}
-          onSuccess={() => setShowMembershipModal(false)}
+        <RequestMembershipModal gym={gym} onClose={() => setShowMembershipModal(false)} onSuccess={() => setShowMembershipModal(false)} />
+      ) : null}
+
+      {showGiftModal ? (
+        <GiftRevealModal
+          open={showGiftModal}
+          onClose={() => setShowGiftModal(false)}
+          gymName={gym?.name}
+          status={freeVisitUsed ? "used" : "claimed"}
+          claimCode={myFreeVisitRow?.free_visit_id}
         />
       ) : null}
     </div>
