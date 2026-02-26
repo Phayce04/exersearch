@@ -32,6 +32,7 @@ import {
 import AddEquipment from "./AddEquip";
 import UpdateEquipment from "./UpdateEquip";
 import UpdateAmenities from "./UpdateAmenities";
+import ReviewsModal from "./OwnerReviewsModal";
 import "./Modals.css";
 
 import Swal from "sweetalert2";
@@ -48,6 +49,11 @@ import {
   ownerListGymMembersCombined,
   normalizeCombinedMembersResponse,
 } from "../../utils/gymMembershipApi";
+
+import {
+  getGymRatings,
+  normalizeGymRatingsResponse,
+} from "../../utils/gymRatingApi";
 
 async function fetchMeSafe() {
   const candidates = ["/me", "/auth/me", "/users/me"];
@@ -108,6 +114,12 @@ function fmtDate(value) {
   return d.toLocaleDateString();
 }
 
+function fmtStars(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  return n.toFixed(1);
+}
+
 export default function ViewGym() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -127,6 +139,8 @@ export default function ViewGym() {
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [showUpdateAmenities, setShowUpdateAmenities] = useState(false);
 
+  const [showReviews, setShowReviews] = useState(false);
+
   const safePhotos = useMemo(() => {
     const p = gym?.photos ?? [];
     return p.length
@@ -134,8 +148,12 @@ export default function ViewGym() {
       : ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80"];
   }, [gym]);
 
-  const enrichGymWithAnalytics = (normalized, analytics) => {
+  const enrichGymWithAnalytics = (normalized, analytics, ratingSummary) => {
     const a = analytics || {};
+    const rs = ratingSummary || {};
+    const verifiedAvg =
+      typeof rs.public_avg_stars === "number" ? rs.public_avg_stars : null;
+
     return {
       ...normalized,
       analytics: {
@@ -146,8 +164,16 @@ export default function ViewGym() {
         saves_change: a.saves_change ?? normalized?.analytics?.saves_change ?? 0,
         total_members: normalized?.analytics?.total_members ?? 0,
         new_members_this_month: normalized?.analytics?.new_members_this_month ?? 0,
-        avg_rating: normalized?.analytics?.avg_rating ?? 0,
-        total_reviews: normalized?.analytics?.total_reviews ?? 0,
+        avg_rating:
+          verifiedAvg ?? normalized?.analytics?.avg_rating ?? 0,
+        total_reviews:
+          typeof rs.total_count === "number"
+            ? rs.total_count
+            : normalized?.analytics?.total_reviews ?? 0,
+        verified_reviews:
+          typeof rs.verified_count === "number" ? rs.verified_count : 0,
+        unverified_reviews:
+          typeof rs.unverified_count === "number" ? rs.unverified_count : 0,
       },
     };
   };
@@ -230,13 +256,21 @@ export default function ViewGym() {
       stats = null;
     }
 
-    const merged = enrichGymWithAnalytics(normalized, stats);
+    let ratingSummary = null;
+    try {
+      const raw = await getGymRatings(id, { per_page: 1, page: 1 });
+      const norm = normalizeGymRatingsResponse(raw);
+      ratingSummary = norm?.summary || null;
+    } catch {
+      ratingSummary = null;
+    }
+
+    const merged = enrichGymWithAnalytics(normalized, stats, ratingSummary);
 
     setGym(merged);
     setVisibility(Boolean(merged.visibility));
     setCurrentPhoto(0);
 
-    // load recent members (3)
     refreshRecentMembers();
 
     return { allowed: true, normalized: merged };
@@ -281,7 +315,8 @@ export default function ViewGym() {
   }, [safePhotos.length]);
 
   const nextPhoto = () => setCurrentPhoto((p) => (p + 1) % safePhotos.length);
-  const prevPhoto = () => setCurrentPhoto((p) => (p - 1 + safePhotos.length) % safePhotos.length);
+  const prevPhoto = () =>
+    setCurrentPhoto((p) => (p - 1 + safePhotos.length) % safePhotos.length);
 
   const toggleVisibility = () => setVisibility((v) => !v);
 
@@ -480,8 +515,10 @@ export default function ViewGym() {
               </div>
               <div className="vg-analytics-content">
                 <span className="vg-analytics-label">Average Rating</span>
-                <h3 className="vg-analytics-value">{gym.analytics?.avg_rating || 0}/5.0</h3>
-                <span className="vg-change positive">{gym.analytics?.total_reviews || 0} reviews</span>
+                <h3 className="vg-analytics-value">{fmtStars(gym.analytics?.avg_rating)}/5.0</h3>
+                <span className="vg-change positive">
+                  {Number(gym.analytics?.total_reviews || 0)} reviews
+                </span>
               </div>
             </div>
           </div>
@@ -702,7 +739,11 @@ export default function ViewGym() {
                   <CheckCircle size={20} />
                   Amenities
                 </h2>
-                <button className="vg-edit-btn-small" onClick={() => setShowUpdateAmenities(true)} type="button">
+                <button
+                  className="vg-edit-btn-small"
+                  onClick={() => setShowUpdateAmenities(true)}
+                  type="button"
+                >
                   <Edit size={14} /> Edit
                 </button>
               </div>
@@ -727,9 +768,9 @@ export default function ViewGym() {
                   <Download size={18} />
                   <span>Export Data</span>
                 </button>
-                <button className="vg-quick-action" type="button">
-                  <Calendar size={18} />
-                  <span>Bookings</span>
+                <button className="vg-quick-action" type="button" onClick={() => setShowReviews(true)}>
+                  <Star size={18} />
+                  <span>View Ratings</span>
                 </button>
               </div>
             </div>
@@ -767,6 +808,13 @@ export default function ViewGym() {
           onSuccess={handleUpdateAmenitiesSuccess}
         />
       )}
+
+      {showReviews && (
+        <ReviewsModal
+          gymId={gym.gym_id}
+          onClose={() => setShowReviews(false)}
+        />
+      )}
     </div>
   );
-} 
+}

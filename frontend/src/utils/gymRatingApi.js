@@ -115,5 +115,10 @@ export function normalizeGymRatingsResponse(data) {
     },
   };
 }
-
+export function ownerGetGymRatings(gymId, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  return request(`/api/v1/owner/gyms/${gymId}/ratings${qs ? `?${qs}` : ""}`, {
+    method: "GET",
+  });
+}
 export const API_BASE_URL = API;

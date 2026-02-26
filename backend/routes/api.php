@@ -228,7 +228,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/me/ratings', [GymRatingController::class, 'myRatings']);
             Route::get('/gyms/{gymId}/ratings/can-rate', [GymRatingController::class, 'canRate'])->whereNumber('gymId');
             Route::post('/gyms/{gymId}/ratings', [GymRatingController::class, 'upsertMyRating'])->whereNumber('gymId');
-
+            Route::get('/owner/gyms/{gymId}/ratings', [GymRatingController::class, 'ownerGymRatings'])
+                ->whereNumber('gymId');
             Route::post('/owner/gyms/{gymId}/memberships/expire-check', [GymMembershipController::class, 'expireCheck']);
             Route::get('/owner/gyms/{gymId}/memberships', [GymMembershipController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/memberships/{membershipId}/activate', [GymMembershipController::class, 'ownerActivate'])->whereNumber('membershipId');

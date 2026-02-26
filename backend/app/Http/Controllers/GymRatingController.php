@@ -154,4 +154,90 @@ class GymRatingController extends Controller
             'verified_ref_id' => $check['ref_id'],
         ]);
     }
+    public function ownerGymRatings(Request $request, $gymId)
+{
+    $user = Auth::user();
+    if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
+
+    $gymId = (int) $gymId;
+
+    // IMPORTANT: ownership check (prevents viewing other gyms)
+    $gym = Gym::where('gym_id', $gymId)
+        ->where('owner_id', (int) $user->user_id) // adjust if your FK differs
+        ->first();
+
+    if (!$gym) {
+        return response()->json(['message' => 'Gym not found or not owned by you'], 404);
+    }
+
+    $perPage = (int) ($request->query('per_page', 20));
+    $perPage = max(1, min($perPage, 100));
+
+    $verified = $request->query('verified', null); // "1" | "0" | null
+    $stars    = $request->query('stars', null);    // 1..5 or null
+    $q        = trim((string) $request->query('q', ''));
+    $sort     = (string) $request->query('sort', 'newest'); // newest|oldest|highest|lowest
+
+    $query = GymRating::query()
+        ->where('gym_id', $gymId)
+        ->with([
+            'user' => function ($u) {
+                // return only what owner UI needs
+                $u->select('user_id', 'name', 'email', 'avatar');
+            }
+        ]);
+
+    if ($verified !== null && ($verified === "0" || $verified === "1")) {
+        $query->where('verified', $verified === "1");
+    }
+
+    if ($stars !== null && is_numeric($stars)) {
+        $s = (int) $stars;
+        if ($s >= 1 && $s <= 5) $query->where('stars', $s);
+    }
+
+    if ($q !== '') {
+        $query->where(function ($w) use ($q) {
+            $w->where('review', 'like', "%{$q}%")
+              ->orWhereHas('user', function ($u) use ($q) {
+                  $u->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
+              });
+        });
+    }
+
+    switch ($sort) {
+        case 'oldest':
+            $query->orderBy('created_at', 'asc');
+            break;
+        case 'highest':
+            $query->orderBy('stars', 'desc')->orderBy('created_at', 'desc');
+            break;
+        case 'lowest':
+            $query->orderBy('stars', 'asc')->orderBy('created_at', 'desc');
+            break;
+        case 'newest':
+        default:
+            $query->orderBy('created_at', 'desc');
+            break;
+    }
+
+    $rows = $query->paginate($perPage);
+
+    $verifiedAvg = GymRating::where('gym_id', $gymId)->where('verified', true)->avg('stars');
+    $verifiedCount = GymRating::where('gym_id', $gymId)->where('verified', true)->count();
+    $totalCount = GymRating::where('gym_id', $gymId)->count();
+    $unverifiedCount = $totalCount - $verifiedCount;
+
+    return response()->json([
+        'summary' => [
+            'public_avg_stars' => $verifiedAvg ? round((float) $verifiedAvg, 2) : null,
+            'verified_count' => (int) $verifiedCount,
+            'unverified_count' => (int) $unverifiedCount,
+            'total_count' => (int) $totalCount,
+            'note' => 'Public rating score uses verified reviews only.',
+        ],
+        'ratings' => $rows,
+    ]);
+}
 }
