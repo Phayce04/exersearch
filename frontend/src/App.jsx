@@ -31,6 +31,10 @@ import EditGym from "./pages/owner/EditGym";
 import ViewStats from "./pages/owner/ViewStats";
 import OwnerGymApplication from "./pages/owner/OwnerGymApplication";
 
+
+import TestLogin from "./pages/user/testLogin";
+
+
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminEquipments from "./pages/admin/AdminEquipments";
@@ -70,6 +74,10 @@ function App() {
       <Route path="/" element={<RoleLanding />} />
       <Route path="/login" element={<Login />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+
+
+      <Route path="/test-login" element={<TestLogin />} />
+
 
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/become-an-owner" element={<BecomeOwner />} />
