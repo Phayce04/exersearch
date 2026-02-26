@@ -238,15 +238,25 @@
 /* Footer */
 .footer {
   font-family: 'Montserrat', sans-serif;
-  background: #cc5803;
+
+  /* ✅ PATCH: blend nicer with animated background */
+  background: rgba(204, 88, 3, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
   color: #fff;
   padding: 3rem 2rem 1rem;
-  margin-top: 4rem;
+
+  /* ✅ PATCH: remove extra dead space */
+  margin-top: 0;
 }
 
 .footer-container {
   max-width: 1400px;
-  height: 200px;
+
+  /* ✅ PATCH: remove fixed height that causes overflow/dead space */
+  /* height: 200px; */
+
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
@@ -313,7 +323,7 @@
 }
 
 .footer-bottom hr {
-  border: none; 
+  border: none;
   border-top: 0.5px solid #f9820c;
   margin-bottom: 1rem;
 }
@@ -477,6 +487,7 @@
 .mobile-menu .logout-link:hover {
   background: #f5f5f5;
 }
+
 .uhv-chip--find {
   background: #eff6ff;
   color: #2563eb;
@@ -489,7 +500,9 @@
   transform: translateY(-1px);
 }
 
-.header {
+/* ✅ PATCH: this was overriding your fixed header above.
+   Rename it so it only affects your UHV header layout blocks. */
+.uhv-header {
   display: flex;
   align-items: center;
   gap: 16px;

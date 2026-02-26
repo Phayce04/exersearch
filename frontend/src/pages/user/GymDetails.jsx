@@ -5,10 +5,12 @@ import "./Homestyles.css";
 import Swal from "sweetalert2";
 import { api } from "../../utils/apiClient";
 import { absoluteUrl } from "../../utils/findGymsData";
+
 import RequestMembershipModal from "./RequestMembershipModal";
 import GiftRevealModal from "./GiftRevealModal";
 import RateGymModal from "./RateGymModal";
-import {
+import GymInquiryModal from "./GymInquiryModal";
+import { askGymInquiry } from "../../utils/gymInquiriesApi";import {
   claimFreeVisit,
   getMyFreeVisits,
   findMyFreeVisitForGym,
@@ -106,10 +108,38 @@ export default function GymDetails() {
   const { id } = useParams();
   const gymIdNum = useMemo(() => Number(id), [id]);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
-
+const [gymInquiryOpen, setGymInquiryOpen] = useState(false);
+const [gymInquirySending, setGymInquirySending] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+const onSendGymInquiry = async (gymId, question) => {
+  setGymInquirySending(true);
+  try {
+    await askGymInquiry(gymId, { question });
 
+    // close modal first (optional, feels snappy)
+    setGymInquiryOpen(false);
+
+    // ✅ orangey success confirmation
+    await Swal.fire({
+      title: "Message Sent!",
+      text: "Your inquiry was successfully sent to the gym.",
+      icon: "success",
+      confirmButtonText: "Great!",
+      confirmButtonColor: "#ed8936", // orangey
+      iconColor: "#ed8936",
+    });
+  } catch (e) {
+    await Swal.fire({
+      title: "Failed",
+      text: e?.response?.data?.message || e?.message || "Failed to send inquiry.",
+      icon: "error",
+      confirmButtonColor: "#dc2626",
+    });
+  } finally {
+    setGymInquirySending(false);
+  }
+};
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -254,7 +284,6 @@ export default function GymDetails() {
     };
   }, []);
 
-  // ✅ load gym
   useEffect(() => {
     let cancelled = false;
 
@@ -817,8 +846,103 @@ export default function GymDetails() {
                 Get Directions
               </button>
             </div>
+{/* Contact & Social */}
+<div className="detail-card contact-card">
+  <h2 className="section-title">Get in Touch</h2>
 
-            {/* ✅ QUICK ACTIONS updated */}
+  <div className="contact-info" style={{ display: "grid", gap: 8 }}>
+    <p>
+      <strong>Phone:</strong> {gym?.contact_number || "—"}
+    </p>
+    <p>
+      <strong>Email:</strong> {gym?.email || "—"}
+    </p>
+    <p>
+      <strong>Website:</strong>{" "}
+      {gym?.website ? (
+        <a href={gym.website} target="_blank" rel="noreferrer">
+          {gym.website}
+        </a>
+      ) : (
+        "—"
+      )}
+    </p>
+  </div>
+
+  <div className="social-links" style={{ marginTop: 12 }}>
+    {gym?.facebook_page ? (
+      <a
+        href={gym.facebook_page}
+        className="social-link facebook"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Facebook"
+      >
+        f
+      </a>
+    ) : null}
+
+    {gym?.instagram_page ? (
+      <a
+        href={gym.instagram_page}
+        className="social-link instagram"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Instagram"
+      >
+        ig
+      </a>
+    ) : null}
+  </div>
+
+  {gym?.owner ? (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontWeight: 900, marginBottom: 8 }}>Owner</div>
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        {gym?.owner?.profile_photo_url ? (
+          <img
+            src={gym.owner.profile_photo_url}
+            alt={gym.owner.name}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 999,
+              objectFit: "cover",
+              border: "2px solid rgba(0,0,0,0.06)",
+            }}
+          />
+        ) : null}
+
+        <div style={{ lineHeight: 1.15 }}>
+          <div style={{ fontWeight: 900 }}>{gym.owner.name}</div>
+          <div style={{ opacity: 0.8, fontWeight: 650 }}>{gym.owner.email}</div>
+        </div>
+      </div>
+    </div>
+  ) : null}
+
+  <div style={{ marginTop: 16 }}>
+    <button
+      type="button"
+      className="action-btn primary"
+      onClick={() => setGymInquiryOpen(true)}
+      disabled={!gym?.id && !gym?.gym_id}
+    >
+      Inquire Now
+    </button>
+  </div>
+
+ 
+  {gymInquiryOpen && (
+    <GymInquiryModal
+      gym={gym}
+      onClose={() => setGymInquiryOpen(false)}
+      sending={gymInquirySending}
+      onSend={onSendGymInquiry}
+    />
+  )}
+</div>
             <div className="detail-card actions-card">
               <h2 className="section-title">Quick Actions</h2>
 
@@ -1019,7 +1143,6 @@ export default function GymDetails() {
 }
 
 function reviewTag(r) {
-  // Prefer verified flag if backend sends it reliably
   const verifiedBool = r?.verified === true;
 
   if (verifiedBool) {

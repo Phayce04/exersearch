@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+.gi-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.80);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.8rem;
+  z-index: 1000;
+  animation: giFade .18s ease;
+}
+
+@keyframes giFade{
+  from{ opacity: 0; }
+  to{ opacity: 1; }
+}
+
+.gi-card{
+  width: 100%;
+  max-width: 640px;
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.22);
+  overflow: hidden;
+  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.gi-head{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px 18px 10px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+.gi-title{
+  font-weight: 950;
+  color: #111;
+  font-size: 18px;
+}
+
+.gi-sub{
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 750;
+  opacity: .8;
+}
+
+.gi-gymName{
+  font-weight: 900;
+  opacity: 1;
+}
+
+.gi-x{
+  border: none;
+  background: rgba(0,0,0,.06);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+
+.gi-x:hover{ transform: translateY(-1px); background: rgba(0,0,0,.10); }
+.gi-x:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
+
+.gi-body{
+  padding: 14px 18px 6px;
+}
+
+.gi-label{
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  opacity: .85;
+  margin-bottom: 8px;
+}
+
+.gi-textarea{
+  width: 100%;
+  border: 1px solid rgba(0,0,0,.10);
+  border-radius: 16px;
+  padding: 12px 12px;
+  font-weight: 650;
+  outline: none;
+  resize: none;
+  min-height: 170px;
+}
+
+.gi-textarea:focus{
+  border-color: rgba(210,63,11,.35);
+  box-shadow: 0 0 0 4px rgba(210,63,11,.12);
+}
+
+.gi-hint{
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: .7;
+  font-weight: 650;
+}
+
+.gi-actions{
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  justify-content: flex-end;
+}
+
+.gi-btnGhost{
+  border: 1px solid rgba(0,0,0,.10);
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.gi-btnPrimary{
+  border: none;
+  background: #d23f0b;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  box-shadow: 0 12px 26px rgba(210,63,11,.22);
+}
+
+.gi-btnPrimary:disabled{
+  opacity: .6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.gi-spinner{
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.55);
+  border-top-color: #fff;
+  animation: giSpin .7s linear infinite;
+}
+
+@keyframes giSpin{
+  to{ transform: rotate(360deg); }
+}
+.gi-iconBtn{
+  border: none;
+  background: rgba(210, 63, 11, 0.10); /* soft orange background */
+  color: #d23f0b;                      /* orange icon */
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all .18s ease;
+}
+
+.gi-iconBtn:hover{
+  background: #d23f0b;                 /* solid orange */
+  color: #fff;                         /* white icon */
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(210, 63, 11, 0.28);
+}
+
+.gi-iconBtn:disabled{
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

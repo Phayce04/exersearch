@@ -72,7 +72,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/gyms/{gym}/amenities', [GymController::class, 'amenities'])->whereNumber('gym');
     Route::get('/gyms/{gym}/amenities/{amenity}', [GymController::class, 'amenityDetail'])->whereNumber('gym')->whereNumber('amenity');
 
-    // PUBLIC: list ratings (verified + unverified, labeled) and VERIFIED-only public score in summary
     Route::get('/gyms/{gym}/ratings', [GymRatingController::class, 'gymRatings'])->whereNumber('gym');
 
     Route::get('/equipments', [EquipmentController::class, 'index']);
@@ -223,13 +222,14 @@ Route::prefix('v1')->group(function () {
 
             Route::post('/gyms/{gymId}/inquiries', [GymInquiryController::class, 'ask'])->whereNumber('gymId');
             Route::get('/me/inquiries', [GymInquiryController::class, 'myInquiries']);
+            Route::post('/me/inquiries/{inquiryId}/read', [GymInquiryController::class, 'userMarkRead'])->whereNumber('inquiryId');
 
-            // RATINGS (AUTH)
             Route::get('/me/ratings', [GymRatingController::class, 'myRatings']);
             Route::get('/gyms/{gymId}/ratings/can-rate', [GymRatingController::class, 'canRate'])->whereNumber('gymId');
             Route::post('/gyms/{gymId}/ratings', [GymRatingController::class, 'upsertMyRating'])->whereNumber('gymId');
-            Route::get('/owner/gyms/{gymId}/ratings', [GymRatingController::class, 'ownerGymRatings'])
-                ->whereNumber('gymId');
+
+            Route::get('/owner/gyms/{gymId}/ratings', [GymRatingController::class, 'ownerGymRatings'])->whereNumber('gymId');
+
             Route::post('/owner/gyms/{gymId}/memberships/expire-check', [GymMembershipController::class, 'expireCheck']);
             Route::get('/owner/gyms/{gymId}/memberships', [GymMembershipController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/memberships/{membershipId}/activate', [GymMembershipController::class, 'ownerActivate'])->whereNumber('membershipId');
@@ -249,6 +249,8 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/owner/gyms/{gymId}/inquiries', [GymInquiryController::class, 'ownerList'])->whereNumber('gymId');
             Route::post('/owner/inquiries/{inquiryId}/answer', [GymInquiryController::class, 'ownerAnswer'])->whereNumber('inquiryId');
+            Route::post('/owner/inquiries/{inquiryId}/close', [GymInquiryController::class, 'ownerClose'])->whereNumber('inquiryId');
+            Route::post('/owner/inquiries/{inquiryId}/read', [GymInquiryController::class, 'ownerMarkRead'])->whereNumber('inquiryId');
 
             Route::middleware('admin')->group(function () {
 
@@ -322,7 +324,11 @@ Route::prefix('v1')->group(function () {
                 Route::post('/admin/db/backup', [DatabaseBackupController::class, 'store']);
                 Route::post('/admin/db/restore', [DatabaseBackupController::class, 'restore']);
                 Route::get('/admin/db/backups/{name}/download', [DatabaseBackupController::class, 'download']);
+
             });
+
         });
+
     });
+
 });

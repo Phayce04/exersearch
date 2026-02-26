@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Gym;
+use App\Models\User;
 
 class GymInquiry extends Model
 {
@@ -15,12 +17,20 @@ class GymInquiry extends Model
         'status',
         'question',
         'answer',
+        'attachment_url',
         'answered_at',
         'answered_by_owner_id',
+        'closed_at',
+        'closed_by_owner_id',
+        'user_read_at',
+        'owner_read_at',
     ];
 
     protected $casts = [
         'answered_at' => 'datetime',
+        'closed_at' => 'datetime',
+        'user_read_at' => 'datetime',
+        'owner_read_at' => 'datetime',
         'created_at'  => 'datetime',
         'updated_at'  => 'datetime',
     ];
@@ -38,5 +48,10 @@ class GymInquiry extends Model
     public function answeredByOwner()
     {
         return $this->belongsTo(User::class, 'answered_by_owner_id', 'user_id');
+    }
+
+    public function closedByOwner()
+    {
+        return $this->belongsTo(User::class, 'closed_by_owner_id', 'user_id');
     }
 }

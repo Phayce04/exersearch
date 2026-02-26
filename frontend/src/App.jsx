@@ -31,9 +31,9 @@ import EditGym from "./pages/owner/EditGym";
 import ViewStats from "./pages/owner/ViewStats";
 import OwnerGymApplication from "./pages/owner/OwnerGymApplication";
 
+import GymInquiryHistory from "./pages/user/GymInquiryHistory";
 
 import TestLogin from "./pages/user/testLogin";
-
 
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -75,9 +75,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
 
-
       <Route path="/test-login" element={<TestLogin />} />
-
 
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/become-an-owner" element={<BecomeOwner />} />
@@ -98,6 +96,7 @@ function App() {
         <Route path="workout" element={<WorkoutWeek />} />
         <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
         <Route path="test-gym-results" element={<GymResults />} />
+        <Route path="inquiries" element={<GymInquiryHistory />} />
       </Route>
 
       <Route path="/owner/*" element={<OwnerLayout />}>
