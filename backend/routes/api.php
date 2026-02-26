@@ -55,6 +55,10 @@ use App\Http\Controllers\OwnerManualMemberController;
 
 use App\Models\Meal;
 use App\Http\Controllers\MealController;
+use App\Http\Controllers\MealController;
+use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\MacroPresetController;
+use App\Http\Controllers\MealPlanController;
 
 Route::prefix('v1')->group(function () {
 
@@ -84,11 +88,32 @@ Route::prefix('v1')->group(function () {
     Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
     Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show'])->whereNumber('id');
 
+    // ── Meals ──────────────────────────────────────────────────────────────────
     Route::prefix('meals')->group(function () {
-        Route::get('/', [MealController::class, 'index']);
-        Route::get('/type/{type}', [MealController::class, 'getByType']);
-        Route::post('/filter', [MealController::class, 'filterByDiet']);
-        Route::get('/stats', [MealController::class, 'stats']);
+        Route::get('/',              [MealController::class, 'index']);
+        Route::get('/stats',         [MealController::class, 'stats']);
+        Route::get('/filter',        [MealController::class, 'filterByDiet']);
+        Route::get('/type/{type}',   [MealController::class, 'getByType']);
+        Route::get('/{id}',          [MealController::class, 'show']);
+    });
+
+    // ── Ingredients ────────────────────────────────────────────────────────────
+    Route::prefix('ingredients')->group(function () {
+        Route::get('/',              [IngredientController::class, 'index']);
+        Route::get('/categories',    [IngredientController::class, 'categories']);
+        Route::get('/{id}',          [IngredientController::class, 'show']);
+    });
+
+    // ── Macro Presets ──────────────────────────────────────────────────────────
+    Route::prefix('macro-presets')->group(function () {
+        Route::get('/',              [MacroPresetController::class, 'index']);
+        Route::get('/{id}',          [MacroPresetController::class, 'show']);
+        Route::post('/{id}/calculate', [MacroPresetController::class, 'calculate']);
+    });
+
+    // ── Meal Plan Generator ────────────────────────────────────────────────────
+    Route::prefix('meal-plan')->group(function () {
+        Route::post('/generate',     [MealPlanController::class, 'generate']);
     });
 
     Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
