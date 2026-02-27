@@ -57,7 +57,7 @@ import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
 
 import { getUserRole } from "./utils/auth";
 import "leaflet/dist/leaflet.css";
-import MealPlanGeneratorAI from "./pages/user/MealPlan";
+
 
 function RoleLanding() {
   const r = getUserRole();

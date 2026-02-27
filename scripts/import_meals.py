@@ -1,13 +1,3 @@
-"""
-ADVANCED MEAL IMPORTER WITH INGREDIENT BREAKDOWN (FIXED)
-=========================================================
-Fixes applied:
-  1. SAVEPOINT per meal — one failure won't abort the whole transaction
-  2. Safe CSV column access with fallbacks for common naming variants
-  3. ON CONFLICT DO NOTHING on meal_ingredients to skip duplicate links
-  4. Prints actual CSV column names on startup for easy debugging
-"""
-
 import pandas as pd
 import psycopg2
 from psycopg2.extras import Json
