@@ -55,7 +55,6 @@ use App\Http\Controllers\OwnerManualMemberController;
 
 use App\Models\Meal;
 use App\Http\Controllers\MealController;
-use App\Http\Controllers\MealController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\MacroPresetController;
 use App\Http\Controllers\MealPlanController;

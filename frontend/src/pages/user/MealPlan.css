@@ -68,6 +68,13 @@
   gap: 0.75rem;
 }
 
+/* NEW */
+.mpai-header__preset {
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
 /* ══════════════════════════════════════════════════════
    FORM BODY
 ══════════════════════════════════════════════════════ */
@@ -104,6 +111,13 @@
   margin: 0 0 1.25rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* NEW */
+.mpai-section-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: -0.75rem 0 1rem;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -817,6 +831,11 @@ input[type="range"]::-moz-range-thumb {
   padding-top: 1.5rem;
 }
 
+/* NEW — section divider inside expanded card */
+.mpai-meal-card__section {
+  border-top: 1px solid #f1f5f9;
+}
+
 .mpai-ingredients-label {
   font-size: 0.875rem;
   font-weight: 700;
@@ -885,7 +904,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ══════════════════════════════════════════════════════
-   SHOPPING LIST
+   SHOPPING LIST (original)
 ══════════════════════════════════════════════════════ */
 .mpai-shop-toggle {
   width: 100%;
@@ -995,20 +1014,11 @@ input[type="range"]::-moz-range-thumb {
    FADE-UP ANIMATIONS
 ══════════════════════════════════════════════════════ */
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.mpai-fade-up {
-  animation: fadeUp 0.5s ease;
-}
-
+.mpai-fade-up   { animation: fadeUp 0.5s ease; }
 .mpai-fade-up-1 { animation-delay: 0.05s; }
 .mpai-fade-up-2 { animation-delay: 0.1s; }
 .mpai-fade-up-3 { animation-delay: 0.15s; }
@@ -1017,55 +1027,219 @@ input[type="range"]::-moz-range-thumb {
 .mpai-fade-up-6 { animation-delay: 0.3s; }
 
 /* ══════════════════════════════════════════════════════
+   NEW — MACRO PRESET GRID
+══════════════════════════════════════════════════════ */
+.mpai-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.mpai-preset-card {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+
+.mpai-preset-card:hover  { border-color: #cbd5e1; }
+.mpai-preset-card.active { box-shadow: 0 0 0 3px rgba(212,102,10,.12); }
+
+.mpai-preset-card__name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.mpai-preset-card__bars    { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.mpai-preset-card__bar-row {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.7rem; font-weight: 600; color: #64748b;
+}
+.mpai-preset-card__track {
+  flex: 1; height: 4px; background: #f1f5f9; border-radius: 99px; overflow: hidden;
+}
+.mpai-preset-card__fill  { height: 100%; border-radius: 99px; }
+.mpai-preset-card__goal  { font-size: 0.7rem; color: #94a3b8; }
+
+.mpai-preset-preview {
+  margin-top: 12px; padding: 10px 12px;
+  background: #fafafa; border-radius: 10px; border: 1px solid #e2e8f0;
+}
+.mpai-preset-preview__label { font-size: 0.78rem; color: #64748b; margin-bottom: 6px; }
+.mpai-preset-preview__pills { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.82rem; }
+
+/* ══════════════════════════════════════════════════════
+   NEW — MACRO BAR (inside meal card + day summary)
+══════════════════════════════════════════════════════ */
+.mpai-macro-bar {
+  display: flex;
+  height: 4px;
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 4px 1.5rem 8px;
+}
+
+.mpai-macro-bar--lg {
+  height: 8px;
+  margin: 0;
+  border-radius: 6px;
+}
+
+.mpai-macro-bar__fill { height: 100%; }
+
+.mpai-day-breakdown {
+  padding: 12px 0 0;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 12px;
+}
+.mpai-day-breakdown__label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; }
+.mpai-macro-legend { display: flex; gap: 12px; margin-top: 6px; font-size: 0.75rem; flex-wrap: wrap; }
+
+/* ══════════════════════════════════════════════════════
+   NEW — ADHERENCE
+══════════════════════════════════════════════════════ */
+.mpai-adherence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.mpai-adherence-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 0 0;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 12px;
+}
+
+.mpai-adherence-row__label { font-size: 0.78rem; color: #64748b; }
+.mpai-adherence-details    { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+.mpai-adherence-detail     { font-size: 0.75rem; color: #64748b; }
+
+/* ══════════════════════════════════════════════════════
+   NEW — INGREDIENT TOGGLE (collapsible inside meal card)
+══════════════════════════════════════════════════════ */
+.mpai-ing-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.mpai-ing-toggle:hover { background: #f8fafc; }
+
+.mpai-ing-list {
+  padding: 0 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mpai-ing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+
+.mpai-ing-row__left   { display: flex; flex-direction: column; gap: 2px; }
+.mpai-ing-row__name   { font-weight: 600; color: #1e293b; }
+.mpai-ing-row__amount { color: #94a3b8; font-size: 0.72rem; }
+.mpai-ing-row__right  { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+.mpai-ing-row__cal    { font-weight: 700; color: #475569; }
+.mpai-ing-row__macros { display: flex; gap: 6px; font-size: 0.7rem; font-weight: 600; }
+
+/* ══════════════════════════════════════════════════════
+   NEW — SHOPPING LIST CARD (replaces old shop-toggle style)
+══════════════════════════════════════════════════════ */
+.mpai-shopping-card { overflow: hidden; margin-bottom: 2rem; }
+
+.mpai-shopping-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.mpai-shopping-toggle:hover          { background: #f8fafc; }
+.mpai-shopping-toggle__title         { font-weight: 700; color: #1e293b; }
+.mpai-shopping-toggle__sub           { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+
+.mpai-shopping-body {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.mpai-shopping-cat__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  padding-top: 4px;
+}
+
+.mpai-shopping-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mpai-shopping-item:last-child  { border-bottom: none; }
+.mpai-shopping-item__left       { display: flex; align-items: center; gap: 8px; }
+.mpai-shopping-item__check      { font-size: 1rem; color: #cbd5e1; }
+.mpai-shopping-item__name       { font-size: 0.82rem; font-weight: 500; color: #334155; }
+.mpai-shopping-item__right      { display: flex; gap: 12px; align-items: center; }
+.mpai-shopping-item__amt        { font-size: 0.78rem; color: #64748b; }
+.mpai-shopping-item__cost       { font-size: 0.78rem; font-weight: 700; color: #d4660a; }
+
+/* ══════════════════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .mpai-header__inner {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .mpai-header__title {
-    font-size: 1.5rem;
-  }
-
-  .mpai-header__actions {
-    width: 100%;
-  }
-
-  .mpai-budget-card__top {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .mpai-budget-card__quick {
-    text-align: left;
-  }
-
-  .mpai-macros-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .mpai-goals-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .mpai-cta-block__summary {
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .mpai-day-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .mpai-meal-card__btn {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .mpai-meal-card__right {
-    text-align: left;
-    width: 100%;
-  }
+  .mpai-header__inner      { flex-direction: column; align-items: flex-start; }
+  .mpai-header__title      { font-size: 1.5rem; }
+  .mpai-header__actions    { width: 100%; }
+  .mpai-budget-card__top   { flex-direction: column; gap: 1rem; }
+  .mpai-budget-card__quick { text-align: left; }
+  .mpai-macros-grid        { grid-template-columns: 1fr; }
+  .mpai-goals-grid         { grid-template-columns: 1fr; }
+  .mpai-cta-block__summary { flex-wrap: wrap; gap: 1rem; }
+  .mpai-day-stats          { grid-template-columns: repeat(2, 1fr); }
+  .mpai-presets-grid       { grid-template-columns: repeat(2, 1fr); }
+  .mpai-meal-card__btn     { flex-direction: column; align-items: flex-start; }
+  .mpai-meal-card__right   { text-align: left; width: 100%; }
 }
