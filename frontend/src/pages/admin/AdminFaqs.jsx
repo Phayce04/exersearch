@@ -1,9 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+// src/pages/admin/AdminFaqs.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { adminThemes } from "./AdminLayout";
 
-import { adminThemes, MAIN } from "./AdminLayout";
 import { useAuthMe } from "../../utils/useAuthMe";
-import { adminAlert, alertError, alertInfo, alertSuccess } from "../../utils/adminAlert";
+import { useApiList } from "../../utils/useApiList";
+import {
+  toggleSort,
+  sortIndicator,
+  sortRows,
+  paginate,
+  globalSearch,
+  tableValue,
+} from "../../utils/tableUtils";
 
 import {
   getFaqs,
@@ -15,732 +24,632 @@ import {
 
 import "./AdminEquipments.css";
 
-const BRAND = "#d23f0b";
-
-function safeStr(v) {
-  return v == null ? "" : String(v);
-}
-function safeNum(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-function safeBool(v) {
-  return !!v;
+function formatDateTimeFallback(value) {
+  if (!value) return "-";
+  const d = new Date(String(value).replace(" ", "T"));
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
 }
 
-const EMPTY_FORM = {
-  question: "",
-  answer: "",
-  category: "",
-  display_order: 0,
-  is_active: true,
-};
+const CATEGORY_OPTIONS = ["All"];
 
 export default function AdminFaqs() {
   const { theme } = useOutletContext();
-  const t = adminThemes[theme].app;
+  const t = adminThemes[theme]?.app || adminThemes.light.app;
+  const isDark = theme === "dark";
 
-  const { me, loadingMe, isAdmin } = useAuthMe();
-  const canEdit = isAdmin && me?.role === "superadmin";
+  const { me, isAdmin } = useAuthMe();
+  const canManage = isAdmin && me?.role === "superadmin";
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
+  const { rows, loading: loadingRows, error, reload } = useApiList("/api/v1/faqs", {
+    authed: true,
+  });
 
-  const [items, setItems] = useState([]);
-  const [pageInfo, setPageInfo] = useState({ currentPage: 1, lastPage: 1, total: 0, perPage: 20 });
-
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
+  const [q, setQ] = useState("");
+  const [category, setCategory] = useState("All");
   const [activeOnly, setActiveOnly] = useState(false);
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [sort, setSort] = useState({ key: "id", dir: "asc" });
+  const pageSize = 10;
+  const [page, setPage] = useState(1);
 
-  const searchRef = useRef(null);
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [faqMode, setFaqMode] = useState("view");
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [faqForm, setFaqForm] = useState(null);
+  const [faqBusy, setFaqBusy] = useState(false);
+  const [faqErr, setFaqErr] = useState("");
 
-  const queryParams = useMemo(() => {
-    const p = {
-      per_page: pageInfo.perPage,
-      page: pageInfo.currentPage,
+  const [delOpen, setDelOpen] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
+
+  const [saveOpen, setSaveOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setFaqOpen(false);
+        setDelOpen(false);
+        setSaveOpen(false);
+      }
     };
-    if (search.trim()) p.search = search.trim();
-    if (category.trim()) p.category = category.trim();
-    if (activeOnly) p.active = 1;
-    return p;
-  }, [search, category, activeOnly, pageInfo.perPage, pageInfo.currentPage]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  const load = async (nextPage = pageInfo.currentPage) => {
-    setErr("");
-    setLoading(true);
-    try {
-      const res = await getFaqs({ ...queryParams, page: nextPage });
-      setItems(res.items);
-      setPageInfo((prev) => ({
-        ...prev,
-        currentPage: res.currentPage || nextPage,
-        lastPage: res.lastPage || 1,
-        total: res.total || 0,
-        perPage: res.perPage || prev.perPage,
-      }));
-    } catch (e) {
-      setErr(e?.response?.data?.message || e?.message || "Failed to load FAQs.");
-    } finally {
-      setLoading(false);
+  const categories = useMemo(() => {
+    const set = new Set((rows || []).map((r) => r.category).filter(Boolean));
+    return ["All", ...Array.from(set).sort()];
+  }, [rows]);
+
+  const searched = useMemo(() => {
+    return globalSearch(rows || [], q, [
+      (r) => r.faq_id,
+      (r) => r.question,
+      (r) => r.answer,
+      (r) => r.category,
+    ]);
+  }, [rows, q]);
+
+  const filtered = useMemo(() => {
+    return searched
+      .filter((r) => (category === "All" ? true : String(r.category || "") === category))
+      .filter((r) => (activeOnly ? !!r.is_active : true));
+  }, [searched, category, activeOnly]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [q, category, activeOnly]);
+
+  const getValue = (r, key) => {
+    switch (key) {
+      case "question":
+        return tableValue.str(r.question);
+      case "category":
+        return tableValue.str(r.category);
+      case "active":
+        return tableValue.num(r.is_active ? 1 : 0);
+      case "order":
+        return tableValue.num(r.display_order);
+      case "updated":
+        return tableValue.dateMs(r.updated_at);
+      case "id":
+        return tableValue.num(r.faq_id);
+      default:
+        return "";
     }
   };
 
-  useEffect(() => {
-    load(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, category, activeOnly, pageInfo.perPage]);
+  const sorted = useMemo(() => sortRows(filtered, sort, getValue), [filtered, sort]);
+  const { totalPages, safePage, pageRows, left, right } = useMemo(
+    () => paginate(sorted, page, pageSize),
+    [sorted, page]
+  );
 
-  const setField = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const headerPills = useMemo(() => {
+    const pills = [];
+    pills.push(loadingRows ? "Loading…" : `${sorted.length} items`);
+    if (category !== "All") pills.push(category);
+    if (activeOnly) pills.push("Active only");
+    return pills;
+  }, [loadingRows, sorted.length, category, activeOnly]);
+
+  const cssVars = {
+    "--bg": t.bg,
+    "--text": t.text,
+    "--mutedText": t.mutedText,
+    "--border": t.border,
+    "--soft": t.soft,
+    "--soft2": t.soft2,
+    "--shadow": t.shadow,
+    "--main": "#d23f0b",
+    "--isDark": isDark ? 1 : 0,
   };
 
-  const openCreate = () => {
-    if (!canEdit) return;
-    setEditing(null);
-    setForm({ ...EMPTY_FORM });
-    setFormOpen(true);
-  };
-
-  const openEdit = (it) => {
-    if (!canEdit) return;
-    setEditing(it);
-    setForm({
-      question: safeStr(it.question),
-      answer: safeStr(it.answer),
-      category: safeStr(it.category),
-      display_order: safeNum(it.displayOrder),
-      is_active: safeBool(it.isActive),
+  const openAdd = () => {
+    setFaqErr("");
+    setFaqMode("add");
+    setActiveFaq(null);
+    setFaqForm({
+      question: "",
+      answer: "",
+      category: "",
+      display_order: 0,
+      is_active: true,
     });
-    setFormOpen(true);
+    setFaqOpen(true);
   };
 
-  const closeForm = () => {
-    if (saving) return;
-    setFormOpen(false);
-    setEditing(null);
-    setForm({ ...EMPTY_FORM });
+  const openView = (r) => {
+    setFaqErr("");
+    setFaqMode("view");
+    setActiveFaq(r);
+    setFaqForm({
+      question: r.question || "",
+      answer: r.answer || "",
+      category: r.category || "",
+      display_order: r.display_order ?? 0,
+      is_active: !!r.is_active,
+    });
+    setFaqOpen(true);
   };
 
-  const onSave = async () => {
-    if (!canEdit) return;
+  const openEdit = (r) => {
+    setFaqErr("");
+    setFaqMode("edit");
+    setActiveFaq(r);
+    setFaqForm({
+      question: r.question || "",
+      answer: r.answer || "",
+      category: r.category || "",
+      display_order: r.display_order ?? 0,
+      is_active: !!r.is_active,
+    });
+    setFaqOpen(true);
+  };
 
-    const payload = {
-      question: safeStr(form.question).trim(),
-      answer: safeStr(form.answer).trim(),
-      category: safeStr(form.category).trim() || null,
-      display_order: safeNum(form.display_order),
-      is_active: !!form.is_active,
-    };
+  const askDelete = (r) => {
+    setFaqErr("");
+    setActiveFaq(r);
+    setDelOpen(true);
+  };
 
-    if (!payload.question || !payload.answer) {
-      await alertError({
-        title: "Missing fields",
-        text: "Question and Answer are required.",
-        theme,
-        mainColor: MAIN,
-      });
+  const doDelete = async () => {
+    if (!activeFaq) return;
+    setDelBusy(true);
+    setFaqErr("");
+    try {
+      await deleteFaq(activeFaq.faq_id);
+      setDelOpen(false);
+      setFaqOpen(false);
+      reload();
+    } catch (e) {
+      setFaqErr(e?.message || "Delete failed.");
+    } finally {
+      setDelBusy(false);
+    }
+  };
+
+  const saveFaq = async () => {
+    if (!faqForm) return;
+
+    const question = String(faqForm.question || "").trim();
+    const answer = String(faqForm.answer || "").trim();
+    if (!question || !answer) {
+      setFaqErr("Question and Answer are required.");
       return;
     }
 
-    setErr("");
-    setSaving(true);
+    setFaqBusy(true);
+    setFaqErr("");
+
     try {
-      if (editing?.id) {
-        await updateFaq(editing.id, payload);
-        await alertSuccess({
-          title: "Saved",
-          text: "FAQ updated successfully.",
-          theme,
-          mainColor: MAIN,
-        });
-      } else {
+      const payload = {
+        question,
+        answer,
+        category: String(faqForm.category || "").trim() || null,
+        display_order: Number.isFinite(Number(faqForm.display_order)) ? Number(faqForm.display_order) : 0,
+        is_active: !!faqForm.is_active,
+      };
+
+      if (faqMode === "add") {
         await createFaq(payload);
-        await alertSuccess({
-          title: "Created",
-          text: "FAQ created successfully.",
-          theme,
-          mainColor: MAIN,
-        });
+      } else if (faqMode === "edit") {
+        if (!activeFaq) throw new Error("No FAQ selected.");
+        await updateFaq(activeFaq.faq_id, payload);
+      } else {
+        return;
       }
-      closeForm();
-      await load(pageInfo.currentPage);
+
+      setFaqOpen(false);
+      setSaveOpen(false);
+      reload();
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Failed to save FAQ.";
-      setErr(msg);
-      await alertError({
-        title: "Save failed",
-        text: msg,
-        theme,
-        mainColor: MAIN,
-      });
+      setFaqErr(e?.message || "Save failed.");
     } finally {
-      setSaving(false);
+      setFaqBusy(false);
     }
   };
 
-  const onDelete = async (it) => {
-    if (!canEdit) return;
-
-    const confirm = await adminAlert({
-      title: "Delete this FAQ?",
-      text: "This action cannot be undone.",
-      icon: "warning",
-      confirmText: "Delete",
-      theme,
-      mainColor: MAIN,
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    setErr("");
-    setSaving(true);
+  const doToggle = async (r) => {
+    if (!canManage) return;
+    setFaqErr("");
     try {
-      await deleteFaq(it.id);
-      await alertSuccess({
-        title: "Deleted",
-        text: "FAQ deleted successfully.",
-        theme,
-        mainColor: MAIN,
-      });
-      const nextPage =
-        pageInfo.currentPage > 1 && items.length === 1 ? pageInfo.currentPage - 1 : pageInfo.currentPage;
-      await load(nextPage);
+      await toggleFaq(r.faq_id);
+      reload();
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Failed to delete FAQ.";
-      setErr(msg);
-      await alertError({
-        title: "Delete failed",
-        text: msg,
-        theme,
-        mainColor: MAIN,
-      });
-    } finally {
-      setSaving(false);
+      setFaqErr(e?.message || "Toggle failed.");
     }
   };
 
-  const onToggle = async (it) => {
-    if (!canEdit) return;
+  const modalTitle =
+    faqMode === "add" ? "Add FAQ" : faqMode === "edit" ? "Edit FAQ" : "View FAQ";
 
-    const confirm = await adminAlert({
-      title: it.isActive ? "Deactivate FAQ?" : "Activate FAQ?",
-      text: it.isActive ? "It will no longer show for users (if filtered by active)." : "It will show for users.",
-      icon: "question",
-      confirmText: it.isActive ? "Deactivate" : "Activate",
-      theme,
-      mainColor: MAIN,
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    setErr("");
-    setSaving(true);
-    try {
-      const updated = await toggleFaq(it.id);
-      setItems((prev) => prev.map((x) => (x.id === it.id ? updated : x)));
-      await alertInfo({
-        title: "Updated",
-        text: "Status changed. No need to save.",
-        theme,
-        mainColor: MAIN,
-      });
-    } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Failed to toggle FAQ.";
-      setErr(msg);
-      await alertError({
-        title: "Update failed",
-        text: msg,
-        theme,
-        mainColor: MAIN,
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const goPage = (p) => {
-    const next = Math.max(1, Math.min(pageInfo.lastPage || 1, p));
-    setPageInfo((prev) => ({ ...prev, currentPage: next }));
-    load(next);
-  };
-
-  const onApplyFilters = async () => {
-    setPageInfo((prev) => ({ ...prev, currentPage: 1 }));
-    await load(1);
-  };
-
-  if (loadingMe) return <div style={{ padding: 18, color: t.text }}>Loading account…</div>;
-  if (!isAdmin) return <div style={{ padding: 18, color: t.text }}>Forbidden.</div>;
+  const canEdit = canManage && (faqMode === "edit" || faqMode === "add");
 
   return (
-    <div style={{ padding: 18 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          marginBottom: 14,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: t.text }}>FAQs</div>
-          <div style={{ fontSize: 12, color: t.mutedText, marginTop: 2 }}>
-            Manage questions and answers (Superadmin only).
+    <div className="ae-page" data-theme={theme} style={cssVars}>
+      <div className="ae-topRow">
+        <div className="ae-titleWrap">
+          <div className="ae-pageTitle">FAQs</div>
+
+          <div className="ae-headerPills">
+            {headerPills.map((p, idx) => (
+              <span key={idx} className={idx === 0 ? "ae-pill" : "ae-pillMuted"}>
+                {p}
+              </span>
+            ))}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={() => load(pageInfo.currentPage)}
-            disabled={loading || saving}
-            style={btnStyle(t, { subtle: true })}
-          >
-            Refresh
-          </button>
-
-          <button
-            onClick={openCreate}
-            disabled={!canEdit || loading || saving}
-            style={btnStyle(t, { brand: true, disabled: !canEdit })}
-            title={!canEdit ? "Superadmin only" : "Add FAQ"}
-          >
-            Add FAQ
+        <div className="ae-topActions">
+          <button className="ae-btn ae-btnSecondary" onClick={reload}>
+            Reload
           </button>
         </div>
       </div>
 
-      {err && (
-        <div
-          style={{
-            marginBottom: 12,
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: `1px solid ${t.border}`,
-            background: t.soft,
-            color: t.text,
-            fontSize: 12,
-            fontWeight: 700,
-          }}
-        >
-          {err}
-        </div>
-      )}
+      <div className="ae-panelOuter">
+        <div className="ae-panel">
+          <div className="ae-panelTop">
+            <div className="ae-leftActions">
+              {canManage ? (
+                <button className="ae-btn ae-btnPrimary" onClick={openAdd}>
+                  + Add FAQ
+                </button>
+              ) : null}
+            </div>
 
-      <section style={cardStyle(t)}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ fontWeight: 900, color: t.text }}>Browse</div>
-          <div style={{ fontSize: 12, color: t.mutedText, fontWeight: 800 }}>
-            Total: {pageInfo.total}
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 160px 160px", gap: 12, marginTop: 12 }}>
-          <Field label="Search">
-            <input
-              ref={searchRef}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={inputStyle(t)}
-              placeholder="Search question / answer / category"
-            />
-          </Field>
-
-          <Field label="Category">
-            <input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              style={inputStyle(t)}
-              placeholder="e.g. Billing"
-            />
-          </Field>
-
-          <Field label="Active only">
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 12px",
-                borderRadius: 12,
-                border: `1px solid ${t.border}`,
-                background: t.soft,
-                color: t.text,
-                cursor: "pointer",
-                userSelect: "none",
-                height: 40,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={!!activeOnly}
-                onChange={(e) => setActiveOnly(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: BRAND }}
-              />
-              <span style={{ fontSize: 12, fontWeight: 800 }}>Active</span>
-            </label>
-          </Field>
-
-          <Field label=" ">
-            <button
-              onClick={onApplyFilters}
-              disabled={loading || saving}
-              style={btnStyle(t, { subtle: true })}
-            >
-              Apply
-            </button>
-          </Field>
-        </div>
-
-        <div style={{ marginTop: 14, borderTop: `1px solid ${t.border}` }} />
-
-        {loading ? (
-          <div style={{ padding: 14, color: t.text }}>Loading FAQs…</div>
-        ) : items.length === 0 ? (
-          <div style={{ padding: 14, color: t.mutedText, fontWeight: 800 }}>No FAQs found.</div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginTop: 12 }}>
-            {items.map((it) => (
-              <div
-                key={it.id}
-                style={{
-                  border: `1px solid ${t.border}`,
-                  background: t.soft,
-                  borderRadius: 14,
-                  padding: 12,
-                  display: "grid",
-                  gridTemplateColumns: "1fr 220px",
-                  gap: 12,
-                  alignItems: "start",
-                }}
-              >
-                <div>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <div style={{ fontWeight: 900, color: t.text, fontSize: 13 }}>
-                      {it.question}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 900,
-                        padding: "4px 8px",
-                        borderRadius: 999,
-                        border: `1px solid ${t.border}`,
-                        background: t.bg,
-                        color: t.text,
-                      }}
-                    >
-                      {it.category || "Uncategorized"}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 900,
-                        padding: "4px 8px",
-                        borderRadius: 999,
-                        border: `1px solid ${t.border}`,
-                        background: it.isActive ? "#fff" : t.bg,
-                        color: it.isActive ? BRAND : t.mutedText,
-                      }}
-                    >
-                      {it.isActive ? "Active" : "Inactive"}
-                    </span>
-                    <span style={{ fontSize: 11, color: t.mutedText, fontWeight: 800 }}>
-                      Order: {it.displayOrder}
-                    </span>
-                  </div>
-
-                  <div style={{ marginTop: 8, color: t.text, fontSize: 12, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
-                    {it.answer}
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gap: 8 }}>
-                  <button
-                    onClick={() => openEdit(it)}
-                    disabled={!canEdit || saving}
-                    style={btnStyle(t, { subtle: true, disabled: !canEdit })}
-                    title={!canEdit ? "Superadmin only" : "Edit"}
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => onToggle(it)}
-                    disabled={!canEdit || saving}
-                    style={btnStyle(t, { brand: true, disabled: !canEdit })}
-                    title={!canEdit ? "Superadmin only" : "Toggle"}
-                  >
-                    {it.isActive ? "Deactivate" : "Activate"}
-                  </button>
-
-                  <button
-                    onClick={() => onDelete(it)}
-                    disabled={!canEdit || saving}
-                    style={btnStyle(t, { danger: true, disabled: !canEdit })}
-                    title={!canEdit ? "Superadmin only" : "Delete"}
-                  >
-                    Delete
-                  </button>
-                </div>
+            <div className="ae-rightActions">
+              <div className="ae-searchBox">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search FAQs…"
+                  className="ae-searchInput"
+                />
+                <span className="ae-searchIcon">⌕</span>
               </div>
-            ))}
-          </div>
-        )}
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 14 }}>
-          <div style={{ fontSize: 12, color: t.mutedText, fontWeight: 800 }}>
-            Page {pageInfo.currentPage} of {pageInfo.lastPage}
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="ae-select">
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={activeOnly ? "Active" : "All"}
+                onChange={(e) => setActiveOnly(e.target.value === "Active")}
+                className="ae-select"
+              >
+                <option value="All">All</option>
+                <option value="Active">Active only</option>
+              </select>
+            </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
+          <div className="ae-tableWrap">
+            {error ? (
+              <div className="ae-errorBox">{error}</div>
+            ) : (
+              <table className="ae-table">
+                <thead>
+                  <tr>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "question"))}>
+                      Question{sortIndicator(sort, "question")}
+                    </th>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "category"))}>
+                      Category{sortIndicator(sort, "category")}
+                    </th>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "order"))}>
+                      Order{sortIndicator(sort, "order")}
+                    </th>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "active"))}>
+                      Active{sortIndicator(sort, "active")}
+                    </th>
+                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "updated"))}>
+                      Updated{sortIndicator(sort, "updated")}
+                    </th>
+                    <th className="ae-th ae-thRight" />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {loadingRows ? (
+                    <tr>
+                      <td className="ae-td" colSpan={6}>
+                        Loading…
+                      </td>
+                    </tr>
+                  ) : pageRows.length === 0 ? (
+                    <tr>
+                      <td className="ae-td" colSpan={6}>
+                        No results.
+                      </td>
+                    </tr>
+                  ) : (
+                    pageRows.map((r) => (
+                      <tr className="ae-tr" key={r.faq_id}>
+                        <td className="ae-td">
+                          <div className="ae-equipMeta">
+                            <div className="ae-equipName">{r.question || "-"}</div>
+                            <div className="ae-mutedTiny">ID: {r.faq_id}</div>
+                          </div>
+                        </td>
+
+                        <td className="ae-td">{r.category || "-"}</td>
+                        <td className="ae-td">{r.display_order ?? 0}</td>
+                        <td className="ae-td">
+                          <span className={r.is_active ? "ae-pill" : "ae-pillMuted"}>
+                            {r.is_active ? "Yes" : "No"}
+                          </span>
+                        </td>
+                        <td className="ae-td ae-mutedCell">{formatDateTimeFallback(r.updated_at)}</td>
+
+                        <td className="ae-td ae-tdRight">
+                          <div className="ae-actionsInline">
+                            <IconBtn title="View" className="ae-iconBtn" onClick={() => openView(r)}>
+                              👁
+                            </IconBtn>
+
+                            {canManage ? (
+                              <>
+                                <IconBtn title="Edit" className="ae-iconBtn" onClick={() => openEdit(r)}>
+                                  ✎
+                                </IconBtn>
+                                <IconBtn
+                                  title={r.is_active ? "Deactivate" : "Activate"}
+                                  className="ae-iconBtn"
+                                  onClick={() => doToggle(r)}
+                                >
+                                  {r.is_active ? "⏻" : "⏻"}
+                                </IconBtn>
+                                <IconBtn title="Delete" className="ae-iconBtnDanger" onClick={() => askDelete(r)}>
+                                  🗑
+                                </IconBtn>
+                              </>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="ae-pagerRow">
             <button
-              onClick={() => goPage(pageInfo.currentPage - 1)}
-              disabled={loading || saving || pageInfo.currentPage <= 1}
-              style={btnStyle(t, { subtle: true })}
+              className="ae-btn ae-btnSecondary"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               Prev
             </button>
+
+            <div className="ae-mutedSmall">
+              Page <b className="ae-strongText">{safePage}</b> of{" "}
+              <b className="ae-strongText">{totalPages}</b>
+            </div>
+
             <button
-              onClick={() => goPage(pageInfo.currentPage + 1)}
-              disabled={loading || saving || pageInfo.currentPage >= pageInfo.lastPage}
-              style={btnStyle(t, { subtle: true })}
+              className="ae-btn ae-btnSecondary"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
               Next
             </button>
+
+            <div className="ae-pagerRight">
+              <span className="ae-mutedSmall">
+                Showing <b className="ae-strongText">{left}-{right}</b> of{" "}
+                <b className="ae-strongText">{sorted.length}</b>
+              </span>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {formOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.35)",
-            display: "grid",
-            placeItems: "center",
-            padding: 14,
-            zIndex: 50,
-          }}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeForm();
-          }}
-        >
-          <div
-            style={{
-              width: "min(860px, 100%)",
-              borderRadius: 16,
-              border: `1px solid ${t.border}`,
-              background: t.bg,
-              padding: 14,
-              boxShadow: "0 18px 50px rgba(0,0,0,0.18)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 900, color: t.text }}>
-                  {editing ? "Edit FAQ" : "Add FAQ"}
-                </div>
-                <div style={{ fontSize: 12, color: t.mutedText, marginTop: 2 }}>
-                  Fill in the fields then save.
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={closeForm} disabled={saving} style={btnStyle(t, { subtle: true })}>
-                  Cancel
-                </button>
-                <button
-                  onClick={onSave}
-                  disabled={!canEdit || saving}
-                  style={btnStyle(t, { brand: true, disabled: !canEdit })}
-                >
-                  {saving ? "Saving…" : "Save"}
-                </button>
-              </div>
+      {faqOpen && faqForm && (
+        <div className="ae-backdrop" onClick={() => setFaqOpen(false)}>
+          <div className="ae-formModal" onClick={(e) => e.stopPropagation()}>
+            <div className="ae-modalTopRow">
+              <div className="ae-modalTitle">{modalTitle}</div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 220px 180px", gap: 12, marginTop: 12 }}>
-              <Field label="Category">
-                <input
-                  value={form.category}
-                  onChange={(e) => setField("category", e.target.value)}
-                  disabled={!canEdit}
-                  style={inputStyle(t)}
-                  placeholder="e.g. Payments"
-                />
-              </Field>
+            {faqErr ? <div className="ae-alert ae-alertError">{faqErr}</div> : null}
 
-              <Field label="Display Order">
+            <div className="ae-formGrid">
+              <Field
+                label="Category"
+                value={faqForm.category}
+                disabled={!canEdit}
+                onChange={(v) => setFaqForm((p) => ({ ...p, category: v }))}
+              />
+
+              <label className="ae-field">
+                <div className="ae-fieldLabel">Display order</div>
                 <input
                   type="number"
-                  value={form.display_order}
-                  onChange={(e) => setField("display_order", e.target.value)}
+                  value={faqForm.display_order ?? 0}
                   disabled={!canEdit}
-                  style={inputStyle(t)}
+                  onChange={(e) => setFaqForm((p) => ({ ...p, display_order: e.target.value }))}
+                  className={`ae-fieldInput ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
                 />
-              </Field>
+              </label>
 
-              <Field label="Active">
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: `1px solid ${t.border}`,
-                    background: t.soft,
-                    color: t.text,
-                    cursor: !canEdit ? "not-allowed" : "pointer",
-                    opacity: !canEdit ? 0.6 : 1,
-                    userSelect: "none",
-                    height: 40,
-                  }}
+              <label className="ae-field">
+                <div className="ae-fieldLabel">Active</div>
+                <select
+                  value={faqForm.is_active ? "1" : "0"}
+                  disabled={!canEdit}
+                  className={`ae-select ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
+                  onChange={(e) => setFaqForm((p) => ({ ...p, is_active: e.target.value === "1" }))}
+                  style={{ height: 42 }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={!!form.is_active}
-                    onChange={(e) => setField("is_active", e.target.checked)}
-                    disabled={!canEdit}
-                    style={{ width: 16, height: 16, accentColor: BRAND }}
-                  />
-                  <span style={{ fontSize: 12, fontWeight: 800 }}>{form.is_active ? "Active" : "Inactive"}</span>
-                </label>
-              </Field>
-            </div>
+                  <option value="1">Yes</option>
+                  <option value="0">No</option>
+                </select>
+              </label>
 
-            <div style={{ marginTop: 12 }}>
-              <Field label="Question">
+              <label className="ae-field ae-fieldFull">
+                <div className="ae-fieldLabel">Question</div>
                 <input
-                  value={form.question}
-                  onChange={(e) => setField("question", e.target.value)}
+                  value={faqForm.question}
                   disabled={!canEdit}
-                  style={inputStyle(t)}
-                  placeholder="Type the question…"
+                  onChange={(e) => setFaqForm((p) => ({ ...p, question: e.target.value }))}
+                  className={`ae-fieldInput ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
                 />
-              </Field>
+              </label>
+
+              <label className="ae-field ae-fieldFull">
+                <div className="ae-fieldLabel">Answer</div>
+                <textarea
+                  value={faqForm.answer}
+                  disabled={!canEdit}
+                  onChange={(e) => setFaqForm((p) => ({ ...p, answer: e.target.value }))}
+                  className={`ae-fieldInput ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
+                  style={{ minHeight: 140, resize: "vertical", paddingTop: 10, lineHeight: 1.5 }}
+                />
+              </label>
             </div>
 
-            <div style={{ marginTop: 12 }}>
-              <Field label="Answer">
-                <textarea
-                  value={form.answer}
-                  onChange={(e) => setField("answer", e.target.value)}
-                  disabled={!canEdit}
-                  style={textareaStyle(t)}
-                  placeholder="Type the answer…"
-                />
-              </Field>
+            <div className="ae-modalFooter">
+              {faqMode === "view" ? (
+                canManage ? (
+                  <>
+                    <button className="ae-btn ae-btnSecondary" onClick={() => askDelete(activeFaq)}>
+                      Delete
+                    </button>
+                    <button className="ae-btn ae-btnPrimary" onClick={() => setFaqMode("edit")}>
+                      Edit
+                    </button>
+                  </>
+                ) : (
+                  <button className="ae-btn ae-btnSecondary" onClick={() => setFaqOpen(false)}>
+                    Close
+                  </button>
+                )
+              ) : (
+                <>
+                  <button
+                    className="ae-btn ae-btnSecondary"
+                    onClick={() => {
+                      setFaqErr("");
+                      setSaveOpen(false);
+                      if (faqMode === "add") setFaqOpen(false);
+                      else setFaqMode("view");
+                    }}
+                    disabled={faqBusy}
+                  >
+                    Cancel
+                  </button>
+
+                  <button className="ae-btn ae-btnPrimary" onClick={() => setSaveOpen(true)} disabled={faqBusy}>
+                    {faqBusy ? "Saving…" : "Save"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {!canEdit && (
-        <div style={{ marginTop: 12, fontSize: 12, color: t.mutedText }}>
-          You are logged in as <b>{me?.role}</b>. Only <b>superadmin</b> can manage FAQs.
+      {saveOpen && faqOpen && faqForm && (
+        <div className="ae-backdrop ae-backdropTop" onClick={() => setSaveOpen(false)}>
+          <div className="ae-confirmModalFancy" onClick={(e) => e.stopPropagation()}>
+            <div className="ae-confirmHeader">
+              <div className="ae-confirmIconWrap" aria-hidden="true">
+                ✅
+              </div>
+              <div className="ae-confirmHeaderText">
+                <div className="ae-confirmTitle">{faqMode === "add" ? "Create FAQ?" : "Confirm changes?"}</div>
+              </div>
+
+              <button className="ae-modalClose" onClick={() => setSaveOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            {faqErr ? <div className="ae-alert ae-alertError">{faqErr}</div> : null}
+
+            <div className="ae-confirmActions">
+              <button className="ae-btn ae-btnSecondary" onClick={() => setSaveOpen(false)} disabled={faqBusy}>
+                Cancel
+              </button>
+
+              <button className="ae-btn ae-btnPrimary" onClick={saveFaq} disabled={faqBusy}>
+                {faqBusy ? "Saving…" : faqMode === "add" ? "Yes, create" : "Yes, save"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
+
+      {delOpen && activeFaq && (
+        <div className="ae-backdrop ae-backdropTop" onClick={() => setDelOpen(false)}>
+          <div className="ae-confirmModalFancy" onClick={(e) => e.stopPropagation()}>
+            <div className="ae-confirmHeader">
+              <div className="ae-confirmIconWrap" aria-hidden="true">
+                ⚠️
+              </div>
+
+              <div className="ae-confirmHeaderText">
+                <div className="ae-confirmTitle">Delete FAQ?</div>
+                <div className="ae-mutedTiny">
+                  This will permanently remove <b className="ae-strongText">{activeFaq.question}</b>. This can’t be
+                  undone.
+                </div>
+              </div>
+
+              <button className="ae-modalClose" onClick={() => setDelOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            {faqErr ? <div className="ae-alert ae-alertError">{faqErr}</div> : null}
+
+            <div className="ae-confirmActions">
+              <button className="ae-btn ae-btnSecondary" onClick={() => setDelOpen(false)} disabled={delBusy}>
+                Keep it
+              </button>
+
+              <button className="ae-btn ae-btnDanger" onClick={doDelete} disabled={delBusy}>
+                <span className="ae-btnIcon" aria-hidden="true">
+                  🗑
+                </span>
+                {delBusy ? "Deleting…" : "Yes, delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="ae-spacer" />
     </div>
   );
 }
 
-function Field({ label, children }) {
+function IconBtn({ children, title, className, onClick }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.85 }}>{label}</div>
+    <button type="button" title={title} onClick={onClick} className={className}>
       {children}
-    </div>
+    </button>
   );
 }
 
-function inputStyle(t) {
-  return {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: `1px solid ${t.border}`,
-    background: t.soft,
-    color: t.text,
-    outline: "none",
-    fontSize: 13,
-    fontWeight: 600,
-  };
-}
-
-function textareaStyle(t) {
-  return {
-    width: "100%",
-    minHeight: 160,
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: `1px solid ${t.border}`,
-    background: t.soft,
-    color: t.text,
-    outline: "none",
-    fontSize: 13,
-    fontWeight: 600,
-    resize: "vertical",
-    lineHeight: 1.5,
-  };
-}
-
-function cardStyle(t) {
-  return {
-    border: `1px solid ${t.border}`,
-    background: t.bg,
-    borderRadius: 14,
-    padding: 14,
-  };
-}
-
-function btnStyle(t, { subtle = false, brand = false, danger = false, disabled = false } = {}) {
-  if (danger) {
-    return {
-      borderRadius: 10,
-      padding: "10px 12px",
-      border: `1px solid ${t.border}`,
-      background: t.soft,
-      color: "#b91c1c",
-      cursor: disabled ? "not-allowed" : "pointer",
-      fontWeight: 900,
-      fontSize: 12,
-      opacity: disabled ? 0.6 : 1,
-    };
-  }
-
-  if (brand) {
-    return {
-      borderRadius: 10,
-      padding: "10px 12px",
-      border: `1px solid ${BRAND}`,
-      background: BRAND,
-      color: "#fff",
-      cursor: disabled ? "not-allowed" : "pointer",
-      fontWeight: 900,
-      fontSize: 12,
-      opacity: disabled ? 0.6 : 1,
-    };
-  }
-
-  const bg = subtle ? t.soft : t.soft;
-  return {
-    borderRadius: 10,
-    padding: "10px 12px",
-    border: `1px solid ${t.border}`,
-    background: bg,
-    color: t.text,
-    cursor: disabled ? "not-allowed" : "pointer",
-    fontWeight: 800,
-    fontSize: 12,
-    opacity: disabled ? 0.55 : 1,
-  };
+function Field({ label, value, onChange, disabled, full }) {
+  return (
+    <label className={`ae-field ${full ? "ae-fieldFull" : ""}`}>
+      <div className="ae-fieldLabel">{label}</div>
+      <input
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={`ae-fieldInput ${disabled ? "ae-fieldInputDisabled" : ""}`}
+      />
+    </label>
+  );
 }

@@ -19,13 +19,10 @@ import { Sparkles } from "./icons/Sparkles";
 type Props = {
   theme: Theme;
   setTheme: React.Dispatch<React.SetStateAction<Theme>>;
-
   collapsed: boolean;
   setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
-
   toggled: boolean;
   setToggled: React.Dispatch<React.SetStateAction<boolean>>;
-
   broken: boolean;
   setBroken: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -43,7 +40,15 @@ const isPathActive = (pathname: string, targets: string[]) => {
 
 const rtl = false;
 
-const AdminSidebar: React.FC<Props> = ({ theme, collapsed, setCollapsed, toggled, setToggled, broken, setBroken }) => {
+const AdminSidebar: React.FC<Props> = ({
+  theme,
+  collapsed,
+  setCollapsed,
+  toggled,
+  setToggled,
+  broken,
+  setBroken,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -253,10 +258,10 @@ const AdminSidebar: React.FC<Props> = ({ theme, collapsed, setCollapsed, toggled
 
                 <MenuItem
                   icon={<Book />}
-                  onClick={() => go("/admin/maintenance")}
-                  style={isPathActive(location.pathname, ["/admin/maintenance"]) ? activeButtonStyle : undefined}
+                  onClick={() => go("/admin/faqs")}
+                  style={isPathActive(location.pathname, ["/admin/faqs"]) ? activeButtonStyle : undefined}
                 >
-                  Maintenance
+                  FAQs
                 </MenuItem>
 
                 <MenuItem
