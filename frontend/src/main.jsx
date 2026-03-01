@@ -1,12 +1,11 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import { GoogleOAuthProvider } from '@react-oauth/google'
-import App from './App.jsx'
-import './index.css'
-import { AuthProvider } from './authcon.jsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import App from "./App.jsx";
+import { AuthProvider } from "./authcon.jsx";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <BrowserRouter>
@@ -15,5 +14,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </AuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
-  </React.StrictMode>,
-) 
+  </React.StrictMode>
+);

@@ -31,7 +31,7 @@ import {
 import { BiTargetLock } from "react-icons/bi";
 import { IoMdNutrition } from "react-icons/io";
 import { MdVerified, MdTrendingUp } from "react-icons/md";
-import "../index.css";
+import "./index.css";
 
 export default function Landing() {
   const [activeFaq, setActiveFaq] = useState(null);
