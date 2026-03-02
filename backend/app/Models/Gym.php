@@ -56,8 +56,8 @@ class Gym extends Model
         'free_first_visit_enabled' => 'boolean',
         'free_first_visit_enabled_at' => 'datetime',
         'approved_at' => 'datetime',
-        'opening_time' => 'datetime:H:i',
-        'closing_time' => 'datetime:H:i',
+        'opening_time' => 'string',
+        'closing_time' => 'string',
     ];
 
     public function owner()

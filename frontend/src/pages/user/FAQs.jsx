@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
 
 import Footer from "./Footer";
@@ -65,6 +64,21 @@ async function fetchFaqsAllActive() {
   return merged.filter((r) => !!r.is_active);
 }
 
+async function fetchPublicSettings() {
+  const res = await axios.get(`${API_BASE}/api/v1/settings/public`);
+  return res.data?.data || {};
+}
+
+function buildGmailComposeUrl({ to, subject, body }) {
+  const params = new URLSearchParams();
+  params.set("view", "cm");
+  params.set("fs", "1");
+  params.set("to", safeStr(to));
+  if (subject) params.set("su", safeStr(subject));
+  if (body) params.set("body", safeStr(body));
+  return `https://mail.google.com/mail/?${params.toString()}`;
+}
+
 export default function FAQsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -73,6 +87,8 @@ export default function FAQsPage() {
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState("");
   const [faqs, setFaqs] = useState([]);
+
+  const [settings, setSettings] = useState(null);
 
   const categories = useMemo(
     () => [
@@ -111,7 +127,9 @@ export default function FAQsPage() {
               faq_id: r.faq_id,
               category: id,
               category_label: safeStr(r.category) || "",
-              display_order: Number.isFinite(Number(r.display_order)) ? Number(r.display_order) : 0,
+              display_order: Number.isFinite(Number(r.display_order))
+                ? Number(r.display_order)
+                : 0,
               question: safeStr(r.question),
               answer: safeStr(r.answer),
             };
@@ -139,13 +157,73 @@ export default function FAQsPage() {
     };
   }, [categoryIdByLabel]);
 
+  useEffect(() => {
+    let alive = true;
+
+    const loadSettings = async () => {
+      try {
+        const data = await fetchPublicSettings();
+        if (!alive) return;
+        setSettings(data);
+      } catch (e) {
+        console.error("Failed to load public settings", e);
+      }
+    };
+
+    loadSettings();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const supportEmail = useMemo(() => {
+    return (
+      safeStr(settings?.support_email) ||
+      safeStr(settings?.contact_email) ||
+      "support@exersearch.com"
+    );
+  }, [settings]);
+
+  const contactPhone = useMemo(() => {
+    return safeStr(settings?.contact_phone) || "+63 917 123 4567";
+  }, [settings]);
+
+  const gmailSupportUrl = useMemo(() => {
+    return buildGmailComposeUrl({
+      to: supportEmail,
+      subject: "Support Request - ExerSearch",
+      body: "Hi ExerSearch Team,\n\nI need help with:\n\n",
+    });
+  }, [supportEmail]);
+
   const contactOptions = useMemo(
     () => [
-      { icon: <Mail size={22} />, title: "Email Us", detail: "support@exersearch.com", description: "We reply within 24 hours" },
-      { icon: <Phone size={22} />, title: "Call Us", detail: "+63 917 123 4567", description: "Mon – Fri · 9AM – 6PM" },
-      { icon: <MessageSquare size={22} />, title: "Live Chat", detail: "Available Now", description: "Instant help from the team" },
+      {
+        type: "email",
+        icon: <Mail size={22} />,
+        title: "Email Us",
+        detail: supportEmail,
+        description: "We reply within 24 hours",
+        href: gmailSupportUrl,
+      },
+      {
+        type: "phone",
+        icon: <Phone size={22} />,
+        title: "Call Us",
+        detail: contactPhone,
+        description: "Mon – Fri · 9AM – 6PM",
+        href: `tel:${contactPhone.replace(/\s+/g, "")}`,
+      },
+      {
+        type: "chat",
+        icon: <MessageSquare size={22} />,
+        title: "Live Chat",
+        detail: "Coming Soon",
+        description: "Instant help from the team",
+        href: null,
+      },
     ],
-    []
+    [supportEmail, contactPhone, gmailSupportUrl]
   );
 
   const calculateSimilarity = (s1, s2) => {
@@ -191,7 +269,8 @@ export default function FAQsPage() {
             if (w.startsWith(t)) score += 3;
           });
           q.split(" ").forEach((w) => {
-            if (w.length > 3 && t.length > 3 && calculateSimilarity(w, t) > 0.7) score += 5;
+            if (w.length > 3 && t.length > 3 && calculateSimilarity(w, t) > 0.7)
+              score += 5;
           });
         });
 
@@ -202,10 +281,7 @@ export default function FAQsPage() {
   };
 
   const filteredFaqs = useMemo(() => {
-    const base = searchQuery.trim()
-      ? searchFaqs(searchQuery)
-      : faqs;
-
+    const base = searchQuery.trim() ? searchFaqs(searchQuery) : faqs;
     return base.filter((f) => activeCategory === "all" || f.category === activeCategory);
   }, [faqs, searchQuery, activeCategory]);
 
@@ -298,12 +374,18 @@ export default function FAQsPage() {
               ))}
             </nav>
 
+            {/* ✅ changed from <Link to="/contact"> to Gmail */}
             <div className="fq-sidebar__help">
               <p>Didn't find your answer?</p>
-              <Link to="/contact" className="fq-sidebar__cta">
+              <a
+                href={gmailSupportUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fq-sidebar__cta"
+              >
                 <Headphones size={14} />
                 Contact Support
-              </Link>
+              </a>
             </div>
           </aside>
 
@@ -416,10 +498,7 @@ export default function FAQsPage() {
                 </div>
                 <h3>Couldn't load FAQs</h3>
                 <p>{loadErr}</p>
-                <button
-                  className="fq-empty__btn"
-                  onClick={() => window.location.reload()}
-                >
+                <button className="fq-empty__btn" onClick={() => window.location.reload()}>
                   Retry
                 </button>
               </div>
@@ -462,9 +541,39 @@ export default function FAQsPage() {
               <div key={i} className="fq-ccard">
                 <div className="fq-ccard__ico">{o.icon}</div>
                 <h3 className="fq-ccard__title">{o.title}</h3>
-                <p className="fq-ccard__detail">{o.detail}</p>
+
+                {o.href ? (
+                  <a
+                    href={o.href}
+                    target={o.type === "phone" ? undefined : "_blank"}
+                    rel={o.type === "phone" ? undefined : "noopener noreferrer"}
+                    className="fq-ccard__detail"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {o.detail}
+                  </a>
+                ) : (
+                  <p className="fq-ccard__detail">{o.detail}</p>
+                )}
+
                 <p className="fq-ccard__desc">{o.description}</p>
-                <button className="fq-ccard__btn">Get in Touch</button>
+
+                <button
+                  className="fq-ccard__btn"
+                  onClick={() => {
+                    if (o.href) {
+                      if (o.type === "phone") {
+                        window.location.href = o.href;
+                      } else {
+                        window.open(o.href, "_blank", "noopener,noreferrer");
+                      }
+                    }
+                  }}
+                  disabled={!o.href}
+                  style={!o.href ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
+                >
+                  Get in Touch
+                </button>
               </div>
             ))}
           </div>
@@ -481,10 +590,16 @@ export default function FAQsPage() {
               Send us a message — we'll get back to you within 24 hours.
             </p>
           </div>
-          <Link to="/contact" className="fq-cta__btn">
+
+          <a
+            href={gmailSupportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fq-cta__btn"
+          >
             <Mail size={15} strokeWidth={2.5} />
             Contact Support
-          </Link>
+          </a>
         </div>
       </section>
 

@@ -192,50 +192,60 @@ export default function ViewGym() {
     return false;
   };
 
-  const refreshRecentMembers = async () => {
-    if (!id) return;
-    setRecentMembersLoading(true);
-    try {
-      const res = await ownerListGymMembersCombined(id, { per_page: 3, page: 1 });
-      const norm = normalizeCombinedMembersResponse(res);
+const refreshRecentMembers = async () => {
+  if (!id) return;
+  setRecentMembersLoading(true);
 
-      const rows = Array.isArray(norm?.rows)
-        ? norm.rows
-        : Array.isArray(res?.data?.data)
-          ? res.data.data
-          : Array.isArray(res?.data)
-            ? res.data
-            : Array.isArray(res)
-              ? res
-              : [];
+  try {
+    const res = await ownerListGymMembersCombined(id, { per_page: 3, page: 1 });
+    const norm = normalizeCombinedMembersResponse(res);
 
-      const top3 = rows.slice(0, 3).map((m) => {
-        const source = m?.source || "app_user";
-        const isManual = source === "manual";
-        const name = isManual ? m?.display_name : m?.user?.name;
-        const email = isManual ? m?.email : m?.user?.email;
-        const createdAt = m?.created_at;
+    const rows = Array.isArray(norm?.rows)
+      ? norm.rows
+      : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
 
-        return {
-          source,
-          name: name || email || "-",
-          email: email || "-",
-          joined: fmtDate(createdAt),
-          avatar: initials(name || email),
-          plan:
-            (m?.plan_type && String(m.plan_type)) ||
-            (m?.status && String(m.status)) ||
-            (isManual ? "Manual" : "App"),
-        };
-      });
+    const top3 = rows.slice(0, 3).map((m) => {
+      const source = m?.source || "app_user";
 
-      setRecentMembers(top3);
-    } catch (e) {
-      setRecentMembers([]);
-    } finally {
-      setRecentMembersLoading(false);
-    }
-  };
+      const name =
+        (m?.display_name && String(m.display_name).trim()) ||
+        (m?.user?.name && String(m.user.name).trim()) ||
+        (m?.name && String(m.name).trim()) ||
+        "";
+
+      const email =
+        (m?.email && String(m.email).trim()) ||
+        (m?.user?.email && String(m.user.email).trim()) ||
+        "";
+
+      const createdAt = m?.created_at;
+
+      return {
+        source,
+        name: name || email || "-",
+        email: email || "-",
+        joined: fmtDate(createdAt),
+        avatar: initials(name || email),
+        plan:
+          (m?.plan_type && String(m.plan_type)) ||
+          (m?.status && String(m.status)) ||
+          "App",
+      };
+    });
+
+    setRecentMembers(top3);
+  } catch (e) {
+    setRecentMembers([]);
+  } finally {
+    setRecentMembersLoading(false);
+  }
+};
 
   const refreshGym = async (meObj) => {
     const res = await getGym(id);
@@ -778,7 +788,6 @@ export default function ViewGym() {
         </div>
       </div>
 
-      <Footer />
 
       {showAddEquipment && (
         <AddEquipment

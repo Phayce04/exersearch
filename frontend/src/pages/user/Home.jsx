@@ -1909,17 +1909,23 @@ export default function Home() {
         </div>
 
         <section className="uhv-section">
-          <div className="uhv-section__hdr">
-            <div>
-              <h2 className="uhv-section__title">
-                <Gift size={18} /> Gyms with Free First Time Visits
-              </h2>
-              <p className="uhv-section__sub">Try these gyms for free on your first visit</p>
-            </div>
-            <Link to="/home/find-gyms" className="uhv-section__link">
-              See all <ChevronRight size={14} />
-            </Link>
-          </div>
+<div className="uhv-section__hdr">
+  <div>
+    <h2 className="uhv-section__title">
+      <Gift size={18} /> Gyms with Free First Visit
+    </h2>
+    <p className="uhv-section__sub">
+      Discover gyms that let you train free on your first visit
+    </p>
+  </div>
+
+  <Link
+    to="/home/gyms?freeFirstVisit=only"
+    className="uhv-section__link"
+  >
+    See all <ChevronRight size={14} />
+  </Link>
+</div>
 
           {!freeVisitLoaded ? (
             <div className="uhv-events">

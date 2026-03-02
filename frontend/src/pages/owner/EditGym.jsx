@@ -46,10 +46,38 @@ function absUrl(u) {
 }
 
 function hhmm(v, fallback = "06:00") {
-  if (!v) return fallback;
-  const s = String(v);
-  const m = s.match(/(\d{2}):(\d{2})/);
-  return m ? `${m[1]}:${m[2]}` : fallback;
+  if (v == null || v === "") return fallback;
+
+  const s = String(v).trim();
+  if (!s) return fallback;
+
+  let m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (m) {
+    const h = String(Math.min(23, Math.max(0, Number(m[1])))).padStart(2, "0");
+    const min = String(Math.min(59, Math.max(0, Number(m[2])))).padStart(2, "0");
+    return `${h}:${min}`;
+  }
+
+  m = s.match(/^(\d{1,2}):(\d{2})\s*([aApP][mM])$/);
+  if (m) {
+    let h = Number(m[1]);
+    const min = Number(m[2]);
+    const ap = m[3].toUpperCase();
+
+    if (ap === "PM" && h < 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+
+    const hh = String(Math.min(23, Math.max(0, h))).padStart(2, "0");
+    const mm = String(Math.min(59, Math.max(0, min))).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  return fallback;
+}
+
+function hhmmss(v, fallback = "06:00:00") {
+  const base = hhmm(v, fallback.slice(0, 5));
+  return `${base}:00`;
 }
 
 function toNumberOrNull(v) {
@@ -453,7 +481,15 @@ export default function EditGym() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      if (newErrors.name || newErrors.contact_number || newErrors.email || newErrors.website || newErrors.facebook_page || newErrors.instagram_page) setActiveTab("basic");
+      if (
+        newErrors.name ||
+        newErrors.contact_number ||
+        newErrors.email ||
+        newErrors.website ||
+        newErrors.facebook_page ||
+        newErrors.instagram_page
+      )
+        setActiveTab("basic");
       else if (newErrors.address || newErrors.location) setActiveTab("location");
       Swal.fire({ icon: "warning", title: "Fix highlighted fields", text: "Some inputs are invalid." });
       return false;
@@ -478,8 +514,8 @@ export default function EditGym() {
         facebook_page: normalizeUrlNullable(form.facebook_page),
         instagram_page: normalizeUrlNullable(form.instagram_page),
         gym_type: String(form.gym_type || "").trim() || null,
-        opening_time: hhmm(form.opening_time, "06:00"),
-        closing_time: hhmm(form.closing_time, "22:00"),
+        opening_time: hhmmss(form.opening_time, "06:00:00"),
+        closing_time: hhmmss(form.closing_time, "22:00:00"),
         has_personal_trainers: !!form.has_personal_trainers,
         has_classes: !!form.has_classes,
         is_24_hours: !!form.is_24_hours,
@@ -1044,7 +1080,7 @@ export default function EditGym() {
                 <div
                   style={{
                     marginTop: 12,
-                       marginBottom: 24,
+                    marginBottom: 24,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -1102,12 +1138,8 @@ export default function EditGym() {
                     <label>Daily Price</label>
                     <div className="eg-price-input">
                       <span className="eg-currency">₱</span>
-                    <input
-                      type="number"
-                      value={form.daily_price}
-                      onChange={(e) => setField("daily_price", e.target.value)}
-                      placeholder="150"
-                    />                    </div>
+                      <input type="number" value={form.daily_price} onChange={(e) => setField("daily_price", e.target.value)} placeholder="150" />
+                    </div>
                     <div className="eg-media-helper" style={{ marginTop: 6 }}>
                       Disabled for now
                     </div>
@@ -1193,7 +1225,6 @@ export default function EditGym() {
         </div>
       </div>
 
-      <Footer />
     </div>
   );
 }

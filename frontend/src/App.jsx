@@ -12,7 +12,7 @@ import UserHome from "./pages/user/Home";
 import Profile from "./pages/user/Profile";
 import Onboarding from "./pages/user/Onboarding";
 import FindGyms from "./pages/user/FindGyms";
-import GymResults from "./pages/user/GymResults";
+import AllGym from "./pages/user/AllGym";
 import GymResultsMatching from "./pages/user/GymResultMatching";
 import GymDetails from "./pages/user/GymDetails";
 import Memberships from "./pages/user/Memberships";
@@ -82,7 +82,6 @@ function App() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/become-an-owner" element={<BecomeOwner />} />
         <Route path="/owner-application" element={<OwnerApplication />} />
-        <Route path="meal-plan" element={<MealPlanGenerator />} />
              <Route path="/owner-application" element={<OwnerApplication />} />
    
         <Route path="/home/*" element={<UserLayout />}>
@@ -92,14 +91,16 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="find-gyms" element={<FindGyms />} />
           <Route path="gym/:id" element={<GymDetails />} />
+                      <Route path="gyms" element={<AllGym />} />
+        <Route path="meal-plan" element={<MealPlanGenerator />} />
+
           <Route path="memberships" element={<Memberships />} />
           <Route path="gym-results" element={<GymResultsMatching />} />
           <Route path="saved-gyms" element={<SavedGyms />} />
           <Route path="workout" element={<WorkoutWeek />} />
           <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
-          <Route path="test-gym-results" element={<GymResults />} />
           <Route path="inquiries" element={<GymInquiryHistory />} />
-                  <Route path="faqs" element={<UserFaq />} />
+            <Route path="faqs" element={<UserFaq />} />
 
         </Route>
 

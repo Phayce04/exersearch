@@ -18,7 +18,6 @@ class AppSettingsPublicController extends Controller
             ]);
         }
 
-        // ✅ Return ONLY safe/public fields
         return response()->json([
             'data' => [
                 'app_name' => $settings->app_name,
