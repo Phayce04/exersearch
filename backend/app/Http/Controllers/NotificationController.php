@@ -9,11 +9,10 @@ use Illuminate\Validation\Rule;
 
 class NotificationController extends Controller
 {
-    private function roleForUser($user): string
+    private function bucketRole(Request $request): string
     {
-        $r = (string) ($user->role ?? 'user');
-        if (in_array($r, ['owner', 'admin', 'superadmin', 'user'])) return $r;
-        return 'user';
+        $r = (string) $request->query('role', 'user');
+        return in_array($r, ['user', 'owner', 'admin', 'superadmin'], true) ? $r : 'user';
     }
 
     public function index(Request $request)
@@ -21,17 +20,19 @@ class NotificationController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        $role = $this->roleForUser($user);
-
         $request->validate([
+            'role' => ['nullable', Rule::in(['user', 'owner', 'admin', 'superadmin'])],
             'unread_only' => ['nullable', 'boolean'],
             'type' => ['nullable', 'string', 'max:80'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
+        $role = $this->bucketRole($request);
+
         $q = Notification::query()
             ->where('recipient_id', (int) $user->user_id)
-            ->where('recipient_role', $role);
+            ->where('recipient_role', $role)
+            ->where('is_hidden', false);
 
         if ($request->boolean('unread_only')) $q->where('is_read', false);
         if ($request->filled('type')) $q->where('type', $request->query('type'));
@@ -48,11 +49,16 @@ class NotificationController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        $role = $this->roleForUser($user);
+        $request->validate([
+            'role' => ['nullable', Rule::in(['user', 'owner', 'admin', 'superadmin'])],
+        ]);
+
+        $role = $this->bucketRole($request);
 
         $count = Notification::query()
             ->where('recipient_id', (int) $user->user_id)
             ->where('recipient_role', $role)
+            ->where('is_hidden', false)
             ->where('is_read', false)
             ->count();
 
@@ -64,7 +70,11 @@ class NotificationController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        $role = $this->roleForUser($user);
+        $request->validate([
+            'role' => ['nullable', Rule::in(['user', 'owner', 'admin', 'superadmin'])],
+        ]);
+
+        $role = $this->bucketRole($request);
 
         $n = Notification::query()
             ->where('notification_id', (int) $id)
@@ -86,11 +96,16 @@ class NotificationController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        $role = $this->roleForUser($user);
+        $request->validate([
+            'role' => ['nullable', Rule::in(['user', 'owner', 'admin', 'superadmin'])],
+        ]);
+
+        $role = $this->bucketRole($request);
 
         $count = Notification::query()
             ->where('recipient_id', (int) $user->user_id)
             ->where('recipient_role', $role)
+            ->where('is_hidden', false)
             ->where('is_read', false)
             ->update(['is_read' => true, 'read_at' => now()]);
 
@@ -102,7 +117,11 @@ class NotificationController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
 
-        $role = $this->roleForUser($user);
+        $request->validate([
+            'role' => ['nullable', Rule::in(['user', 'owner', 'admin', 'superadmin'])],
+        ]);
+
+        $role = $this->bucketRole($request);
 
         $deleted = Notification::query()
             ->where('notification_id', (int) $id)

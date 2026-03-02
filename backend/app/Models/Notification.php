@@ -9,7 +9,7 @@ class Notification extends Model
     protected $table = 'notifications';
     protected $primaryKey = 'notification_id';
 
-    public $timestamps = false; // we manage created_at/read_at ourselves
+    public $timestamps = false;
 
     protected $fillable = [
         'recipient_id',
@@ -22,6 +22,7 @@ class Notification extends Model
         'actor_id',
         'meta',
         'is_read',
+        'is_hidden',
         'created_at',
         'read_at',
     ];
@@ -31,6 +32,7 @@ class Notification extends Model
         'gym_id' => 'integer',
         'actor_id' => 'integer',
         'is_read' => 'boolean',
+        'is_hidden' => 'boolean',
         'meta' => 'array',
         'created_at' => 'datetime',
         'read_at' => 'datetime',

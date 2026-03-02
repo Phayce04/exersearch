@@ -1,3 +1,4 @@
+// src/components/header/HeaderUser.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import "./HF.css";
@@ -19,6 +20,13 @@ import {
   MessageCircle,
   Settings,
 } from "lucide-react";
+
+import {
+  listNotifications,
+  getUnreadNotificationsCount,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../../utils/notificationApi";
 
 const API_BASE = "https://exersearch.test";
 const FALLBACK_AVATAR = "/defaulticon.png";
@@ -63,6 +71,16 @@ function labelForUiMode(mode) {
   return "";
 }
 
+function iconForNotifType(type) {
+  const t = String(type || "").toLowerCase();
+  if (t.includes("workout")) return Flame;
+  if (t.includes("meal")) return Utensils;
+  if (t.includes("saved") || t.includes("follow")) return Heart;
+  if (t.includes("membership")) return Trophy;
+  if (t.includes("inquiry") || t.includes("message")) return MessageCircle;
+  return Bell;
+}
+
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -92,22 +110,11 @@ export default function HeaderUser() {
     return "user";
   }, [location.pathname]);
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: "n1",
-      unread: true,
-      icon: Flame,
-      title: "Workout Plan",
-      message: "Your plan is ready. Start today!",
-    },
-    {
-      id: "n2",
-      unread: false,
-      icon: Heart,
-      title: "Saved Gyms",
-      message: "You saved a gym recently.",
-    },
-  ]);
+  // Notifications (real)
+  const [notifications, setNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifErr, setNotifErr] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -238,6 +245,7 @@ export default function HeaderUser() {
     [logout, navigate]
   );
 
+  // Close popovers on outside click
   useEffect(() => {
     function onDocClick(e) {
       if (notifOpen && notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
@@ -247,11 +255,45 @@ export default function HeaderUser() {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [notifOpen, profileOpen]);
 
+  // Header scrolled state
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.pageYOffset > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Notifications: fetch unread count
+  const refreshUnread = useCallback(async () => {
+    if (!token) return;
+    try {
+      const c = await getUnreadNotificationsCount();
+      setUnreadCount(c);
+    } catch (e) {
+      // ignore
+    }
+  }, [token]);
+
+  // Notifications: fetch list
+  const loadNotifs = useCallback(async () => {
+    if (!token) return;
+    setNotifLoading(true);
+    setNotifErr("");
+    try {
+      const paged = await listNotifications({ page: 1, per_page: 20 });
+      setNotifications(paged.data || []);
+    } catch (e) {
+      setNotifErr("Failed to load notifications.");
+    } finally {
+      setNotifLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    refreshUnread();
+    const onFocus = () => refreshUnread();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refreshUnread]);
 
   const appLogo = userLogoUrl || fallbackLogo;
 
@@ -331,14 +373,18 @@ export default function HeaderUser() {
           <div className="uhv-notif-wrap" ref={notifRef}>
             <button
               type="button"
-              className={"uhv-notif" + (notifications.some((n) => n.unread) ? " has-unread" : "")}
+              className={"uhv-notif" + (unreadCount > 0 ? " has-unread" : "")}
               onClick={() => {
-                setNotifOpen((o) => !o);
+                setNotifOpen((o) => {
+                  const next = !o;
+                  if (next) loadNotifs();
+                  return next;
+                });
                 setProfileOpen(false);
               }}
             >
               <Bell size={16} />
-              {notifications.some((n) => n.unread) && <span className="uhv-notif__dot" />}
+              {unreadCount > 0 && <span className="uhv-notif__dot" />}
             </button>
 
             {notifOpen && (
@@ -346,8 +392,20 @@ export default function HeaderUser() {
                 <div className="uhv-notif-pop__hdr">
                   <span>Notifications</span>
                   <div className="uhv-notif-actions">
-                    <button type="button" className="uhv-notif-clear" onClick={() => setNotifications([])}>
-                      Clear all
+                    <button
+                      type="button"
+                      className="uhv-notif-clear"
+                      onClick={async () => {
+                        try {
+                          await markAllNotificationsRead();
+                          setNotifications((prev) => prev.map((x) => ({ ...x, unread: false })));
+                          setUnreadCount(0);
+                        } catch (e) {
+                          // ignore
+                        }
+                      }}
+                    >
+                      Mark all as read
                     </button>
                     <button type="button" className="uhv-notif-close" onClick={() => setNotifOpen(false)}>
                       <X size={14} />
@@ -356,27 +414,48 @@ export default function HeaderUser() {
                 </div>
 
                 <div className="uhv-notif-pop__list">
-                  {notifications.length === 0 && <div className="uhv-notif-empty">All caught up!</div>}
+                  {notifLoading && <div className="uhv-notif-empty">Loading...</div>}
+                  {!notifLoading && notifErr && <div className="uhv-notif-empty">{notifErr}</div>}
 
-                  {notifications.map((n) => {
-                    const Icon = n.icon;
-                    return (
-                      <button
-                        key={n.id}
-                        type="button"
-                        className={"uhv-notif-item" + (n.unread ? " unread" : "")}
-                        onClick={() => setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x)))}
-                      >
-                        <div className="uhv-notif-icon">
-                          <Icon size={14} />
-                        </div>
-                        <div className="uhv-notif-body">
-                          <p>{n.title}</p>
-                          <span>{n.message}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {!notifLoading && !notifErr && notifications.length === 0 && (
+                    <div className="uhv-notif-empty">All caught up!</div>
+                  )}
+
+                  {!notifLoading &&
+                    !notifErr &&
+                    notifications.map((n) => {
+                      const Icon = iconForNotifType(n.type);
+                      return (
+                        <button
+                          key={n.id}
+                          type="button"
+                          className={"uhv-notif-item" + (n.unread ? " unread" : "")}
+                          onClick={async () => {
+                            // optimistic
+                            setNotifications((prev) =>
+                              prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x))
+                            );
+                            setUnreadCount((c) => Math.max(0, c - (n.unread ? 1 : 0)));
+
+                            try {
+                              await markNotificationRead(n.id);
+                            } catch (e) {
+                              // easiest safe fallback
+                              refreshUnread();
+                              loadNotifs();
+                            }
+                          }}
+                        >
+                          <div className="uhv-notif-icon">
+                            <Icon size={14} />
+                          </div>
+                          <div className="uhv-notif-body">
+                            <p>{n.title}</p>
+                            <span>{n.message}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -493,7 +572,11 @@ export default function HeaderUser() {
                   )}
 
                   <div className="uhv-profile-pop__divider" />
-                  <button type="button" className="uhv-profile-menu-item uhv-profile-menu-item--logout" onClick={handleLogout}>
+                  <button
+                    type="button"
+                    className="uhv-profile-menu-item uhv-profile-menu-item--logout"
+                    onClick={handleLogout}
+                  >
                     <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
                       <LogOut size={15} />
                     </div>
@@ -513,14 +596,30 @@ export default function HeaderUser() {
       </header>
 
       <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
-        <Link to="/home" onClick={() => setMobileMenuOpen(false)}>DASHBOARD</Link>
-        <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>SAVED GYMS</Link>
-        <Link to="/home/find-gyms" onClick={() => setMobileMenuOpen(false)}>FIND GYMS</Link>
-        <Link to="/home/workout" onClick={() => setMobileMenuOpen(false)}>WORKOUT PLAN</Link>
-        <Link to="/home/meal-plan" onClick={() => setMobileMenuOpen(false)}>MEAL PLAN</Link>
-        <Link to="/home/memberships" onClick={() => setMobileMenuOpen(false)}>MEMBERSHIPS</Link>
-        <Link to="/home/inquiries" onClick={() => setMobileMenuOpen(false)}>INQUIRIES</Link>
-        <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>MY PROFILE</Link>
+        <Link to="/home" onClick={() => setMobileMenuOpen(false)}>
+          DASHBOARD
+        </Link>
+        <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>
+          SAVED GYMS
+        </Link>
+        <Link to="/home/find-gyms" onClick={() => setMobileMenuOpen(false)}>
+          FIND GYMS
+        </Link>
+        <Link to="/home/workout" onClick={() => setMobileMenuOpen(false)}>
+          WORKOUT PLAN
+        </Link>
+        <Link to="/home/meal-plan" onClick={() => setMobileMenuOpen(false)}>
+          MEAL PLAN
+        </Link>
+        <Link to="/home/memberships" onClick={() => setMobileMenuOpen(false)}>
+          MEMBERSHIPS
+        </Link>
+        <Link to="/home/inquiries" onClick={() => setMobileMenuOpen(false)}>
+          INQUIRIES
+        </Link>
+        <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>
+          MY PROFILE
+        </Link>
 
         {isOwnerPlus &&
           switchModes.map((m) => (
@@ -541,7 +640,9 @@ export default function HeaderUser() {
             </button>
           ))}
 
-        <Link to="/login" onClick={handleLogout}>LOGOUT</Link>
+        <Link to="/login" onClick={handleLogout}>
+          LOGOUT
+        </Link>
       </div>
     </>
   );

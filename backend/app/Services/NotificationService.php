@@ -18,9 +18,11 @@ class NotificationService
             'url'            => $data['url'] ?? null,
             'gym_id'         => $data['gym_id'] ?? null,
             'actor_id'       => $data['actor_id'] ?? null,
-'meta' => isset($data['meta']) ? json_encode($data['meta']) : null,
+            'meta'           => isset($data['meta']) ? json_encode($data['meta']) : null,
             'is_read'        => false,
+            'is_hidden'      => false,
             'created_at'     => now(),
+            'read_at'        => null,
         ]);
     }
 
@@ -41,7 +43,9 @@ class NotificationService
                 'url'            => $r['url'] ?? null,
                 'gym_id'         => $r['gym_id'] ?? null,
                 'actor_id'       => $r['actor_id'] ?? null,
-'meta' => isset($r['meta']) ? json_encode($r['meta']) : null,                'is_read'        => false,
+                'meta'           => isset($r['meta']) ? json_encode($r['meta']) : null,
+                'is_read'        => false,
+                'is_hidden'      => false,
                 'created_at'     => $now,
                 'read_at'        => null,
             ];

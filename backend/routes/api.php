@@ -183,6 +183,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('verified')->group(function () {
 
             Route::get('/notifications', [NotificationController::class, 'index']);
+                        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']); 
             Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
             Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 

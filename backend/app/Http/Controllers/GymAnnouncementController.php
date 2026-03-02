@@ -98,7 +98,6 @@ class GymAnnouncementController extends Controller
         }
 
         $recipientIds = array_values(array_unique(array_map('intval', $recipientIds)));
-        $recipientIds = array_values(array_filter($recipientIds, fn ($id) => $id !== (int) $user->user_id));
 
         if (!empty($recipientIds)) {
             $rows = [];
@@ -228,6 +227,11 @@ class GymAnnouncementController extends Controller
             'deleted_at' => now(),
         ]);
 
+        DB::table('notifications')
+            ->where('type', 'GYM_ANNOUNCEMENT')
+            ->whereJsonContains('meta->announcement_id', (int) $announcementId)
+            ->update(['is_hidden' => true]);
+
         return response()->json(['message' => 'Announcement deleted']);
     }
 
@@ -296,6 +300,11 @@ class GymAnnouncementController extends Controller
             'deleted_by' => (int) $user->user_id,
             'deleted_at' => now(),
         ]);
+
+        DB::table('notifications')
+            ->where('type', 'GYM_ANNOUNCEMENT')
+            ->whereJsonContains('meta->announcement_id', (int) $announcementId)
+            ->update(['is_hidden' => true]);
 
         return response()->json(['message' => 'Announcement deleted']);
     }
