@@ -1,3 +1,4 @@
+// src/components/header/HeaderOwner.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -16,6 +17,13 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
+
+import {
+  listNotifications,
+  getUnreadNotificationsCount,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../../utils/notificationApi";
 
 const API_BASE = "https://exersearch.test";
 const FALLBACK_AVATAR = "https://i.pravatar.cc/60?img=12";
@@ -49,6 +57,10 @@ function labelForUiMode(mode) {
   if (mode === "superadmin") return "Admin UI";
   if (mode === "owner") return "Owner UI";
   return "";
+}
+
+function safeRole(s) {
+  return String(s || "").toLowerCase();
 }
 
 export default function HeaderOwner() {
@@ -93,9 +105,64 @@ export default function HeaderOwner() {
     return modes.filter((m) => m !== currentUi);
   }, [isOwnerPlus, effectiveUser?.role, currentUi]);
 
-  const [notifications, setNotifications] = useState([
-    { id: "n1", unread: true, title: "Inbox", message: "You have new inquiries." },
-  ]);
+  // =========================
+  // Notifications (backend)
+  // =========================
+  const [notifications, setNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifErr, setNotifErr] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const refreshUnread = useCallback(async () => {
+    if (!token) return;
+    try {
+      // NOTE: our utils accept 0 args; backend should scope by token.
+      // If your backend returns mixed roles, we’ll correct via list fallback.
+      const c = await getUnreadNotificationsCount();
+      setUnreadCount(Number(c) || 0);
+    } catch {
+      // fallback: compute from list
+      try {
+        const paged = await listNotifications({ page: 1, per_page: 50 });
+        const ownerOnly = (paged?.data || []).filter(
+          (n) => safeRole(n?.recipient_role) === "owner"
+        );
+        const unread = ownerOnly.filter((n) => !n.is_read).length;
+        setUnreadCount(unread);
+      } catch {
+        // ignore
+      }
+    }
+  }, [token]);
+
+  const loadNotifs = useCallback(async () => {
+    if (!token) return;
+    setNotifLoading(true);
+    setNotifErr("");
+    try {
+      const paged = await listNotifications({ page: 1, per_page: 20 });
+
+      // Enforce owner-only in UI (prevents accidental cross-role display)
+      const ownerOnly = (paged?.data || []).filter(
+        (n) => safeRole(n?.recipient_role) === "owner"
+      );
+
+      setNotifications(ownerOnly);
+    } catch {
+      setNotifErr("Failed to load notifications.");
+      setNotifications([]);
+    } finally {
+      setNotifLoading(false);
+    }
+  }, [token]);
+
+  // load unread on mount + focus
+  useEffect(() => {
+    refreshUnread();
+    const onFocus = () => refreshUnread();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refreshUnread]);
 
   useEffect(() => {
     let mounted = true;
@@ -233,6 +300,9 @@ export default function HeaderOwner() {
     { to: "/owner/view-gyms", icon: Building2, label: "View Gyms", chipClass: "uhv-chip--fire" },
   ];
 
+  const hasUnreadDot =
+    unreadCount > 0 || notifications.some((n) => !n?.is_read);
+
   return (
     <>
       {isScrolled && (
@@ -284,17 +354,22 @@ export default function HeaderOwner() {
             </Link>
           ))}
 
+          {/* Notifications */}
           <div className="uhv-notif-wrap" ref={notifRef}>
             <button
               type="button"
-              className={"uhv-notif" + (notifications.some((n) => n.unread) ? " has-unread" : "")}
+              className={"uhv-notif" + (hasUnreadDot ? " has-unread" : "")}
               onClick={() => {
-                setNotifOpen((o) => !o);
+                setNotifOpen((o) => {
+                  const next = !o;
+                  if (next) loadNotifs();
+                  return next;
+                });
                 setProfileOpen(false);
               }}
             >
               <Bell size={16} />
-              {notifications.some((n) => n.unread) && <span className="uhv-notif__dot" />}
+              {hasUnreadDot && <span className="uhv-notif__dot" />}
             </button>
 
             {notifOpen && (
@@ -302,8 +377,20 @@ export default function HeaderOwner() {
                 <div className="uhv-notif-pop__hdr">
                   <span>Notifications</span>
                   <div className="uhv-notif-actions">
-                    <button type="button" className="uhv-notif-clear" onClick={() => setNotifications([])}>
-                      Clear all
+                    <button
+                      type="button"
+                      className="uhv-notif-clear"
+                      onClick={async () => {
+                        try {
+                          await markAllNotificationsRead();
+                          setNotifications((prev) => (prev || []).map((x) => ({ ...x, is_read: true })));
+                          setUnreadCount(0);
+                        } catch {
+                          // ignore
+                        }
+                      }}
+                    >
+                      Mark all as read
                     </button>
                     <button type="button" className="uhv-notif-close" onClick={() => setNotifOpen(false)}>
                       <X size={14} />
@@ -312,28 +399,58 @@ export default function HeaderOwner() {
                 </div>
 
                 <div className="uhv-notif-pop__list">
-                  {notifications.length === 0 && <div className="uhv-notif-empty">All caught up!</div>}
+                  {notifLoading && <div className="uhv-notif-empty">Loading...</div>}
+                  {!notifLoading && notifErr && <div className="uhv-notif-empty">{notifErr}</div>}
 
-                  {notifications.map((n) => (
-                    <button
-                      key={n.id}
-                      type="button"
-                      className={"uhv-notif-item" + (n.unread ? " unread" : "")}
-                      onClick={() =>
-                        setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x)))
-                      }
-                    >
-                      <div className="uhv-notif-body" style={{ paddingLeft: 2 }}>
-                        <p>{n.title}</p>
-                        <span>{n.message}</span>
-                      </div>
-                    </button>
-                  ))}
+                  {!notifLoading && !notifErr && notifications.length === 0 && (
+                    <div className="uhv-notif-empty">All caught up!</div>
+                  )}
+
+                  {!notifLoading &&
+                    !notifErr &&
+                    notifications.map((n) => (
+                      <button
+                        key={n.notification_id ?? n.id}
+                        type="button"
+                        className={"uhv-notif-item" + (!n.is_read ? " unread" : "")}
+                        onClick={async () => {
+                          const id = n.notification_id ?? n.id;
+
+                          // optimistic
+                          setNotifications((prev) =>
+                            (prev || []).map((x) =>
+                              (x.notification_id ?? x.id) === id ? { ...x, is_read: true } : x
+                            )
+                          );
+                          setUnreadCount((c) => Math.max(0, c - (!n.is_read ? 1 : 0)));
+
+                          try {
+                            await markNotificationRead(id);
+                          } catch {
+                            refreshUnread();
+                            loadNotifs();
+                          }
+
+                          // optional: navigate if your notif has a link in meta
+                          const href = n?.meta?.href || n?.meta?.url || "";
+                          if (href) {
+                            setNotifOpen(false);
+                            navigate(String(href));
+                          }
+                        }}
+                      >
+                        <div className="uhv-notif-body" style={{ paddingLeft: 2 }}>
+                          <p>{n.title}</p>
+                          <span>{n.body}</span>
+                        </div>
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
           </div>
 
+          {/* Profile */}
           <div className="uhv-profile-wrap" ref={profileRef}>
             <button
               type="button"
@@ -424,7 +541,11 @@ export default function HeaderOwner() {
                   )}
 
                   <div className="uhv-profile-pop__divider" />
-                  <button type="button" className="uhv-profile-menu-item uhv-profile-menu-item--logout" onClick={handleLogout}>
+                  <button
+                    type="button"
+                    className="uhv-profile-menu-item uhv-profile-menu-item--logout"
+                    onClick={handleLogout}
+                  >
                     <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
                       <LogOut size={15} />
                     </div>
@@ -444,11 +565,21 @@ export default function HeaderOwner() {
       </header>
 
       <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
-        <Link to="/owner/home" onClick={() => setMobileMenuOpen(false)}>HOME</Link>
-        <Link to="/owner/inbox" onClick={() => setMobileMenuOpen(false)}>INBOX</Link>
-        <Link to="/owner/view-gyms" onClick={() => setMobileMenuOpen(false)}>VIEW GYMS</Link>
-        <Link to="/owner/gym-application" onClick={() => setMobileMenuOpen(false)}>GYM APPLICATION</Link>
-        <Link to="/owner/profile" onClick={() => setMobileMenuOpen(false)}>PROFILE (SOON)</Link>
+        <Link to="/owner/home" onClick={() => setMobileMenuOpen(false)}>
+          HOME
+        </Link>
+        <Link to="/owner/inbox" onClick={() => setMobileMenuOpen(false)}>
+          INBOX
+        </Link>
+        <Link to="/owner/view-gyms" onClick={() => setMobileMenuOpen(false)}>
+          VIEW GYMS
+        </Link>
+        <Link to="/owner/gym-application" onClick={() => setMobileMenuOpen(false)}>
+          GYM APPLICATION
+        </Link>
+        <Link to="/owner/profile" onClick={() => setMobileMenuOpen(false)}>
+          PROFILE (SOON)
+        </Link>
 
         {switchModes.map((m) => (
           <button
@@ -468,7 +599,9 @@ export default function HeaderOwner() {
           </button>
         ))}
 
-        <Link to="/login" onClick={handleLogout}>LOGOUT</Link>
+        <Link to="/login" onClick={handleLogout}>
+          LOGOUT
+        </Link>
       </div>
     </>
   );

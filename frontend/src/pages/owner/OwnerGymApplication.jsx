@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Header from "../user/Header-user";
 import Footer from "../user/Footer";
 import "./EditGym.css";
 import {
@@ -634,7 +633,6 @@ export default function OwnerGymApplication() {
     const gymId = createdGym?.gym_id ?? createdGym?.id ?? null;
     return (
       <div className="eg-app">
-        <Header />
         <div className="eg-container">
           <div className="eg-content">
             <div className="eg-tab-content">
@@ -709,7 +707,6 @@ export default function OwnerGymApplication() {
 
   return (
     <div className="eg-app">
-      <Header />
 
       <div className="eg-container">
         <div className="eg-sticky-header">
@@ -1417,7 +1414,6 @@ export default function OwnerGymApplication() {
         </div>
       </div>
 
-      <Footer />
     </div>
   );
 }

@@ -84,6 +84,7 @@ import {
 } from "../../utils/userHomeApi";
 
 import { api } from "../../utils/apiClient";
+import HomeHeader from "./HomeHeader";
 
 const UI_MODE_KEY = "ui_mode";
 const ROLE_LEVEL = { user: 1, owner: 2, superadmin: 3 };
@@ -223,13 +224,6 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("match");
   const [openFaq, setOpenFaq] = useState(null);
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-
-  const notifRef = useRef(null);
-  const profileRef = useRef(null);
-
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -344,25 +338,6 @@ export default function Home() {
     setSelectedAmenities((p) => (p.includes(a) ? p.filter((x) => x !== a) : [...p, a]));
 
   useEffect(() => {
-    const close = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
-      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
-    };
-    const esc = (e) => {
-      if (e.key === "Escape") {
-        setNotifOpen(false);
-        setProfileOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", esc);
-    };
-  }, []);
-
-  useEffect(() => {
     const q = searchParams.get("q") || "";
     setSearchQuery(q);
   }, [location.search, searchParams]);
@@ -382,6 +357,13 @@ export default function Home() {
     const t = setTimeout(() => applySearch(searchQuery), 250);
     return () => clearTimeout(t);
   }, [searchQuery, applySearch]);
+
+  const onClearSearch = useCallback(() => {
+    setSearchQuery("");
+    const params = new URLSearchParams(location.search);
+    params.delete("q");
+    setSearchParams(params, { replace: true });
+  }, [location.search, setSearchParams]);
 
   useEffect(() => {
     let mounted = true;
@@ -828,9 +810,6 @@ export default function Home() {
   const handleSwitchUi = useCallback(
     (mode) => {
       localStorage.setItem(UI_MODE_KEY, mode);
-      setProfileOpen(false);
-      setNotifOpen(false);
-      setMobileMenuOpen(false);
       navigate(routeForUiMode(mode));
     },
     [navigate]
@@ -839,9 +818,6 @@ export default function Home() {
   const handleLogout = useCallback(
     (e) => {
       if (e?.preventDefault) e.preventDefault();
-      setProfileOpen(false);
-      setNotifOpen(false);
-      setMobileMenuOpen(false);
       logout();
       navigate("/login", { replace: true });
     },
@@ -1034,7 +1010,7 @@ export default function Home() {
       }
     }, 60);
     return () => clearTimeout(t);
-  }, [mapInitialized, mobileMenuOpen, showFilterModal]);
+  }, [mapInitialized, showFilterModal]);
 
   const handleZoomIn = () => {
     if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
@@ -1128,9 +1104,6 @@ export default function Home() {
   const goBestMatch = () => {
     setSelectedView("all");
     setSortBy("match");
-    setMobileMenuOpen(false);
-    setNotifOpen(false);
-    setProfileOpen(false);
   };
 
   const weeklyGoal = useMemo(() => {
@@ -1146,334 +1119,25 @@ export default function Home() {
 
   return (
     <div className="uhv-app">
-      <div className="top-logo scrolled">
-        <div
-          style={{ cursor: "pointer" }}
-          onClick={() => {
-            setMobileMenuOpen(false);
-            setNotifOpen(false);
-            setProfileOpen(false);
-            navigate("/home");
-          }}
-        >
-          <img
-            src={appLogo}
-            alt="ExerSearch Logo"
-            onError={(e) => {
-              e.currentTarget.src = fallbackLogo;
-            }}
-          />
-        </div>
-      </div>
-
-      <header className="header header--scrolled">
-        <div
-          className="logo"
-          onClick={() => {
-            setMobileMenuOpen(false);
-            setNotifOpen(false);
-            setProfileOpen(false);
-            navigate("/home");
-          }}
-          style={{ cursor: "pointer" }}
-        >
-          <img
-            src={appLogo}
-            alt="ExerSearch"
-            onError={(e) => {
-              e.currentTarget.src = fallbackLogo;
-            }}
-          />
-        </div>
-
-        <div className="uhv-header__search-wrap">
-          <Search size={14} className="uhv-header__search-icon" />
-          <input
-            className="uhv-header__search-input"
-            type="text"
-            placeholder="Search gyms, areas, tags..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              className="uhv-header__search-clear"
-              type="button"
-              onClick={() => {
-                setSearchQuery("");
-                const params = new URLSearchParams(location.search);
-                params.delete("q");
-                setSearchParams(params, { replace: true });
-              }}
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-
-        <div className="uhv-header__actions">
-          <Link
-            to="/home/workout"
-            className="uhv-chip uhv-chip--fire"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              setNotifOpen(false);
-              setProfileOpen(false);
-            }}
-          >
-            <Flame size={12} /> Workout Plan
-          </Link>
-
-          <Link
-            to="/home/find-gyms"
-            className="uhv-chip uhv-chip--find"
-            onClick={() => {
-              goBestMatch();
-            }}
-          >
-            <Dumbbell size={12} /> Best Match Gyms
-          </Link>
-
-          <Link
-            to="/home/meal-plan"
-            className="uhv-chip uhv-chip--meal"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              setNotifOpen(false);
-              setProfileOpen(false);
-            }}
-          >
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <UtensilsCrossed size={12} /> Meal Plan
-            </span>
-          </Link>
-
-          <div className="uhv-notif-wrap" ref={notifRef}>
-            <button
-              type="button"
-              className={"uhv-notif" + (notifications.some((n) => n.unread) ? " has-unread" : "")}
-              onClick={() => {
-                setNotifOpen((o) => !o);
-                setProfileOpen(false);
-              }}
-            >
-              <Bell size={16} />
-              {notifications.some((n) => n.unread) && <span className="uhv-notif__dot" />}
-            </button>
-
-            {notifOpen && (
-              <div className="uhv-notif-pop">
-                <div className="uhv-notif-pop__hdr">
-                  <span>Notifications</span>
-                  <div className="uhv-notif-actions">
-                    <button type="button" className="uhv-notif-clear" onClick={() => setNotifications([])}>
-                      Clear all
-                    </button>
-                    <button type="button" className="uhv-notif-close" onClick={() => setNotifOpen(false)}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="uhv-notif-pop__list">
-                  {notifications.length === 0 && (
-                    <div className="uhv-notif-empty">
-                      <svg className="lucide-empty-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8m16 0H4m16 0l-2 7H6l-2-7" />
-                      </svg>
-                      All caught up!
-                    </div>
-                  )}
-
-                  {notifications.map((n) => {
-                    const Icon = n.icon;
-                    return (
-                      <button
-                        key={n.id}
-                        type="button"
-                        className={"uhv-notif-item" + (n.unread ? " unread" : "")}
-                        onClick={() => setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x)))}
-                      >
-                        <div className="uhv-notif-icon">
-                          <Icon size={14} />
-                        </div>
-                        <div className="uhv-notif-body">
-                          <p>{n.title}</p>
-                          <span>{n.message}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="uhv-profile-wrap" ref={profileRef}>
-            <button
-              type="button"
-              className="uhv-profile-btn"
-              onClick={() => {
-                setProfileOpen((o) => !o);
-                setNotifOpen(false);
-              }}
-            >
-              <div className="uhv-profile-avatar">
-                <img
-                  src={avatarSrc}
-                  alt="Profile"
-                  className="uhv-profile-avatar__img"
-                  onError={(e) => {
-                    e.currentTarget.src = FALLBACK_AVATAR;
-                  }}
-                />
-                <span className="uhv-profile-avatar__fallback">{initials(displayName)}</span>
-              </div>
-              <ChevronDown size={13} className={"uhv-profile-chevron" + (profileOpen ? " open" : "")} />
-            </button>
-
-            {profileOpen && (
-              <div className="uhv-profile-pop">
-                <div className="uhv-profile-pop__top">
-                  <div className="uhv-profile-pop__bigavatar">
-                    <img
-                      src={avatarSrc}
-                      alt="Profile"
-                      onError={(e) => {
-                        e.currentTarget.src = FALLBACK_AVATAR;
-                      }}
-                    />
-                    <span>{initials(displayName)}</span>
-                  </div>
-                  <div>
-                    <p className="uhv-profile-pop__name">{displayName}</p>
-                    <p className="uhv-profile-pop__email">{displayEmail || " "}</p>
-                  </div>
-                </div>
-
-                <div className="uhv-profile-pop__menu">
-                  <Link to="/home/profile" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#eff6ff", color: "#3b82f6" }}>
-                      <UserCircle size={15} />
-                    </div>
-                    My Profile
-                  </Link>
-
-                  <Link to="/home/workout" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>
-                      <Flame size={15} />
-                    </div>
-                    Workout Plan
-                  </Link>
-
-                  <Link
-                    to="/home/find-gyms"
-                    className="uhv-profile-menu-item"
-                    onClick={() => {
-                      goBestMatch();
-                      setProfileOpen(false);
-                    }}
-                  >
-                    <div className="uhv-pmi-icon" style={{ background: "#eff6ff", color: "#2563eb" }}>
-                      <Dumbbell size={15} />
-                    </div>
-                    Best Match Gyms
-                  </Link>
-
-                  <Link to="/home/meal-plan" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#f0fdf4", color: "#16a34a" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center" }}>
-                        <UtensilsCrossed size={15} />
-                      </span>
-                    </div>
-                    Meal Plan
-                  </Link>
-
-                  <Link to="/home/memberships" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#fff7ed", color: "#f59e0b" }}>
-                      <Trophy size={15} />
-                    </div>
-                    Memberships
-                  </Link>
-
-                  <Link to="/home/saved-gyms" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
-                      <Heart size={15} />
-                    </div>
-                    Saved Gyms
-                  </Link>
-
-                  <Link to="/home/inquiries" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#f5f3ff", color: "#8b5cf6" }}>
-                      <MessageCircle size={15} />
-                    </div>
-                    Inquiries
-                  </Link>
-
-                  {isOwnerPlus && switchModes.length > 0 && (
-                    <>
-                      <div className="uhv-profile-pop__divider" />
-                      {switchModes.map((m) => (
-                        <button key={m} type="button" className="uhv-profile-menu-item" onClick={() => handleSwitchUi(m)}>
-                          <div className="uhv-pmi-icon" style={{ background: "#f3f4f6", color: "#111827" }}>
-                            <Settings size={15} />
-                          </div>
-                          Switch to {labelForUiMode(m)}
-                        </button>
-                      ))}
-                    </>
-                  )}
-
-                  <div className="uhv-profile-pop__divider" />
-                  <button type="button" className="uhv-profile-menu-item uhv-profile-menu-item--logout" onClick={handleLogout}>
-                    <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
-                      <LogOut size={15} />
-                    </div>
-                    Log Out
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="hamburger" onClick={() => setMobileMenuOpen((p) => !p)}>
-          <span />
-          <span />
-          <span />
-        </div>
-      </header>
-
-      <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
-        <Link to="/home" onClick={() => setMobileMenuOpen(false)}>DASHBOARD</Link>
-        <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>SAVED GYMS</Link>
-        <Link to="/home/find-gyms" onClick={() => goBestMatch()}>BEST MATCH GYMS</Link>
-        <Link to="/home/workout" onClick={() => setMobileMenuOpen(false)}>WORKOUT PLAN</Link>
-        <Link to="/home/meal-plan" onClick={() => setMobileMenuOpen(false)}>MEAL PLAN</Link>
-        <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>MY PROFILE</Link>
-        <Link to="/home/inquiries" onClick={() => setMobileMenuOpen(false)}>INQUIRIES</Link>
-
-        {isOwnerPlus &&
-          switchModes.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => handleSwitchUi(m)}
-              style={{
-                background: "transparent",
-                border: "none",
-                textAlign: "left",
-                padding: "12px 16px",
-                cursor: "pointer",
-                width: "100%",
-              }}
-            >
-              Switch to {labelForUiMode(m)}
-            </button>
-          ))}
-
-        <Link to="/login" onClick={handleLogout}>LOGOUT</Link>
-      </div>
+      {/* ✅ Header extracted */}
+      <HomeHeader
+        appLogo={appLogo}
+        fallbackLogo={fallbackLogo}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onClearSearch={onClearSearch}
+        goBestMatch={goBestMatch}
+        notifications={notifications}
+        setNotifications={setNotifications}
+        avatarSrc={avatarSrc}
+        displayName={displayName}
+        displayEmail={displayEmail}
+        isOwnerPlus={isOwnerPlus}
+        switchModes={switchModes}
+        labelForUiMode={labelForUiMode}
+        handleSwitchUi={handleSwitchUi}
+        handleLogout={handleLogout}
+      />
 
       <section className="uhv-hero">
         <div className="uhv-hero__inner">
@@ -1646,16 +1310,7 @@ export default function Home() {
                 {discoveryTips.map((tip) => {
                   const Icon = tip.icon;
                   return (
-                    <Link
-                      key={tip.id}
-                      to={tip.link}
-                      className="uhv-tip"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setNotifOpen(false);
-                        setProfileOpen(false);
-                      }}
-                    >
+                    <Link key={tip.id} to={tip.link} className="uhv-tip">
                       <div className="uhv-tip__icon" style={{ background: tip.bg, color: tip.color }}>
                         <Icon size={14} />
                       </div>
@@ -1699,15 +1354,7 @@ export default function Home() {
                           <Icon size={13} />
                         </div>
                         <div className="uhv-activity__body">
-                          <Link
-                            to={"/home/gym/" + a.gymId}
-                            className="uhv-activity__gym"
-                            onClick={() => {
-                              setMobileMenuOpen(false);
-                              setNotifOpen(false);
-                              setProfileOpen(false);
-                            }}
-                          >
+                          <Link to={"/home/gym/" + a.gymId} className="uhv-activity__gym">
                             {a.gym}
                           </Link>
                           <p className="uhv-activity__action">{a.action}</p>
@@ -1799,7 +1446,8 @@ export default function Home() {
                               {gym.name}
                             </h4>
                             <p className="uhv-card__loc">
-                              <MapPin size={11} /> {gym.location} &nbsp;·&nbsp; <span className="uhv-card__type-label">{gym.type}</span>
+                              <MapPin size={11} /> {gym.location} &nbsp;·&nbsp;{" "}
+                              <span className="uhv-card__type-label">{gym.type}</span>
                             </p>
                           </div>
                         </div>
@@ -1852,7 +1500,9 @@ export default function Home() {
                               ₱{gym.price}
                               <small>/day</small>
                             </span>
-                            <span className="uhv-card__price-month">₱{Number(gym.monthlyPrice || 0).toLocaleString()}/mo</span>
+                            <span className="uhv-card__price-month">
+                              ₱{Number(gym.monthlyPrice || 0).toLocaleString()}/mo
+                            </span>
                           </div>
 
                           <div className="uhv-card__btns">
@@ -1865,14 +1515,18 @@ export default function Home() {
                                 await toggleSaveGym(gym, "footer_button");
                               }}
                             >
-                              <Bookmark size={13} /> {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
+                              <Bookmark size={13} />{" "}
+                              {isSaving ? "Saving..." : isSaved ? "Saved" : "Save"}
                             </button>
 
                             <Link
                               to={"/home/gym/" + gym.id}
                               className="uhv-card__btn-view"
                               onClick={async () => {
-                                await logInteraction("view", gym, { action: "view_details", to: "/home/gym/" + gym.id });
+                                await logInteraction("view", gym, {
+                                  action: "view_details",
+                                  to: "/home/gym/" + gym.id,
+                                });
                               }}
                             >
                               View Details <ChevronRight size={13} />
@@ -1909,23 +1563,18 @@ export default function Home() {
         </div>
 
         <section className="uhv-section">
-<div className="uhv-section__hdr">
-  <div>
-    <h2 className="uhv-section__title">
-      <Gift size={18} /> Gyms with Free First Visit
-    </h2>
-    <p className="uhv-section__sub">
-      Discover gyms that let you train free on your first visit
-    </p>
-  </div>
+          <div className="uhv-section__hdr">
+            <div>
+              <h2 className="uhv-section__title">
+                <Gift size={18} /> Gyms with Free First Visit
+              </h2>
+              <p className="uhv-section__sub">Discover gyms that let you train free on your first visit</p>
+            </div>
 
-  <Link
-    to="/home/gyms?freeFirstVisit=only"
-    className="uhv-section__link"
-  >
-    See all <ChevronRight size={14} />
-  </Link>
-</div>
+            <Link to="/home/gyms?freeFirstVisit=only" className="uhv-section__link">
+              See all <ChevronRight size={14} />
+            </Link>
+          </div>
 
           {!freeVisitLoaded ? (
             <div className="uhv-events">
@@ -1943,10 +1592,16 @@ export default function Home() {
                   to={"/home/gym/" + g.id}
                   className="uhv-event-card"
                   onClick={async () => {
-                    await logInteraction("view", g, { action: "free_visit_card_view", to: "/home/gym/" + g.id });
+                    await logInteraction("view", g, {
+                      action: "free_visit_card_view",
+                      to: "/home/gym/" + g.id,
+                    });
                   }}
                 >
-                  <div className="uhv-event-card__date" style={{ background: "#d23f0b15", borderColor: "#d23f0b30" }}>
+                  <div
+                    className="uhv-event-card__date"
+                    style={{ background: "#d23f0b15", borderColor: "#d23f0b30" }}
+                  >
                     <span className="uhv-event-card__day-name" style={{ color: "#d23f0b" }}>
                       FREE
                     </span>
@@ -1958,7 +1613,8 @@ export default function Home() {
                       <MapPin size={10} /> {g.location}
                     </p>
                     <p className="uhv-event-card__meta">
-                      <Star size={10} /> {Number(g.rating || 0).toFixed(1)} &nbsp;·&nbsp; <Tag size={10} /> ₱{Number(g.monthlyPrice || 0).toLocaleString()}/mo
+                      <Star size={10} /> {Number(g.rating || 0).toFixed(1)} &nbsp;·&nbsp;{" "}
+                      <Tag size={10} /> ₱{Number(g.monthlyPrice || 0).toLocaleString()}/mo
                     </p>
                   </div>
                   <div className="uhv-event-card__cta" style={{ background: "#d23f0b" }}>
@@ -1994,7 +1650,12 @@ export default function Home() {
                       <p className="uhv-review-card__user">{r.user}</p>
                       <div className="uhv-review-card__stars">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} size={11} fill={i < r.rating ? "#f59e0b" : "none"} color={i < r.rating ? "#f59e0b" : "#d1d5db"} />
+                          <Star
+                            key={i}
+                            size={11}
+                            fill={i < r.rating ? "#f59e0b" : "none"}
+                            color={i < r.rating ? "#f59e0b" : "#d1d5db"}
+                          />
                         ))}
                       </div>
                     </div>
@@ -2005,7 +1666,11 @@ export default function Home() {
                     to={"/home/gym/" + r.gymId}
                     className="uhv-review-card__gym"
                     onClick={async () => {
-                      await logInteraction("view", { id: r.gymId, name: r.gym }, { action: "review_gym_view", to: "/home/gym/" + r.gymId });
+                      await logInteraction(
+                        "view",
+                        { id: r.gymId, name: r.gym },
+                        { action: "review_gym_view", to: "/home/gym/" + r.gymId }
+                      );
                     }}
                   >
                     <MapPin size={10} /> {r.gym}
@@ -2052,7 +1717,9 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="uhv-cta-banner__title">Become an Owner on ExerSearch</h3>
-                  <p className="uhv-cta-banner__desc">List your gym, manage members, and grow your business with owner tools.</p>
+                  <p className="uhv-cta-banner__desc">
+                    List your gym, manage members, and grow your business with owner tools.
+                  </p>
                 </div>
               </div>
               <Link to="/home/becomeowner" className="uhv-cta-banner__btn">
@@ -2155,9 +1822,19 @@ export default function Home() {
                   ₱{priceRange[0]} — ₱{priceRange[1]}
                 </div>
                 <div className="uhv-price-row">
-                  <input type="number" value={priceRange[0]} onChange={(e) => setPriceRange([+e.target.value, priceRange[1]])} placeholder="Min" />
+                  <input
+                    type="number"
+                    value={priceRange[0]}
+                    onChange={(e) => setPriceRange([+e.target.value, priceRange[1]])}
+                    placeholder="Min"
+                  />
                   <span>to</span>
-                  <input type="number" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], +e.target.value])} placeholder="Max" />
+                  <input
+                    type="number"
+                    value={priceRange[1]}
+                    onChange={(e) => setPriceRange([priceRange[0], +e.target.value])}
+                    placeholder="Max"
+                  />
                 </div>
               </div>
 
@@ -2165,7 +1842,11 @@ export default function Home() {
                 <label>Amenities</label>
                 <div className="uhv-amenity-grid">
                   {["Shower", "Locker", "WiFi", "Parking", "AC", "Sauna"].map((a) => (
-                    <button key={a} className={"uhv-amenity-btn" + (selectedAmenities.includes(a) ? " active" : "")} onClick={() => toggleAmenity(a)}>
+                    <button
+                      key={a}
+                      className={"uhv-amenity-btn" + (selectedAmenities.includes(a) ? " active" : "")}
+                      onClick={() => toggleAmenity(a)}
+                    >
                       {selectedAmenities.includes(a) && <Check size={11} />} {a}
                     </button>
                   ))}

@@ -17,6 +17,13 @@ import {
   Settings,
 } from "lucide-react";
 
+import {
+  listNotifications,
+  getUnreadNotificationsCount,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../../utils/notificationApi";
+
 const API_BASE = "https://exersearch.test";
 const FALLBACK_AVATAR = "https://i.pravatar.cc/60?img=12";
 const TOKEN_KEY = "token";
@@ -49,6 +56,9 @@ function labelForUiMode(mode) {
   if (mode === "superadmin") return "Admin UI";
   if (mode === "owner") return "Owner UI";
   return "";
+}
+function safeRole(s) {
+  return String(s || "").toLowerCase();
 }
 
 export default function HeaderOwnerStatic() {
@@ -90,9 +100,55 @@ export default function HeaderOwnerStatic() {
     return modes.filter((m) => m !== currentUi);
   }, [isOwnerPlus, effectiveUser?.role, currentUi]);
 
-  const [notifications, setNotifications] = useState([
-    { id: "n1", unread: true, title: "Inbox", message: "You have new inquiries." },
-  ]);
+  // =========================
+  // Notifications (backend)
+  // =========================
+  const [notifications, setNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifErr, setNotifErr] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const refreshUnread = useCallback(async () => {
+    if (!token) return;
+    try {
+      // utils are 0-arg; backend should scope by token.
+      const c = await getUnreadNotificationsCount();
+      setUnreadCount(Number(c) || 0);
+    } catch {
+      // fallback compute from list
+      try {
+        const paged = await listNotifications({ page: 1, per_page: 50 });
+        const ownerOnly = (paged?.data || []).filter((n) => safeRole(n?.recipient_role) === "owner");
+        setUnreadCount(ownerOnly.filter((n) => !n.is_read).length);
+      } catch {}
+    }
+  }, [token]);
+
+  const loadNotifs = useCallback(async () => {
+    if (!token) return;
+    setNotifLoading(true);
+    setNotifErr("");
+    try {
+      const paged = await listNotifications({ page: 1, per_page: 20 });
+
+      // enforce owner-only display
+      const ownerOnly = (paged?.data || []).filter((n) => safeRole(n?.recipient_role) === "owner");
+
+      setNotifications(ownerOnly);
+    } catch {
+      setNotifErr("Failed to load notifications.");
+      setNotifications([]);
+    } finally {
+      setNotifLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    refreshUnread();
+    const onFocus = () => refreshUnread();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refreshUnread]);
 
   useEffect(() => {
     let mounted = true;
@@ -235,7 +291,7 @@ export default function HeaderOwnerStatic() {
     { to: "/owner/view-gyms", icon: Building2, label: "View Gyms", chipClass: "oh-chip--gyms" },
   ];
 
-  const hasUnread = notifications.some((n) => n.unread);
+  const hasUnread = unreadCount > 0 || notifications.some((n) => !n?.is_read);
 
   return (
     <>
@@ -268,7 +324,11 @@ export default function HeaderOwnerStatic() {
               type="button"
               className="oh-notifBtn"
               onClick={() => {
-                setNotifOpen((o) => !o);
+                setNotifOpen((o) => {
+                  const next = !o;
+                  if (next) loadNotifs();
+                  return next;
+                });
                 setProfileOpen(false);
               }}
               aria-label="Notifications"
@@ -282,8 +342,18 @@ export default function HeaderOwnerStatic() {
                 <div className="oh-pop__hdr">
                   <span className="oh-pop__title">Notifications</span>
                   <div className="oh-pop__hdrBtns">
-                    <button type="button" className="oh-pop__textBtn" onClick={() => setNotifications([])}>
-                      Clear all
+                    <button
+                      type="button"
+                      className="oh-pop__textBtn"
+                      onClick={async () => {
+                        try {
+                          await markAllNotificationsRead();
+                          setNotifications((prev) => (prev || []).map((x) => ({ ...x, is_read: true })));
+                          setUnreadCount(0);
+                        } catch {}
+                      }}
+                    >
+                      Mark all as read
                     </button>
                     <button type="button" className="oh-pop__iconBtn" onClick={() => setNotifOpen(false)}>
                       <X size={16} />
@@ -292,21 +362,47 @@ export default function HeaderOwnerStatic() {
                 </div>
 
                 <div className="oh-pop__list">
-                  {notifications.length === 0 ? (
+                  {notifLoading ? (
+                    <div className="oh-pop__empty">Loading...</div>
+                  ) : notifErr ? (
+                    <div className="oh-pop__empty">{notifErr}</div>
+                  ) : notifications.length === 0 ? (
                     <div className="oh-pop__empty">All caught up!</div>
                   ) : (
                     notifications.map((n) => (
                       <button
-                        key={n.id}
+                        key={n.notification_id ?? n.id}
                         type="button"
-                        className={`oh-popItem ${n.unread ? "oh-popItem--unread" : ""}`}
-                        onClick={() =>
-                          setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x)))
-                        }
+                        className={`oh-popItem ${!n.is_read ? "oh-popItem--unread" : ""}`}
+                        onClick={async () => {
+                          const id = n.notification_id ?? n.id;
+
+                          // optimistic
+                          setNotifications((prev) =>
+                            (prev || []).map((x) =>
+                              (x.notification_id ?? x.id) === id ? { ...x, is_read: true } : x
+                            )
+                          );
+                          setUnreadCount((c) => Math.max(0, c - (!n.is_read ? 1 : 0)));
+
+                          try {
+                            await markNotificationRead(id);
+                          } catch {
+                            refreshUnread();
+                            loadNotifs();
+                          }
+
+                          // optional deep link (if you store it in meta)
+                          const href = n?.meta?.href || n?.meta?.url || "";
+                          if (href) {
+                            setNotifOpen(false);
+                            navigate(String(href));
+                          }
+                        }}
                       >
                         <div className="oh-popItem__body">
                           <p>{n.title}</p>
-                          <span>{n.message}</span>
+                          <span>{n.body}</span>
                         </div>
                       </button>
                     ))
@@ -386,11 +482,12 @@ export default function HeaderOwnerStatic() {
                     Gym Application
                   </Link>
 
+                  {/* ✅ removed "(Soon)" */}
                   <Link to="/owner/profile" className="oh-menuItem" onClick={() => setProfileOpen(false)}>
                     <div className="oh-miIcon" style={{ background: "#eff6ff", color: "#2563eb" }}>
                       <UserCircle size={16} />
                     </div>
-                    Profile (Soon)
+                    Profile
                   </Link>
 
                   {switchModes.length > 0 && (
@@ -428,11 +525,22 @@ export default function HeaderOwnerStatic() {
       </header>
 
       <div className={`oh-mobileMenu ${mobileMenuOpen ? "open" : ""}`}>
-        <Link className="oh-mobileLink" to="/owner/home" onClick={() => setMobileMenuOpen(false)}>HOME</Link>
-        <Link className="oh-mobileLink" to="/owner/inbox" onClick={() => setMobileMenuOpen(false)}>INBOX</Link>
-        <Link className="oh-mobileLink" to="/owner/view-gyms" onClick={() => setMobileMenuOpen(false)}>VIEW GYMS</Link>
-        <Link className="oh-mobileLink" to="/owner/gym-application" onClick={() => setMobileMenuOpen(false)}>GYM APPLICATION</Link>
-        <Link className="oh-mobileLink" to="/owner/profile" onClick={() => setMobileMenuOpen(false)}>PROFILE (SOON)</Link>
+        <Link className="oh-mobileLink" to="/owner/home" onClick={() => setMobileMenuOpen(false)}>
+          HOME
+        </Link>
+        <Link className="oh-mobileLink" to="/owner/inbox" onClick={() => setMobileMenuOpen(false)}>
+          INBOX
+        </Link>
+        <Link className="oh-mobileLink" to="/owner/view-gyms" onClick={() => setMobileMenuOpen(false)}>
+          VIEW GYMS
+        </Link>
+        <Link className="oh-mobileLink" to="/owner/gym-application" onClick={() => setMobileMenuOpen(false)}>
+          GYM APPLICATION
+        </Link>
+
+\        <Link className="oh-mobileLink" to="/owner/profile" onClick={() => setMobileMenuOpen(false)}>
+          PROFILE
+        </Link>
 
         {switchModes.map((m) => (
           <button key={m} type="button" className="oh-mobileBtn" onClick={() => handleSwitchUi(m)}>
@@ -440,7 +548,9 @@ export default function HeaderOwnerStatic() {
           </button>
         ))}
 
-        <button type="button" className="oh-mobileBtn" onClick={handleLogout}>LOGOUT</button>
+        <button type="button" className="oh-mobileBtn" onClick={handleLogout}>
+          LOGOUT
+        </button>
       </div>
     </>
   );

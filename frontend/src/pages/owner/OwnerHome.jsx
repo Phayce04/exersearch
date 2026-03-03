@@ -2,7 +2,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "./Header2";
-import Footer from "../user/Footer";
 import "./OwnerHome.css";
 
 import {
@@ -508,7 +507,6 @@ export default function OwnerHome() {
           <div className="od-spinner"></div>
           <p>Loading dashboard...</p>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -530,7 +528,6 @@ export default function OwnerHome() {
             </div>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
