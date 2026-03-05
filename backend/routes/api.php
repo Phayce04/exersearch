@@ -343,13 +343,14 @@ Route::prefix('v1')->group(function () {
                 ->whereNumber('announcementId');
 
             Route::middleware('admin')->group(function () {
-
+                Route::get('/admin/activities', [GymInteractionController::class, 'adminIndex']);
                 Route::get('/admin/settings', [AdminAppSettingsController::class, 'show']);
                 Route::put('/admin/settings', [AdminAppSettingsController::class, 'update']);
                 Route::get('/admin/dashboard', [AdminDashboardController::class, 'show']);
                 Route::get('/admin/profile', [AdminProfileController::class, 'show']);
                 Route::put('/admin/profile', [AdminProfileController::class, 'update']);
-
+                Route::get('/admin/chat-history', [ChatController::class, 'adminIndex']);
+Route::post('/admin/chat-history/clear', [ChatController::class, 'adminClear']);
                 Route::get('/admin/admins', [AdminAdminController::class, 'index']);
                 Route::get('/admin/admins/{user}', [AdminAdminController::class, 'show']);
                 Route::post('/admin/admins', [AdminAdminController::class, 'store']);

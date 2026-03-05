@@ -22,23 +22,61 @@ class AdminDashboardController extends Controller
         $days = $range === '7d' ? 7 : ($range === '30d' ? 30 : 365);
         $from = now()->subDays($days);
 
-        /* ---------------- KPI ---------------- */
-
         $pendingApplications = GymOwnerApplication::where('status', 'pending')->count();
-
         $pendingGyms = Gym::where('status', 'pending')->count();
-
         $totalGyms = Gym::count();
-
         $totalUsers = User::where('role', 'user')->count();
-
         $blockedGyms = Gym::where('is_announcement_blocked', true)->count();
 
         $interactions = DB::table('gym_interactions')
             ->where('created_at', '>=', $from)
             ->count();
 
-        /* ---------------- RECENT ACTIVITY ---------------- */
+        $recentUsers = User::query()
+            ->where('role', 'user')
+            ->with(['userProfile'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($u) {
+                return [
+                    'id' => $u->user_id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'created_at' => optional($u->created_at)->toIso8601String(),
+                    'profile' => $u->userProfile ? [
+                        'profile_photo_url' => $u->userProfile->profile_photo_url,
+                        'address' => $u->userProfile->address,
+                        'gender' => $u->userProfile->gender,
+                        'age' => $u->userProfile->age,
+                    ] : null,
+                ];
+            })
+            ->values();
+
+        $recentOwners = User::query()
+            ->where('role', 'owner')
+            ->with(['ownerProfile'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($o) {
+                return [
+                    'id' => $o->user_id,
+                    'name' => $o->name,
+                    'email' => $o->email,
+                    'created_at' => optional($o->created_at)->toIso8601String(),
+                    'profile' => $o->ownerProfile ? [
+                        'profile_photo_url' => $o->ownerProfile->profile_photo_url,
+                        'contact_number' => $o->ownerProfile->contact_number,
+                        'address' => $o->ownerProfile->address,
+                        'company_name' => $o->ownerProfile->company_name,
+                        'verified' => (bool) $o->ownerProfile->verified,
+                        'last_login' => $o->ownerProfile->last_login,
+                    ] : null,
+                ];
+            })
+            ->values();
 
         $apps = GymOwnerApplication::latest()
             ->limit(6)
@@ -86,8 +124,6 @@ class AdminDashboardController extends Controller
             ->values()
             ->take(12);
 
-        /* ---------------- CHARTS ---------------- */
-
         $approvalsByMonth = $this->countByMonth(
             GymOwnerApplication::where('status', 'approved'),
             'created_at',
@@ -115,10 +151,10 @@ class AdminDashboardController extends Controller
                 'interactions_trend' => $interactionsTrend,
             ],
             'activity' => $activity,
+            'recent_users' => $recentUsers,
+            'recent_owners' => $recentOwners,
         ]);
     }
-
-    /* ---------------- MONTHLY CHART ---------------- */
 
     private function countByMonth($query, string $column, int $months)
     {
@@ -131,14 +167,16 @@ class AdminDashboardController extends Controller
             ->orderBy('ym')
             ->get();
 
-        $map = $rows->pluck('c', 'ym')->toArray();
+        $map = [];
+        foreach ($rows as $r) {
+            $key = \Carbon\Carbon::parse($r->ym)->format('Y-m-01');
+            $map[$key] = (int) $r->c;
+        }
 
         $out = [];
-
         for ($i = 0; $i < $months; $i++) {
             $date = (clone $start)->addMonths($i);
-
-            $key = $date->startOfMonth()->toDateTimeString();
+            $key = $date->format('Y-m-01');
 
             $out[] = [
                 'label' => $date->format('M'),
@@ -148,8 +186,6 @@ class AdminDashboardController extends Controller
 
         return $out;
     }
-
-    /* ---------------- DAILY TREND ---------------- */
 
     private function countByDayTrend($table, string $column, int $days)
     {
@@ -163,17 +199,20 @@ class AdminDashboardController extends Controller
             ->get();
 
         $map = [];
-
         foreach ($rows as $r) {
-            $map[$r->d] = (int) $r->c;
+            $key = \Carbon\Carbon::parse($r->d)->format('Y-m-d');
+            $map[$key] = (int) $r->c;
         }
 
         $out = [];
-
         for ($i = 0; $i < $days; $i++) {
-            $day = (clone $start)->addDays($i)->startOfDay()->toDateTimeString();
+            $date = (clone $start)->addDays($i);
+            $key = $date->format('Y-m-d');
 
-            $out[] = (int) ($map[$day] ?? 0);
+            $out[] = [
+                'label' => $date->format('M d'),
+                'value' => (int) ($map[$key] ?? 0),
+            ];
         }
 
         return $out;

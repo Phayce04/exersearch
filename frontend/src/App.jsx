@@ -60,6 +60,8 @@ import AdminTemplateItems from "./pages/admin/AdminTemplateItems";
 import AdminDatabaseBackup from "./pages/admin/AdminDatabaseBackup";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import OwnerGymsPage from "./pages/owner/OwnerGymsPage";
+import AdminActivities from "./pages/admin/AdminInteractions";
+import AdminChatHistory from "./pages/admin/AdminChatHistory";
 
 import ScrollToTop from "./utils/ScrollToTop";  // ← Changed from ../../utils // ← ADD THIS
 
@@ -132,6 +134,9 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="equipments" element={<AdminEquipments />} />
           <Route path="amenities" element={<AdminAmenities />} />
+                    <Route path="activities" element={<AdminActivities />} />
+                    <Route path="chathistory" element={<AdminChatHistory />} />
+
           <Route path="gyms" element={<AdminGyms />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="admins" element={<AdminAdmins />} />

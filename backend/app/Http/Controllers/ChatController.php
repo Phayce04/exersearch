@@ -317,4 +317,90 @@ class ChatController extends Controller
             'deleted' => $deleted
         ]);
     }
+
+    // ✅ Admin: list chat history across users/guests
+public function adminIndex(Request $request)
+{
+    $limit = (int) $request->query('limit', 2000);
+    if ($limit < 1) $limit = 1;
+    if ($limit > 5000) $limit = 5000;
+
+    $q = trim((string) $request->query('q', ''));
+    $role = trim((string) $request->query('role', '')); // user | assistant | (empty=all)
+    $days = (int) $request->query('days', 7);
+    if (!in_array($days, [1, 7, 30, 90, 365], true)) $days = 7;
+
+    $userId = $request->query('user_id'); // optional filter
+    $from = now()->subDays($days);
+
+    $query = \DB::table('chat_histories as ch')
+        ->leftJoin('users as u', 'u.user_id', '=', 'ch.user_id')
+        ->where('ch.created_at', '>=', $from)
+        ->select([
+            'ch.user_id',
+            'ch.ip_address',
+            'ch.role',
+            'ch.content',
+            'ch.created_at',
+            'u.name as user_name',
+            'u.email as user_email',
+
+            // row key (since table may not have id)
+            \DB::raw("CONCAT(COALESCE(ch.user_id::text,''),'|',COALESCE(ch.ip_address,''),'|',ch.role,'|',ch.created_at::text) as row_key"),
+        ])
+        ->orderByDesc('ch.created_at')
+        ->limit($limit);
+
+    if ($role !== '' && $role !== 'All') {
+        $query->where('ch.role', $role);
+    }
+
+    if ($userId !== null && $userId !== '') {
+        $query->where('ch.user_id', (int) $userId);
+    }
+
+    if ($q !== '') {
+        $like = '%' . str_replace('%', '\\%', $q) . '%';
+        $query->where(function ($w) use ($like) {
+            $w->where('ch.content', 'ilike', $like)
+              ->orWhere('ch.ip_address', 'ilike', $like)
+              ->orWhere('ch.role', 'ilike', $like)
+              ->orWhere('u.name', 'ilike', $like)
+              ->orWhere('u.email', 'ilike', $like);
+        });
+    }
+
+    return response()->json($query->get(), 200);
+}
+
+// ✅ Admin: clear chat history (all, by user_id, or by ip)
+public function adminClear(Request $request)
+{
+    $request->validate([
+        'user_id' => ['nullable', 'integer'],
+        'ip_address' => ['nullable', 'string', 'max:64'],
+        'days' => ['nullable', 'integer'],
+    ]);
+
+    $userId = $request->input('user_id');
+    $ip = $request->input('ip_address');
+    $days = $request->input('days');
+
+    $query = ChatHistory::query();
+
+    if ($userId) $query->where('user_id', (int) $userId);
+    if ($ip) $query->where('ip_address', (string) $ip);
+
+    if ($days) {
+        $query->where('created_at', '>=', now()->subDays((int) $days));
+    }
+
+    $deleted = $query->delete();
+
+    return response()->json([
+        'success' => true,
+        'deleted' => $deleted,
+        'message' => 'Chat history cleared.',
+    ]);
+}
 }

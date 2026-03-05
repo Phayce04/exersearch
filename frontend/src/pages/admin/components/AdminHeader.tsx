@@ -427,233 +427,255 @@ export default function AdminHeader({
             )}
           </button>
 
-          {notifOpen && (
-            <div
+{notifOpen && (
+  <div
+    style={{
+      position: "absolute",
+      right: 0,
+      top: 50,
+      width: 340,
+      borderRadius: 14,
+      border: `1px solid ${t.border}`,
+      background: t.bg,
+      boxShadow: t.shadow,
+      padding: 10,
+      zIndex: 999,
+
+      // ✅ limit overall size
+      maxHeight: 460,
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden", // prevents header from scrolling
+    }}
+  >
+    {/* Header stays fixed */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        paddingBottom: 8,
+      }}
+    >
+      <div style={{ fontWeight: 950, fontSize: 13, color: t.text }}>Notifications</div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await markAllNotificationsRead({ role: "admin" });
+              setNotifications((prev) => prev.map((x) => ({ ...x, is_read: true })));
+              setUnreadCount(0);
+            } catch {
+              // ignore
+            }
+          }}
+          style={{
+            border: `1px solid ${t.border}`,
+            background: t.soft,
+            color: t.text,
+            borderRadius: 10,
+            padding: "6px 10px",
+            cursor: "pointer",
+            fontWeight: 900,
+            fontSize: 12,
+          }}
+        >
+          Mark all read
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setNotifOpen(false)}
+          style={{
+            border: `1px solid ${t.border}`,
+            background: t.soft,
+            color: t.text,
+            borderRadius: 10,
+            width: 34,
+            height: 32,
+            cursor: "pointer",
+            display: "grid",
+            placeItems: "center",
+            fontWeight: 900,
+          }}
+          title="Close"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    {/* ✅ Scrollable content area */}
+    <div
+      style={{
+        flex: 1,
+        overflowY: "auto",
+        paddingRight: 2, // avoids content hiding behind scrollbar
+      }}
+    >
+      {notifLoading && (
+        <div
+          style={{
+            padding: 10,
+            borderRadius: 12,
+            background: t.soft2,
+            border: `1px solid ${t.border}`,
+            fontWeight: 850,
+            color: t.mutedText,
+          }}
+        >
+          Loading…
+        </div>
+      )}
+
+      {!notifLoading && notifErr && (
+        <div
+          style={{
+            padding: 10,
+            borderRadius: 12,
+            background: t.soft2,
+            border: `1px solid ${t.border}`,
+            fontWeight: 850,
+            color: t.mutedText,
+          }}
+        >
+          {notifErr}
+        </div>
+      )}
+
+      {!notifLoading && !notifErr && notifications.length === 0 && (
+        <div
+          style={{
+            padding: 10,
+            borderRadius: 12,
+            background: t.soft2,
+            border: `1px solid ${t.border}`,
+            fontWeight: 850,
+            color: t.mutedText,
+          }}
+        >
+          All caught up!
+        </div>
+      )}
+
+      {!notifLoading &&
+        !notifErr &&
+        notifications.map((n) => {
+          const id = Number(n.notification_id ?? n.id);
+          const unread = !n.is_read;
+
+          const title = String(n.title ?? "");
+          const body = String(n.body ?? n.message ?? "");
+
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={async () => {
+                // optimistic
+                setNotifications((prev) =>
+                  prev.map((x) =>
+                    Number(x.notification_id ?? x.id) === id ? { ...x, is_read: true } : x
+                  )
+                );
+                setUnreadCount((c) => Math.max(0, c - (unread ? 1 : 0)));
+
+                try {
+                  await markNotificationRead(id);
+                } catch {
+                  refreshUnread();
+                  loadNotifs();
+                }
+
+                const url = n?.url || n?.meta?.url || n?.meta?.route || n?.meta?.link;
+                if (url) {
+                  setNotifOpen(false);
+                  navigate(String(url));
+                }
+              }}
               style={{
-                position: "absolute",
-                right: 0,
-                top: 50,
-                width: 340,
-                borderRadius: 14,
+                width: "100%",
+                textAlign: "left",
                 border: `1px solid ${t.border}`,
-                background: t.bg,
-                boxShadow: t.shadow,
+                background: unread ? t.soft : t.bg,
+                color: t.text,
+                borderRadius: 12,
                 padding: 10,
-                zIndex: 999,
+                cursor: "pointer",
+                display: "flex",
+                gap: 10,
+                marginTop: 8,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                <div style={{ fontWeight: 950, fontSize: 13, color: t.text }}>Notifications</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await markAllNotificationsRead({ role: "admin" });
-                        setNotifications((prev) => prev.map((x) => ({ ...x, is_read: true })));
-                        setUnreadCount(0);
-                      } catch {
-                        // ignore
-                      }
-                    }}
-                    style={{
-                      border: `1px solid ${t.border}`,
-                      background: t.soft,
-                      color: t.text,
-                      borderRadius: 10,
-                      padding: "6px 10px",
-                      cursor: "pointer",
-                      fontWeight: 900,
-                      fontSize: 12,
-                    }}
-                  >
-                    Mark all read
-                  </button>
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 12,
+                  background: t.soft2,
+                  border: `1px solid ${t.border}`,
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 16,
+                  flex: "0 0 auto",
+                }}
+              >
+                {iconForNotifType(n.type)}
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setNotifOpen(false)}
-                    style={{
-                      border: `1px solid ${t.border}`,
-                      background: t.soft,
-                      color: t.text,
-                      borderRadius: 10,
-                      width: 34,
-                      height: 32,
-                      cursor: "pointer",
-                      display: "grid",
-                      placeItems: "center",
-                      fontWeight: 900,
-                    }}
-                    title="Close"
-                  >
-                    ✕
-                  </button>
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 950,
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {title || "Notification"}
+                </div>
+                <div
+                  style={{
+                    marginTop: 3,
+                    fontWeight: 800,
+                    fontSize: 12,
+                    color: t.mutedText,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical" as any,
+                  }}
+                >
+                  {body}
                 </div>
               </div>
 
-              <div style={{ marginTop: 10 }}>
-                {notifLoading && (
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 12,
-                      background: t.soft2,
-                      border: `1px solid ${t.border}`,
-                      fontWeight: 850,
-                      color: t.mutedText,
-                    }}
-                  >
-                    Loading…
-                  </div>
-                )}
-
-                {!notifLoading && notifErr && (
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 12,
-                      background: t.soft2,
-                      border: `1px solid ${t.border}`,
-                      fontWeight: 850,
-                      color: t.mutedText,
-                    }}
-                  >
-                    {notifErr}
-                  </div>
-                )}
-
-                {!notifLoading && !notifErr && notifications.length === 0 && (
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 12,
-                      background: t.soft2,
-                      border: `1px solid ${t.border}`,
-                      fontWeight: 850,
-                      color: t.mutedText,
-                    }}
-                  >
-                    All caught up!
-                  </div>
-                )}
-
-                {!notifLoading &&
-                  !notifErr &&
-                  notifications.map((n) => {
-                    const id = Number(n.notification_id ?? n.id);
-                    const unread = !n.is_read;
-
-                    const title = String(n.title ?? "");
-                    const body = String(n.body ?? n.message ?? "");
-
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={async () => {
-                          // optimistic
-                          setNotifications((prev) =>
-                            prev.map((x) =>
-                              Number(x.notification_id ?? x.id) === id ? { ...x, is_read: true } : x
-                            )
-                          );
-                          setUnreadCount((c) => Math.max(0, c - (unread ? 1 : 0)));
-
-                          try {
-                            await markNotificationRead(id);
-                          } catch {
-                            refreshUnread();
-                            loadNotifs();
-                          }
-
-                          // navigate (prefer top-level url, fallback to meta)
-                          const url = n?.url || n?.meta?.url || n?.meta?.route || n?.meta?.link;
-                          if (url) {
-                            setNotifOpen(false);
-                            navigate(String(url));
-                          }
-                        }}
-                        style={{
-                          width: "100%",
-                          textAlign: "left",
-                          border: `1px solid ${t.border}`,
-                          background: unread ? t.soft : t.bg,
-                          color: t.text,
-                          borderRadius: 12,
-                          padding: 10,
-                          cursor: "pointer",
-                          display: "flex",
-                          gap: 10,
-                          marginTop: 8,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 12,
-                            background: t.soft2,
-                            border: `1px solid ${t.border}`,
-                            display: "grid",
-                            placeItems: "center",
-                            fontSize: 16,
-                            flex: "0 0 auto",
-                          }}
-                        >
-                          {iconForNotifType(n.type)}
-                        </div>
-
-                        <div style={{ minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontWeight: 950,
-                              fontSize: 13,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {title || "Notification"}
-                          </div>
-                          <div
-                            style={{
-                              marginTop: 3,
-                              fontWeight: 800,
-                              fontSize: 12,
-                              color: t.mutedText,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical" as any,
-                            }}
-                          >
-                            {body}
-                          </div>
-                        </div>
-
-                        {unread && (
-                          <span
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: 999,
-                              background: MAIN,
-                              marginLeft: "auto",
-                              marginTop: 2,
-                              boxShadow: `0 0 0 3px rgba(210,63,11,0.18)`,
-                              flex: "0 0 auto",
-                            }}
-                            title="Unread"
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
+              {unread && (
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 999,
+                    background: MAIN,
+                    marginLeft: "auto",
+                    marginTop: 2,
+                    boxShadow: `0 0 0 3px rgba(210,63,11,0.18)`,
+                    flex: "0 0 auto",
+                  }}
+                  title="Unread"
+                />
+              )}
+            </button>
+          );
+        })}
+    </div>
+  </div>
+)}
         </div>
 
         {/* Profile menu (existing) */}
