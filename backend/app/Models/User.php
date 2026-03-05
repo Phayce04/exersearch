@@ -140,7 +140,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(\App\Models\GymRating::class, 'user_id', 'user_id');
     }
     public function linkedManualMembership()
-{
+    {
     return $this->hasOne(\App\Models\GymManualMember::class, 'linked_user_id', 'user_id');
-}
+    }
+
+    public function chatHistory()
+    {
+    return $this->hasMany(ChatHistory::class);
+    }
+    
 }

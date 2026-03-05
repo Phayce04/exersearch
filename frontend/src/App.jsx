@@ -25,6 +25,8 @@ import GymInquiryHistory from "./pages/user/GymInquiryHistory";
 import UserFaq from "./pages/user/FAQs";
 import AboutUs from "./pages/user/AboutUs";
 
+import Chatbot from "./pages/user/ChatBot";
+
 import OwnerLayout from "./pages/owner/OwnerLayout";
 import OwnerHome from "./pages/owner/OwnerHome";
 import OwnerMembers from "./pages/owner/OwnerMembers";
@@ -88,6 +90,8 @@ function App() {
         <Route path="/become-an-owner" element={<BecomeOwner />} />
         <Route path="/owner-application" element={<OwnerApplication />} />
         <Route path="meal-plan" element={<MealPlanGenerator />} />
+
+        <Route path="/chatbot" element={<Chatbot />} />
              <Route path="/owner-application" element={<OwnerApplication />} />
    
         <Route path="/home/*" element={<UserLayout />}>

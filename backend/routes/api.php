@@ -67,6 +67,8 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\GymAnnouncementController;
 use App\Http\Controllers\AdminDashboardController;
 
+use App\Http\Controllers\ChatController;
+
 Route::prefix('v1')->group(function () {
 
     Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
@@ -134,6 +136,14 @@ Route::prefix('v1')->group(function () {
     Route::prefix('meal-plan')->group(function () {
         Route::post('/generate', [MealPlanController::class, 'generate']);
     });
+
+    Route::post('/chat', [ChatController::class, 'sendMessage']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/chat/history', [ChatController::class, 'getUserHistory']);
+    });
+
+    Route::delete('/api/v1/chat/clear', [ChatController::class, 'clearHistory']);
 
     Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
 
