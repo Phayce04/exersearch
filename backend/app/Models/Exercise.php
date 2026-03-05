@@ -18,11 +18,17 @@ class Exercise extends Model
         'instructions',
         'external_source',
         'external_id',
+
+        'tutorial_image',
+        'tutorial_video_url',
     ];
 
     protected $casts = [
         'secondary_muscles' => 'array',
         'instructions' => 'array',
+
+        'tutorial_image' => 'string',
+        'tutorial_video_url' => 'string',
     ];
 
     public function equipments()
@@ -34,5 +40,4 @@ class Exercise extends Model
             'equipment_id'
         );
     }
-    
 }

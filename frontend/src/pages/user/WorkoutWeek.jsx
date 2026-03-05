@@ -188,8 +188,8 @@ export default function WorkoutWeek() {
       console.log("[WorkoutWeek] Loaded plan:", loaded);
     } catch (e) {
       console.error("[WorkoutWeek] Load plan error:", e);
-// silently ignore for first-time users
-console.warn("[WorkoutWeek] No existing plan found.");
+      // silently ignore for first-time users
+      console.warn("[WorkoutWeek] No existing plan found.");
     } finally {
       setLoadingPlan(false);
     }
@@ -340,14 +340,7 @@ console.warn("[WorkoutWeek] No existing plan found.");
               {loadingGenerate ? "Generating..." : "Generate Plan"}
             </button>
 
-            <button
-              className="ww-landing-btn ww-landing-btn-secondary"
-              onClick={openRecalibrate}
-              type="button"
-            >
-              Recalibrate Preferences
-            </button>
-
+            {/* ✅ removed recalibrate button from landing */}
           </div>
         </section>
       ) : (
@@ -388,6 +381,7 @@ console.warn("[WorkoutWeek] No existing plan found.");
                     {loadingGenerate ? "Generating..." : "Regenerate"}
                   </button>
 
+                  {/* ✅ only shows after plan exists */}
                   <button
                     className="ww-btn"
                     onClick={openRecalibrate}
@@ -782,7 +776,14 @@ function PreferencesModal({
                       key={id}
                       type="button"
                       className={`ww-eq-pill ${checked ? "is-on" : ""}`}
-                      onClick={() => toggleEquipment(id)}
+                      onClick={() => {
+                        setPreferredEquipmentIds((prev) => {
+                          const set = new Set(prev.map(Number));
+                          if (set.has(id)) set.delete(id);
+                          else set.add(id);
+                          return Array.from(set);
+                        });
+                      }}
                       title={name}
                     >
                       {checked ? "✓ " : ""}

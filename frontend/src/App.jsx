@@ -62,6 +62,9 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import OwnerGymsPage from "./pages/owner/OwnerGymsPage";
 import AdminActivities from "./pages/admin/AdminInteractions";
 import AdminChatHistory from "./pages/admin/AdminChatHistory";
+import AdminIngredients from "./pages/admin/AdminIngredients";
+import AdminMacroPresets from "./pages/admin/AdminMacroPresets";
+import AdminMeals from "./pages/admin/AdminMeals";
 
 import ScrollToTop from "./utils/ScrollToTop";  // ← Changed from ../../utils // ← ADD THIS
 
@@ -136,6 +139,9 @@ function App() {
           <Route path="amenities" element={<AdminAmenities />} />
                     <Route path="activities" element={<AdminActivities />} />
                     <Route path="chathistory" element={<AdminChatHistory />} />
+                    <Route path="ingredients" element={<AdminIngredients />} />
+                    <Route path="macro" element={<AdminMacroPresets />} />
+                    <Route path="meals" element={<AdminMeals />} />
 
           <Route path="gyms" element={<AdminGyms />} />
           <Route path="users" element={<AdminUsers />} />

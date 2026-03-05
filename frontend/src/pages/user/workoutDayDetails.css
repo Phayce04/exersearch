@@ -980,3 +980,166 @@
   }
 }
 .swal2-container { z-index: 20000 !important; }
+/* ✅ ADD THESE ONLY (icon + tutorial modal pieces) */
+
+/* --- "How to do it" title row + view icon button --- */
+.wdp-mini-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 0.6rem; /* keep your spacing */
+}
+
+.wdp-viewicon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+
+  border: 1.5px solid rgba(210, 63, 11, 0.28);
+  background: rgba(210, 63, 11, 0.08);
+  color: var(--orange);
+
+  font-weight: 900;
+  font-size: 0.78rem;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+
+  transition: transform 0.16s ease, background 0.16s ease,
+    border-color 0.16s ease, box-shadow 0.16s ease;
+  user-select: none;
+}
+
+.wdp-viewicon:hover {
+  transform: translateY(-1px);
+  background: rgba(210, 63, 11, 0.12);
+  border-color: rgba(210, 63, 11, 0.4);
+  box-shadow: 0 10px 20px rgba(210, 63, 11, 0.08);
+}
+
+.wdp-viewicon:active {
+  transform: translateY(0);
+}
+
+.wdp-viewicon:focus-visible {
+  outline: 3px solid rgba(210, 63, 11, 0.18);
+  outline-offset: 3px;
+}
+
+/* --- Tutorial modal sizing (uses your existing .wdp-modal styles) --- */
+.wdp-modal--tutorial {
+  width: min(760px, 96vw);
+}
+
+/* Notes block inside tutorial modal */
+.wdp-tut-notes {
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 14px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-weight: 700;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+/* Tutorial image */
+.wdp-tut-imagewrap {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--gray-300);
+  background: var(--gray-100);
+  margin-bottom: 12px;
+}
+
+.wdp-tut-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* YouTube thumbnail card */
+.wdp-tut-yt {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+
+  text-decoration: none;
+  border: 1px solid var(--gray-300);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--white);
+
+  transition: transform 0.16s ease, box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.wdp-tut-yt:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+  border-color: rgba(210, 63, 11, 0.28);
+}
+
+.wdp-tut-ytthumb {
+  position: relative;
+  width: 220px;
+  flex: 0 0 220px;
+  background: #111827;
+}
+
+.wdp-tut-ytthumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.95;
+}
+
+.wdp-tut-ytplay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.wdp-tut-ytmeta {
+  padding: 12px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.wdp-tut-ytlabel {
+  color: var(--black);
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+
+.wdp-tut-ytlink {
+  color: var(--gray-500);
+  font-weight: 800;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mobile tweaks */
+@media (max-width: 560px) {
+  .wdp-tut-yt {
+    flex-direction: column;
+  }
+  .wdp-tut-ytthumb {
+    width: 100%;
+    flex-basis: auto;
+    height: 180px;
+  }
+}

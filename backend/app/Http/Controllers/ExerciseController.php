@@ -19,17 +19,19 @@ class ExerciseController extends Controller
         if ($q) {
             $query->where('name', 'ilike', "%{$q}%");
         }
+
         if ($muscle) {
             $query->where('primary_muscle', $muscle);
         }
+
         if ($difficulty) {
             $query->where('difficulty', $difficulty);
         }
+
         if ($equipment) {
             $query->where('equipment', $equipment);
         }
 
-        // ✅ IMPORTANT: return paginator directly so frontend useApiList works
         return $query->orderBy('name')->paginate(20);
     }
 
@@ -55,6 +57,8 @@ class ExerciseController extends Controller
             'instructions.*' => 'string|max:300',
             'external_source' => 'nullable|string|max:30',
             'external_id' => 'nullable|string|max:50',
+            'tutorial_image' => 'nullable|string',
+            'tutorial_video_url' => 'nullable|string',
         ]);
 
         $exercise = Exercise::create($data);
@@ -80,6 +84,8 @@ class ExerciseController extends Controller
             'instructions.*' => 'string|max:300',
             'external_source' => 'nullable|string|max:30',
             'external_id' => 'nullable|string|max:50',
+            'tutorial_image' => 'nullable|string',
+            'tutorial_video_url' => 'nullable|string',
         ]);
 
         $exercise->update($data);

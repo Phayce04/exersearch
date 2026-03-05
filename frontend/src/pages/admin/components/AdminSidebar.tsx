@@ -1,3 +1,4 @@
+// AdminSidebar.tsx
 import React from "react";
 import { Sidebar, Menu, MenuItem, SubMenu, menuClasses } from "react-pro-sidebar";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -15,6 +16,15 @@ import { MapPin } from "./icons/MapPin";
 import { Dumbbell } from "./icons/Dumbbell";
 import { Users } from "./icons/Users";
 import { Sparkles } from "./icons/Sparkles";
+
+// ✅ distinct icons you already have in your project (lucide-react is already in your repo)
+import {
+  Activity,
+  MessageSquareText,
+  Salad,
+  PercentDiamond,
+  UtensilsCrossed,
+} from "lucide-react";
 
 type Props = {
   theme: Theme;
@@ -90,6 +100,9 @@ const AdminSidebar: React.FC<Props> = ({
     borderRadius: 10,
     margin: "2px 10px",
   };
+
+  // ✅ small helper so lucide icons match your existing icon sizing
+  const L = (Icon: any) => <Icon size={18} style={{ display: "block" }} />;
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
@@ -185,7 +198,72 @@ const AdminSidebar: React.FC<Props> = ({
                 Announcements
               </MenuItem>
 
+              {/* Content & Nutrition (only ingredients/macro/meals now) */}
+              <SubMenu label="Content & Nutrition" icon={<Sparkles />}>
+                <MenuItem
+                  icon={L(Salad)}
+                  onClick={() => go("/admin/ingredients")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/ingredients"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Ingredients
+                </MenuItem>
+
+                <MenuItem
+                  icon={L(PercentDiamond)}
+                  onClick={() => go("/admin/macro")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/macro"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Macro Presets
+                </MenuItem>
+
+                <MenuItem
+                  icon={L(UtensilsCrossed)}
+                  onClick={() => go("/admin/meals")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/meals"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Meals
+                </MenuItem>
+              </SubMenu>
+
               <SubMenu label="Manage Data" icon={<Diamond />}>
+                {/* ✅ MOVED HERE */}
+                <MenuItem
+                  icon={L(Activity)}
+                  onClick={() => go("/admin/activities")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/activities"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Activities
+                </MenuItem>
+
+                {/* ✅ MOVED HERE */}
+                <MenuItem
+                  icon={L(MessageSquareText)}
+                  onClick={() => go("/admin/chathistory")}
+                  style={
+                    isPathActive(location.pathname, ["/admin/chathistory"])
+                      ? activeButtonStyle
+                      : undefined
+                  }
+                >
+                  Chat History
+                </MenuItem>
+
                 <MenuItem
                   icon={<Dumbbell />}
                   onClick={() => go("/admin/gyms")}
@@ -373,17 +451,7 @@ const AdminSidebar: React.FC<Props> = ({
                 Gyms Map
               </MenuItem>
 
-              <MenuItem
-                icon={<Book />}
-                onClick={() => go("/admin/docs")}
-                style={
-                  isPathActive(location.pathname, ["/admin/docs"])
-                    ? activeButtonStyle
-                    : undefined
-                }
-              >
-                Documentation
-              </MenuItem>
+              {/* ✅ REMOVED: Documentation */}
             </Menu>
           </div>
 

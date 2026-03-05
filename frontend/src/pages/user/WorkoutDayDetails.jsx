@@ -1,7 +1,7 @@
-// ✅ src/pages/user/WorkoutDayDetails.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
+import { Eye } from "lucide-react";
 import "./workoutDayDetails.css";
 import {
   getUserWorkoutPlanDay,
@@ -9,7 +9,7 @@ import {
   getUserSavedGyms,
   searchGyms,
   recalibrateWorkoutDayGym,
-  recalibrateWorkoutPlanGym, // ✅ week / whole plan
+  recalibrateWorkoutPlanGym,
   getGym,
 } from "../../utils/workoutPlanApi";
 
@@ -75,7 +75,6 @@ function eqAlias(norm = "") {
   return n;
 }
 
-// ✅ bodyweight ignore (matches your backend intent)
 function isBodyweightEqName(name = "") {
   const n = normalizeEqName(name);
   return n.includes("bodyweight") || n.includes("no equipment");
@@ -84,7 +83,6 @@ function isBodyweightEqName(name = "") {
 function toEqSet(equipments = []) {
   const set = new Set();
   for (const e of equipments || []) {
-    // ✅ ignore bodyweight from gym list too
     if (isBodyweightEqName(e?.name || "")) continue;
     const nm = eqAlias(normalizeEqName(e?.name || ""));
     if (nm) set.add(nm);
@@ -92,15 +90,11 @@ function toEqSet(equipments = []) {
   return set;
 }
 
-/* -------------------- CHANGE SUMMARY (for SweetAlert) -------------------- */
-
-// ✅ Prefer backend notices if present (more reliable than original_exercise)
 function buildChangeSummary(updatedDay) {
   const notices = Array.isArray(updatedDay?.recalibration_notices)
     ? updatedDay.recalibration_notices
     : [];
 
-  // If backend provided notices, use them.
   if (notices.length) {
     const changes = [];
 
@@ -109,7 +103,9 @@ function buildChangeSummary(updatedDay) {
         changes.push({
           kind: "replaced",
           slot: prettyLabel(n?.slot_type || "slot"),
-          from: n?.from_exercise_name || `Exercise #${n?.from_exercise_id || ""}`,
+          from:
+            n?.from_exercise_name ||
+            `Exercise #${n?.from_exercise_id || ""}`,
           to: n?.to_exercise_name || `Exercise #${n?.to_exercise_id || ""}`,
           reason: n?.reason || "",
         });
@@ -132,7 +128,6 @@ function buildChangeSummary(updatedDay) {
     return changes;
   }
 
-  // Fallback: infer from is_modified + original_exercise (old behavior)
   const changes = [];
   for (const it of updatedDay?.exercises || []) {
     const from = it?.original_exercise?.name;
@@ -225,15 +220,25 @@ function countKinds(changes = []) {
   return { swapped, removed };
 }
 
+function getExerciseTutorial(ex) {
+  const title = ex?.name ? `${ex.name} Tutorial` : "Exercise Tutorial";
+  const rawImg = ex?.tutorial_image || ex?.tutorial_image_url || "";
+  const rawVid = ex?.tutorial_video_url || "";
+  return {
+    title,
+    imageUrl: rawImg ? imgUrl(rawImg) : "",
+    videoUrl: String(rawVid || "").trim(),
+  };
+}
+
 export default function WorkoutDayDetails() {
-  const { id } = useParams(); // user_plan_day_id
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [day, setDay] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // ✅ equipment image modal (lightbox)
   const [imgModal, setImgModal] = useState({
     open: false,
     src: "",
@@ -242,7 +247,13 @@ export default function WorkoutDayDetails() {
     description: "",
   });
 
-  // ✅ gym picker states (BOTTOM)
+  const [tutorialModal, setTutorialModal] = useState({
+    open: false,
+    title: "",
+    imageUrl: "",
+    videoUrl: "",
+  });
+
   const [savedGyms, setSavedGyms] = useState([]);
   const [gymQuery, setGymQuery] = useState("");
   const [gymResults, setGymResults] = useState([]);
@@ -250,7 +261,6 @@ export default function WorkoutDayDetails() {
   const [gymErr, setGymErr] = useState("");
   const [recalibratingGymId, setRecalibratingGymId] = useState(null);
 
-  // ✅ DAY preview/confirm modal (only for this day)
   const [gymConfirm, setGymConfirm] = useState({
     open: false,
     gym: null,
@@ -259,7 +269,6 @@ export default function WorkoutDayDetails() {
     affected: [],
   });
 
-  // ✅ WEEK confirm modal (whole plan)
   const [gymWeekConfirm, setGymWeekConfirm] = useState({
     open: false,
     gym: null,
@@ -272,6 +281,14 @@ export default function WorkoutDayDetails() {
       title: "",
       category: "",
       description: "",
+    });
+
+  const closeTutorialModal = () =>
+    setTutorialModal({
+      open: false,
+      title: "",
+      imageUrl: "",
+      videoUrl: "",
     });
 
   const closeGymConfirm = () =>
@@ -306,9 +323,6 @@ export default function WorkoutDayDetails() {
     }
   }
 
-  // ----------------------------
-  // LOAD DAY DETAILS
-  // ----------------------------
   useEffect(() => {
     let alive = true;
 
@@ -335,13 +349,10 @@ export default function WorkoutDayDetails() {
     };
   }, [id]);
 
-  // load saved gyms
   useEffect(() => {
     refreshSavedGyms();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // gym search (debounced)
   useEffect(() => {
     let alive = true;
 
@@ -374,25 +385,21 @@ export default function WorkoutDayDetails() {
     };
   }, [gymQuery]);
 
-  // close modals on ESC
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
         if (imgModal.open) closeImgModal();
+        if (tutorialModal.open) closeTutorialModal();
         if (gymConfirm.open) closeGymConfirm();
         if (gymWeekConfirm.open) closeGymWeekConfirm();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imgModal.open, gymConfirm.open, gymWeekConfirm.open]);
+  }, [imgModal.open, tutorialModal.open, gymConfirm.open, gymWeekConfirm.open]);
 
   const isRest = !!day?.is_rest || (day?.exercises?.length ?? 0) === 0;
 
-  // ----------------------------
-  // DAY PREVIEW (FETCH FULL GYM FIRST)
-  // ----------------------------
   function buildDayPreviewAndOpen(fullGym) {
     const gymEquipments = Array.isArray(fullGym?.equipments)
       ? fullGym.equipments
@@ -400,7 +407,7 @@ export default function WorkoutDayDetails() {
     const gymEqSet = toEqSet(gymEquipments);
 
     const affected = [];
-    const neededAll = new Map(); // norm -> pretty
+    const neededAll = new Map();
 
     for (const it of day?.exercises || []) {
       const ex = it?.exercise || {};
@@ -432,7 +439,8 @@ export default function WorkoutDayDetails() {
 
     const hasEquip = [];
     const missingEquip = [];
-    for (const [norm, pretty] of neededAll.entries()) {
+    for (const [, pretty] of neededAll.entries()) {
+      const norm = eqAlias(normalizeEqName(pretty));
       if (gymEqSet.has(norm)) hasEquip.push(pretty);
       else missingEquip.push(pretty);
     }
@@ -460,9 +468,6 @@ export default function WorkoutDayDetails() {
     }
   }
 
-  // ----------------------------
-  // WEEK CONFIRM (FETCH FULL GYM FIRST)
-  // ----------------------------
   async function openGymWeekModal(gym) {
     if (!gym?.gym_id) return;
     setGymErr("");
@@ -475,9 +480,6 @@ export default function WorkoutDayDetails() {
     }
   }
 
-  // ----------------------------
-  // CONFIRM RECALIBRATE (DAY)
-  // ----------------------------
   async function confirmRecalibrateDay() {
     const gym = gymConfirm.gym;
     if (!gym?.gym_id || !id) return;
@@ -486,7 +488,6 @@ export default function WorkoutDayDetails() {
     setGymErr("");
 
     try {
-      // backend returns day payload (should include recalibration_notices + recalibration_summary)
       await recalibrateWorkoutDayGym(id, gym.gym_id);
 
       closeGymConfirm();
@@ -497,7 +498,8 @@ export default function WorkoutDayDetails() {
       const changes = buildChangeSummary(updatedDay);
       const { swapped, removed } = countKinds(changes);
       const summaryText =
-        (updatedDay?.recalibration_summary && String(updatedDay.recalibration_summary)) ||
+        (updatedDay?.recalibration_summary &&
+          String(updatedDay.recalibration_summary)) ||
         (removed
           ? `${removed} exercise(s) were removed because no compatible replacement was found. Volume was redistributed.`
           : "");
@@ -506,7 +508,9 @@ export default function WorkoutDayDetails() {
         title: "Day recalibration complete",
         html: `
           <div style="text-align:left;font-weight:800;color:#374151;margin-bottom:10px;">
-            Gym: <span style="font-weight:900;color:#111827;">${gym?.name || "Selected gym"}</span>
+            Gym: <span style="font-weight:900;color:#111827;">${
+              gym?.name || "Selected gym"
+            }</span>
           </div>
 
           <div style="text-align:left;color:#6b7280;font-weight:800;line-height:1.6;margin-bottom:12px;">
@@ -535,9 +539,6 @@ export default function WorkoutDayDetails() {
     }
   }
 
-  // ----------------------------
-  // CONFIRM RECALIBRATE (WEEK / WHOLE PLAN)
-  // ----------------------------
   async function confirmRecalibrateWeek() {
     const gym = gymWeekConfirm.gym;
     const planId = day?.plan?.user_plan_id;
@@ -548,13 +549,11 @@ export default function WorkoutDayDetails() {
     setGymErr("");
 
     try {
-      // ✅ use API response for summary + notices
       const res = await recalibrateWorkoutPlanGym(planId, gym.gym_id);
       const planPayload = res?.data || null;
 
       closeGymWeekConfirm();
 
-      // refresh just this page's day (plan-wide changes may affect it)
       const updatedDay = await refreshDay();
       await refreshSavedGyms();
 
@@ -562,24 +561,33 @@ export default function WorkoutDayDetails() {
         ? planPayload.recalibration_notices
         : [];
 
-      const swapped = notices.filter((n) => n?.type === "exercise_replaced").length;
-      const removed = notices.filter((n) => n?.type === "exercise_dropped").length;
+      const swapped = notices.filter((n) => n?.type === "exercise_replaced")
+        .length;
+      const removed = notices.filter((n) => n?.type === "exercise_dropped")
+        .length;
 
       const summaryText =
-        (planPayload?.recalibration_summary && String(planPayload.recalibration_summary)) ||
+        (planPayload?.recalibration_summary &&
+          String(planPayload.recalibration_summary)) ||
         (removed
           ? `${removed} exercise(s) were removed because no compatible replacement was found. Volume was redistributed.`
           : "");
 
-      // show top few items (plan-wide) as a quick digest
       const topItems = notices.slice(0, 8).map((n) => {
         if (n?.type === "exercise_replaced") {
-          const from = n?.from_exercise_name || `Exercise #${n?.from_exercise_id || ""}`;
-          const to = n?.to_exercise_name || `Exercise #${n?.to_exercise_id || ""}`;
-          const dayName = n?.user_plan_day_id ? `Day #${n.user_plan_day_id}` : "";
+          const from =
+            n?.from_exercise_name ||
+            `Exercise #${n?.from_exercise_id || ""}`;
+          const to =
+            n?.to_exercise_name || `Exercise #${n?.to_exercise_id || ""}`;
+          const dayName = n?.user_plan_day_id
+            ? `Day #${n.user_plan_day_id}`
+            : "";
           return `
             <div style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#fff;text-align:left;">
-              <div style="font-weight:900;color:#111827;margin-bottom:4px;">Swapped ${dayName ? `• ${dayName}` : ""}</div>
+              <div style="font-weight:900;color:#111827;margin-bottom:4px;">Swapped ${
+                dayName ? `• ${dayName}` : ""
+              }</div>
               <div style="color:#6b7280;font-weight:800;">Was: <span style="color:#111827;font-weight:900;">${from}</span></div>
               <div style="color:#6b7280;font-weight:800;">Now: <span style="color:#111827;font-weight:900;">${to}</span></div>
             </div>
@@ -587,16 +595,18 @@ export default function WorkoutDayDetails() {
         }
 
         if (n?.type === "exercise_dropped") {
-          const ex = n?.exercise_name || `Exercise #${n?.exercise_id || ""}`;
+          const exn = n?.exercise_name || `Exercise #${n?.exercise_id || ""}`;
           const sets = Number(n?.sets_lost || 0);
-          const dayName = n?.user_plan_day_id ? `Day #${n.user_plan_day_id}` : "";
+          const dayName = n?.user_plan_day_id
+            ? `Day #${n.user_plan_day_id}`
+            : "";
           return `
             <div style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#fff;text-align:left;">
               <div style="font-weight:900;color:#111827;margin-bottom:4px;">
                 Removed ${dayName ? `• ${dayName}` : ""} 
                 <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#fee2e2;color:#991b1b;font-weight:900;font-size:12px;margin-left:8px;">REMOVED</span>
               </div>
-              <div style="color:#6b7280;font-weight:800;">${ex}</div>
+              <div style="color:#6b7280;font-weight:800;">${exn}</div>
               ${
                 sets
                   ? `<div style="color:#6b7280;font-weight:800;margin-top:6px;">Sets redistributed: <span style="color:#111827;font-weight:900;">${sets}</span></div>`
@@ -636,7 +646,9 @@ export default function WorkoutDayDetails() {
         html: `
           <div style="text-align:left;font-weight:800;color:#374151;margin-bottom:10px;">
             Gym applied to your full 7-day plan:
-            <span style="font-weight:900;color:#111827;"> ${gym?.name || "Selected gym"}</span>
+            <span style="font-weight:900;color:#111827;"> ${
+              gym?.name || "Selected gym"
+            }</span>
           </div>
 
           <div style="text-align:left;color:#6b7280;font-weight:800;line-height:1.6;margin-bottom:12px;">
@@ -668,10 +680,6 @@ export default function WorkoutDayDetails() {
         confirmButtonText: "OK",
         confirmButtonColor: "#d23f0b",
       });
-
-      // optional: if the plan-wide recalibration changed THIS day, you can pop a smaller followup
-      // based on updatedDay?.recalibration_notices if you want.
-      void updatedDay;
     } catch (e) {
       setGymErr(e?.message || "Failed to recalibrate whole week.");
 
@@ -752,7 +760,6 @@ export default function WorkoutDayDetails() {
           </div>
         ) : (
           <>
-            {/* EXERCISES */}
             <section className="wdp-card">
               <div className="wdp-card-head">
                 <div className="wdp-card-head-title">Exercises</div>
@@ -769,6 +776,9 @@ export default function WorkoutDayDetails() {
                       ? ex.equipments
                       : [];
                     const eqs = uniqById(eqsRaw, "equipment_id");
+
+                    const tut = getExerciseTutorial(ex);
+                    const canShowTut = !!tut.imageUrl;
 
                     return (
                       <article
@@ -816,7 +826,41 @@ export default function WorkoutDayDetails() {
                           {Array.isArray(ex?.instructions) &&
                           ex.instructions.length ? (
                             <div className="wdp-instructions">
-                              <div className="wdp-mini-title">How to do it</div>
+                              <div className="wdp-mini-title-row">
+                                <div className="wdp-mini-title">
+                                  How to do it
+                                </div>
+
+                                <button
+                                  type="button"
+                                  className="wdp-viewicon"
+                                  title={
+                                    canShowTut
+                                      ? "View tutorial"
+                                      : "No tutorial image yet"
+                                  }
+                                  onClick={() => {
+                                    if (!canShowTut) return;
+                                    setTutorialModal({
+                                      open: true,
+                                      title: tut.title || ex?.name || "Tutorial",
+                                      imageUrl: tut.imageUrl,
+                                      videoUrl: tut.videoUrl || "",
+                                    });
+                                  }}
+                                  disabled={!canShowTut}
+                                  aria-disabled={!canShowTut}
+                                  style={
+                                    !canShowTut
+                                      ? { opacity: 0.5, cursor: "not-allowed" }
+                                      : undefined
+                                  }
+                                >
+                                  <Eye size={16} />
+                                  <span>View</span>
+                                </button>
+                              </div>
+
                               <ol>
                                 {ex.instructions.slice(0, 8).map((step, idx) => (
                                   <li key={idx}>{String(step)}</li>
@@ -827,7 +871,9 @@ export default function WorkoutDayDetails() {
                         </div>
 
                         <aside className="wdp-exright">
-                          <div className="wdp-mini-title">Machines / Equipment</div>
+                          <div className="wdp-mini-title">
+                            Machines / Equipment
+                          </div>
 
                           {eqs.length ? (
                             <div className="wdp-eqstack">
@@ -907,7 +953,6 @@ export default function WorkoutDayDetails() {
 
             <div className="wdp-gap" />
 
-            {/* ✅ GYM PICKER AT BOTTOM */}
             <section className="wdp-card wdp-gymcard">
               <div className="wdp-card-head">
                 <div className="wdp-card-head-title">
@@ -925,7 +970,6 @@ export default function WorkoutDayDetails() {
                   </div>
                 ) : null}
 
-                {/* Saved gyms */}
                 {savedGyms?.length ? (
                   <div className="wdp-saved-list">
                     {savedGyms.map((g) => (
@@ -1015,7 +1059,6 @@ export default function WorkoutDayDetails() {
                   </div>
                 )}
 
-                {/* Search gyms */}
                 <div className="wdp-gymsearch-wrap">
                   <div className="wdp-gymsearch-title">Find a gym</div>
 
@@ -1041,7 +1084,9 @@ export default function WorkoutDayDetails() {
                     </button>
                   </div>
 
-                  {gymLoading ? <div className="wdp-muted">Searching…</div> : null}
+                  {gymLoading ? (
+                    <div className="wdp-muted">Searching…</div>
+                  ) : null}
 
                   {!gymLoading && gymResults.length ? (
                     <div className="wdp-gymresults">
@@ -1077,7 +1122,6 @@ export default function WorkoutDayDetails() {
         )}
       </div>
 
-      {/* ✅ Equipment Image Modal */}
       {imgModal.open ? (
         <div
           className="wdp-modal-overlay"
@@ -1124,7 +1168,53 @@ export default function WorkoutDayDetails() {
         </div>
       ) : null}
 
-      {/* ✅ DAY Gym Preview / Confirm Modal */}
+      {tutorialModal.open ? (
+        <div
+          className="wdp-modal-overlay"
+          onClick={closeTutorialModal}
+          role="presentation"
+        >
+          <div
+            className="wdp-modal wdp-modal--tutorial"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Exercise tutorial"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wdp-modal-head">
+              <div className="wdp-modal-title">
+                {tutorialModal.title || "Tutorial"}
+              </div>
+              <button
+                className="wdp-modal-close"
+                type="button"
+                onClick={closeTutorialModal}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="wdp-modal-scroll">
+              {tutorialModal.imageUrl ? (
+                <div className="wdp-tut-imagewrap">
+                  <img
+                    src={tutorialModal.imageUrl}
+                    alt={tutorialModal.title}
+                    className="wdp-tut-image"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = FALLBACK_EQUIPMENT_IMG;
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="wdp-muted">No tutorial image provided.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {gymConfirm.open ? (
         <div
           className="wdp-modal-overlay"
@@ -1231,7 +1321,9 @@ export default function WorkoutDayDetails() {
                   onClick={confirmRecalibrateDay}
                   disabled={!!recalibratingGymId}
                 >
-                  {recalibratingGymId ? "Recalibrating…" : "Recalibrate this day"}
+                  {recalibratingGymId
+                    ? "Recalibrating…"
+                    : "Recalibrate this day"}
                 </button>
               </div>
             </div>
@@ -1239,7 +1331,6 @@ export default function WorkoutDayDetails() {
         </div>
       ) : null}
 
-      {/* ✅ WEEK / WHOLE PLAN Confirm Modal */}
       {gymWeekConfirm.open ? (
         <div
           className="wdp-modal-overlay"
@@ -1306,7 +1397,9 @@ export default function WorkoutDayDetails() {
                   onClick={confirmRecalibrateWeek}
                   disabled={!!recalibratingGymId}
                 >
-                  {recalibratingGymId ? "Recalibrating…" : "Recalibrate whole week"}
+                  {recalibratingGymId
+                    ? "Recalibrating…"
+                    : "Recalibrate whole week"}
                 </button>
               </div>
             </div>
