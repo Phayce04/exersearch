@@ -263,7 +263,7 @@ class GymController extends Controller
                 [
                     'gym_id' => $gym->gym_id,
                     'actor_id' => $user->user_id,
-                    'url' => '/admin/gyms/' . $gym->gym_id,
+                    'url' => '/admin/gym-application',
                     'meta' => ['status' => $gym->status],
                 ]
             );

@@ -5,7 +5,7 @@
   position: fixed;
   top: 10px;
   left: 24px;
-  z-index: 1001; /* Always on top */
+  z-index: 3002; /* Always on top */
   transition: filter 0.3s ease;
 }
 
@@ -33,7 +33,7 @@
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 1000; /* Below the logo */
+  z-index: 3001; /* Below the logo */
 
   height: 70px;
   display: flex;

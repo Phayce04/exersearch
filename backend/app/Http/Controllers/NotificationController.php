@@ -41,6 +41,41 @@ class NotificationController extends Controller
     }
 
     /**
+     * OWNER URL fallback rules (only used if url is empty):
+     * - ratings/reviews -> /owner/view-gym/{gym_id}
+     * - inquiries       -> /owner/inbox
+     * - members         -> /owner/members/{gym_id}
+     * - free visits     -> /owner/free-visits/{gym_id}
+     */
+    private function fallbackOwnerUrl($row): ?string
+    {
+        $type = strtoupper(trim((string) ($row->type ?? '')));
+        $gymId = (int) ($row->gym_id ?? 0);
+
+        // inquiries (exact)
+        if ($this->isInquiryType($type)) {
+            return '/owner/inbox';
+        }
+
+        // ratings / reviews (exact)
+        if (str_contains($type, 'RATING') || str_contains($type, 'REVIEW')) {
+            return $gymId > 0 ? ('/owner/view-gym/' . $gymId) : null;
+        }
+
+        // members / membership (exact)
+        if (str_contains($type, 'MEMBER') || str_contains($type, 'MEMBERSHIP')) {
+            return $gymId > 0 ? ('/owner/members/' . $gymId) : null;
+        }
+
+        // visits / free visits (exact)
+        if (str_contains($type, 'FREE_VISIT') || str_contains($type, 'VISIT')) {
+            return $gymId > 0 ? ('/owner/free-visits/' . $gymId) : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Collapsed feed rule:
      * - Non-inquiry: normal rows (paged)
      * - Inquiry: ALWAYS 1 row per gym (latest activity), regardless of read/unread
@@ -119,10 +154,8 @@ class NotificationController extends Controller
         $n->collapsed = true;
         $n->collapsed_count = $count;
 
-        // OWNER inquiry groups
         if (($n->recipient_role ?? null) === 'owner') {
             if ($count <= 0) {
-                // all read -> fall back to normal row text
                 $n->collapsed_title = $n->title ?? 'Inquiry update';
                 $n->collapsed_message = $n->message ?? 'Tap to view.';
             } else {
@@ -133,10 +166,8 @@ class NotificationController extends Controller
             }
         }
 
-        // USER reply groups
         else if (($n->recipient_role ?? null) === 'user') {
             if ($count <= 0) {
-                // all read -> fall back to normal row text
                 $n->collapsed_title = $n->title ?? 'Inquiry update';
                 $n->collapsed_message = $n->message ?? 'Tap to view your inquiry history.';
             } else {
@@ -147,17 +178,15 @@ class NotificationController extends Controller
             }
         }
 
-        // fallback
         else {
             $n->collapsed_title = $n->title ?? 'Inquiry update';
             $n->collapsed_message = $n->message ?? '';
         }
 
-        // ensure inquiry groups always have a usable route
         if (empty($n->url)) {
             if (($n->recipient_role ?? null) === 'owner') {
-                $gid = (int)($n->gym_id ?? 0);
-                $n->url = $gid > 0 ? ('/owner/inquiries?gym_id=' . $gid) : '/owner/inquiries';
+                // EXACT per your requirement
+                $n->url = '/owner/inbox';
             } else if (($n->recipient_role ?? null) === 'user') {
                 $n->url = '/home/inquiries';
             }
@@ -180,25 +209,33 @@ class NotificationController extends Controller
         $unreadOnly = $request->boolean('unread_only');
         $perPage = (int) $request->query('per_page', 20);
 
-        // exact type filter (no collapsing)
         if ($request->filled('type')) {
             $q = Notification::query();
             $this->applyAccessScope($q, $user, $role);
             if ($unreadOnly) $q->where('is_read', false);
             $q->where('type', $request->query('type'));
 
-            return response()->json(
-                $q->orderByDesc('created_at')->paginate($perPage)
-            );
+            $paged = $q->orderByDesc('created_at')->paginate($perPage);
+
+            $items = $paged->getCollection()->map(function ($row) {
+                if (($row->recipient_role ?? null) === 'owner' && empty($row->url)) {
+                    $fallback = $this->fallbackOwnerUrl($row);
+                    if (!empty($fallback)) $row->url = $fallback;
+                }
+                return $row;
+            });
+
+            $paged->setCollection($items);
+
+            return response()->json($paged);
         }
 
         $base = $this->buildCollapsedIndexQuery($user, $role, $unreadOnly);
         $paged = $base->orderByDesc('created_at')->paginate($perPage);
 
-        // Decorate inquiry rows (ALWAYS collapse inquiries, even if latest row is read)
         $items = $paged->getCollection()->map(function ($row) use ($user, $role) {
             $type = $row->type ?? null;
-            $gymId = (int)($row->gym_id ?? 0);
+            $gymId = (int) ($row->gym_id ?? 0);
 
             if ($gymId > 0 && $this->isInquiryType($type)) {
                 $count = $this->inquiryUnreadCountForGym($user, $role, $gymId);
@@ -206,6 +243,12 @@ class NotificationController extends Controller
             } else {
                 $row->collapsed = false;
                 $row->collapsed_count = 1;
+            }
+
+            // owner fallback for missing url (exact rules)
+            if (($row->recipient_role ?? null) === 'owner' && empty($row->url)) {
+                $fallback = $this->fallbackOwnerUrl($row);
+                if (!empty($fallback)) $row->url = $fallback;
             }
 
             return $row;
@@ -244,7 +287,6 @@ class NotificationController extends Controller
 
         return response()->json(['unread' => (int) ($nonInquiryCount + $inquiryGroupCount)]);
     }
-
     public function markRead(Request $request, $id)
     {
         $user = Auth::user();
@@ -262,7 +304,6 @@ class NotificationController extends Controller
         $n = $q->first();
         if (!$n) return response()->json(['message' => 'Notification not found'], 404);
 
-        // if inquiry: mark ALL unread inquiry notifs for that gym as read
         if ($this->isInquiryType($n->type) && !empty($n->gym_id)) {
             $all = Notification::query();
             $this->applyAccessScope($all, $user, $role);
@@ -319,6 +360,9 @@ class NotificationController extends Controller
 
         $deleted = $q->delete();
 
-        return response()->json(['message' => $deleted ? 'Deleted' : 'Not found', 'deleted' => (int) $deleted]);
+        return response()->json([
+            'message' => $deleted ? 'Deleted' : 'Not found',
+            'deleted' => (int) $deleted
+        ]);
     }
 }

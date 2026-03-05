@@ -82,8 +82,7 @@ class GymInquiryController extends Controller
                 'message' => ($user->name ?? 'A user') . ' sent an inquiry for "' . ($gym->name ?? 'your gym') . '".',
                 'gym_id' => (int) $gym->gym_id,
                 'actor_id' => (int) $user->user_id,
-                'url' => '/owner/inquiries?gym_id=' . (int) $gym->gym_id,
-                'meta' => [
+'url' => '/owner/inbox',                'meta' => [
                     'inquiry_id' => (int) $row->inquiry_id,
                     'unassigned_owner' => empty($gym->owner_id),
                 ],
@@ -145,8 +144,7 @@ class GymInquiryController extends Controller
                 'message' => ($user->name ?? 'A user') . ' replied to an inquiry for "' . ($gym->name ?? 'your gym') . '".',
                 'gym_id' => (int) $gym->gym_id,
                 'actor_id' => (int) $user->user_id,
-                'url' => '/owner/inquiries?gym_id=' . (int) $gym->gym_id,
-                'meta' => [
+'url' => '/owner/inbox',                'meta' => [
                     'inquiry_id' => (int) $row->inquiry_id,
                     'unassigned_owner' => empty($gym->owner_id),
                 ],

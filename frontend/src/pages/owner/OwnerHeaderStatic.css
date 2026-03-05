@@ -16,7 +16,7 @@
   position: fixed;
   top: 10px;
   left: 24px;
-  z-index: 1101;
+  z-index: 3101;
 }
 
 .oh-topLogo img {
@@ -31,7 +31,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1100;
+  z-index: 3100;
   height: 70px;
   display: flex;
   align-items: center;

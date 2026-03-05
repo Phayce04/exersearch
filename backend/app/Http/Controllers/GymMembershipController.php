@@ -66,8 +66,7 @@ class GymMembershipController extends Controller
                 'message' => ($user->name ?? 'A user') . ' requested membership for "' . ($gym->name ?? 'your gym') . '".',
                 'gym_id' => (int) $gym->gym_id,
                 'actor_id' => (int) $user->user_id,
-                'url' => '/owner/memberships?gym_id=' . (int) $gym->gym_id,
-                'meta' => [
+'url' => '/owner/members/' . (int) $gym->gym_id,                'meta' => [
                     'membership_id' => (int) $membership->membership_id,
                     'unassigned_owner' => false,
                 ],
@@ -88,8 +87,7 @@ class GymMembershipController extends Controller
                     'message' => ($user->name ?? 'A user') . ' requested membership for "' . ($gym->name ?? 'your gym') . '".',
                     'gym_id' => (int) $gym->gym_id,
                     'actor_id' => (int) $user->user_id,
-                    'url' => '/owner/memberships?gym_id=' . (int) $gym->gym_id,
-                    'meta' => [
+'url' => '/owner/members/' . (int) $gym->gym_id,                    'meta' => [
                         'membership_id' => (int) $membership->membership_id,
                         'unassigned_owner' => true,
                     ],
@@ -177,8 +175,7 @@ class GymMembershipController extends Controller
             'message' => ($user->name ?? 'A user') . ' cancelled membership for "' . ($gym->name ?? 'your gym') . '".',
             'gym_id' => (int) $gym->gym_id,
             'actor_id' => (int) $user->user_id,
-            'url' => '/owner/memberships?gym_id=' . (int) $gym->gym_id,
-            'meta' => [
+'url' => '/owner/members/' . (int) $gym->gym_id,            'meta' => [
                 'membership_id' => (int) $m->membership_id,
                 'unassigned_owner' => empty($gym->owner_id),
             ],

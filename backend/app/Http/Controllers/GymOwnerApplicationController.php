@@ -74,7 +74,7 @@ class GymOwnerApplicationController extends Controller
                 ($user->name ?? 'A user') . ' updated an owner application for "' . ($application->gym_name ?? 'a gym') . '".',
                 [
                     'actor_id' => (int) $user->user_id,
-                    'url' => '/admin/owner-applications',
+                    'url' => '/admin/applications',
                     'meta' => ['application_id' => (int) $application->id],
                 ]
             );
@@ -91,7 +91,7 @@ class GymOwnerApplicationController extends Controller
             ($user->name ?? 'A user') . ' requested to become an owner for "' . ($application->gym_name ?? 'a gym') . '".',
             [
                 'actor_id' => (int) $user->user_id,
-                'url' => '/admin/owner-applications',
+                'url' => '/admin/applications',
                 'meta' => ['application_id' => (int) $application->id],
             ]
         );

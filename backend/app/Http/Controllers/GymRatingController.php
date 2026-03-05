@@ -120,7 +120,7 @@ class GymRatingController extends Controller
                     'type' => 'REVIEW_RECEIVED',
                     'title' => 'New review posted',
                     'message' => $msg,
-                    'url' => '/owner/gyms/' . (int) $gym->gym_id . '/ratings',
+'url' => '/owner/view-gym/' . (int) $gym->gym_id,
                     'gym_id' => (int) $gym->gym_id,
                     'actor_id' => (int) $user->user_id,
                     'meta' => [
