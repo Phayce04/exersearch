@@ -80,7 +80,7 @@ export default function AboutFinal() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveStory((prev) => (prev + 1) % 3);
-    }, 4000);
+    }, 4000); 
     return () => clearInterval(interval);
   }, []);
 

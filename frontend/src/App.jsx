@@ -86,6 +86,7 @@ function App() {
     <>
       <Routes>
         <Route path="/about-us" element={<AboutUs />} />
+          <Route path="faqs" element={<UserFaq />} />
 
         <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/" element={<RoleLanding />} />
@@ -114,9 +115,8 @@ function App() {
           <Route path="workout" element={<WorkoutWeek />} />
           <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
           <Route path="inquiries" element={<GymInquiryHistory />} />
-          <Route path="faqs" element={<UserFaq />} />
         </Route>
-
+ 
         <Route path="/owner/*" element={<OwnerLayout />}>
                   <Route path="view-gyms" element={<OwnerGymsPage />} />
 

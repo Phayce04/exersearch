@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import Header from "./Header";
+import Footer from './Footer';
 
-import Footer from "./Footer";
 import {
   Search,
   HelpCircle,
@@ -226,24 +227,26 @@ export default function FAQsPage() {
     [supportEmail, contactPhone, gmailSupportUrl]
   );
 
+  const levenshteinDistance = (s1, s2) => {
+    const m = [];
+    for (let i = 0; i <= s2.length; i++) m[i] = [i];
+    for (let j = 0; j <= s1.length; j++) m[0][j] = j;
+    for (let i = 1; i <= s2.length; i++) {
+      for (let j = 1; j <= s1.length; j++) {
+        m[i][j] =
+          s2[i - 1] === s1[j - 1]
+            ? m[i - 1][j - 1]
+            : Math.min(m[i - 1][j - 1] + 1, m[i][j - 1] + 1, m[i - 1][j] + 1);
+      }
+    }
+    return m[s2.length][s1.length];
+  };
+
   const calculateSimilarity = (s1, s2) => {
     const a = s1.length > s2.length ? s1 : s2;
     const b = s1.length > s2.length ? s2 : s1;
     if (!a.length) return 1;
     return (a.length - levenshteinDistance(a, b)) / a.length;
-  };
-
-  const levenshteinDistance = (s1, s2) => {
-    const m = [];
-    for (let i = 0; i <= s2.length; i++) m[i] = [i];
-    for (let j = 0; j <= s1.length; j++) m[0][j] = j;
-    for (let i = 1; i <= s2.length; i++)
-      for (let j = 1; j <= s1.length; j++)
-        m[i][j] =
-          s2[i - 1] === s1[j - 1]
-            ? m[i - 1][j - 1]
-            : Math.min(m[i - 1][j - 1] + 1, m[i][j - 1] + 1, m[i - 1][j] + 1);
-    return m[s2.length][s1.length];
   };
 
   const searchFaqs = (query) => {
@@ -262,15 +265,19 @@ export default function FAQsPage() {
           if (q.includes(t)) score += 10;
           if (a.includes(t)) score += 5;
           if (c.includes(t)) score += 3;
+
           q.split(" ").forEach((w) => {
             if (w.startsWith(t)) score += 7;
           });
+
           a.split(" ").forEach((w) => {
             if (w.startsWith(t)) score += 3;
           });
+
           q.split(" ").forEach((w) => {
-            if (w.length > 3 && t.length > 3 && calculateSimilarity(w, t) > 0.7)
+            if (w.length > 3 && t.length > 3 && calculateSimilarity(w, t) > 0.7) {
               score += 5;
+            }
           });
         });
 
@@ -289,320 +296,361 @@ export default function FAQsPage() {
     setActiveFaq(null);
   }, [activeCategory, searchQuery]);
 
-  const toggleFaq = (i) => setActiveFaq(activeFaq === i ? null : i);
+  const toggleFaq = (i) => {
+    setActiveFaq(activeFaq === i ? null : i);
+  };
 
   return (
-    <div className="fq">
-      <section className="fq-hero">
-        <div className="fq-hero__glow" />
-        <div className="fq-wrap">
-          <div className="fq-hero__content">
-            <p className="fq-hero__eyebrow">
-              <HelpCircle size={12} strokeWidth={2.5} />
-              Frequently Asked Questions
-            </p>
-            <h1 className="fq-hero__title">
-              Got questions?<br />
-              <span>We have answers.</span>
-            </h1>
-            <p className="fq-hero__sub">
-              Everything you need to know about ExerSearch —<br />
-              from gym discovery to nutrition planning.
-            </p>
+    <>
+      <Header />
 
-            <div className="fq-searchbar">
-              <Search className="fq-searchbar__ico" size={16} strokeWidth={2.5} />
-              <input
-                type="text"
-                className="fq-searchbar__input"
-                placeholder='Search articles — try "gym reviews" or "meal plan"'
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button className="fq-searchbar__clear" onClick={() => setSearchQuery("")}>
-                  ✕
-                </button>
+      <div className="fq">
+        <section className="fq-hero">
+          <div className="fq-hero__glow" />
+          <div className="fq-wrap">
+            <div className="fq-hero__content">
+              <p className="fq-hero__eyebrow">
+                <HelpCircle size={12} strokeWidth={2.5} />
+                Frequently Asked Questions
+              </p>
+
+              <h1 className="fq-hero__title">
+                Got questions?
+                <br />
+                <span>We have answers.</span>
+              </h1>
+
+              <p className="fq-hero__sub">
+                Everything you need to know about ExerSearch —
+                <br />
+                from gym discovery to nutrition planning.
+              </p>
+
+              <div className="fq-searchbar">
+                <Search className="fq-searchbar__ico" size={16} strokeWidth={2.5} />
+                <input
+                  type="text"
+                  className="fq-searchbar__input"
+                  placeholder='Search articles — try "gym reviews" or "meal plan"'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="fq-searchbar__clear"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {!searchQuery && (
+                <div className="fq-popular">
+                  <span>Quick searches —</span>
+                  {["create account", "gym reviews", "meal planner", "always free"].map(
+                    (t, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="fq-popular__chip"
+                        onClick={() => setSearchQuery(t)}
+                      >
+                        {t}
+                      </button>
+                    )
+                  )}
+                </div>
               )}
             </div>
 
-            {!searchQuery && (
-              <div className="fq-popular">
-                <span>Quick searches —</span>
-                {["create account", "gym reviews", "meal planner", "always free"].map((t, i) => (
-                  <button key={i} className="fq-popular__chip" onClick={() => setSearchQuery(t)}>
-                    {t}
+            <div className="fq-hero__stats">
+              {[
+                [`${faqs.length}+`, "Help Articles"],
+                ["50+", "Partner Gyms"],
+                ["24h", "Avg. Response"],
+                ["100%", "Free Platform"],
+              ].map(([v, l]) => (
+                <div key={l} className="fq-hero__stat">
+                  <span className="fq-hero__stat-n">{v}</span>
+                  <span className="fq-hero__stat-l">{l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="fq-main">
+          <div className="fq-wrap fq-main__grid">
+            <aside className="fq-sidebar">
+              <p className="fq-sidebar__heading">Browse by Topic</p>
+
+              <nav>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    className={`fq-catbtn ${activeCategory === cat.id ? "fq-catbtn--on" : ""}`}
+                    onClick={() => setActiveCategory(cat.id)}
+                  >
+                    <span className="fq-catbtn__ico">{cat.icon}</span>
+                    <span className="fq-catbtn__lbl">{cat.label}</span>
+                    <span className="fq-catbtn__n">
+                      {faqs.filter((f) => cat.id === "all" || f.category === cat.id).length}
+                    </span>
                   </button>
                 ))}
-              </div>
-            )}
-          </div>
+              </nav>
 
-          <div className="fq-hero__stats">
-            {[
-              [`${faqs.length}+`, "Help Articles"],
-              ["50+", "Partner Gyms"],
-              ["24h", "Avg. Response"],
-              ["100%", "Free Platform"],
-            ].map(([v, l]) => (
-              <div key={l} className="fq-hero__stat">
-                <span className="fq-hero__stat-n">{v}</span>
-                <span className="fq-hero__stat-l">{l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fq-main">
-        <div className="fq-wrap fq-main__grid">
-          <aside className="fq-sidebar">
-            <p className="fq-sidebar__heading">Browse by Topic</p>
-            <nav>
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  className={`fq-catbtn ${activeCategory === cat.id ? "fq-catbtn--on" : ""}`}
-                  onClick={() => setActiveCategory(cat.id)}
+              <div className="fq-sidebar__help">
+                <p>Didn't find your answer?</p>
+                <a
+                  href={gmailSupportUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="fq-sidebar__cta"
                 >
-                  <span className="fq-catbtn__ico">{cat.icon}</span>
-                  <span className="fq-catbtn__lbl">{cat.label}</span>
-                  <span className="fq-catbtn__n">
-                    {faqs.filter((f) => cat.id === "all" || f.category === cat.id).length}
-                  </span>
-                </button>
-              ))}
-            </nav>
+                  <Headphones size={14} />
+                  Contact Support
+                </a>
+              </div>
+            </aside>
 
-            {/* ✅ changed from <Link to="/contact"> to Gmail */}
-            <div className="fq-sidebar__help">
-              <p>Didn't find your answer?</p>
-              <a
-                href={gmailSupportUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="fq-sidebar__cta"
-              >
-                <Headphones size={14} />
-                Contact Support
-              </a>
-            </div>
-          </aside>
+            <div className="fq-panel">
+              <div className="fq-panel__hdr">
+                {loading ? (
+                  <>
+                    <h2 className="fq-panel__title">Loading…</h2>
+                    <p className="fq-panel__meta">Fetching FAQs</p>
+                  </>
+                ) : loadErr ? (
+                  <>
+                    <h2 className="fq-panel__title">FAQs</h2>
+                    <p className="fq-panel__meta">
+                      {loadErr}
+                      <button
+                        type="button"
+                        className="fq-popular__chip"
+                        onClick={() => window.location.reload()}
+                        style={{ marginLeft: 10 }}
+                      >
+                        Retry
+                      </button>
+                    </p>
+                  </>
+                ) : searchQuery ? (
+                  <>
+                    <h2 className="fq-panel__title">Search Results</h2>
+                    <p className="fq-panel__meta">
+                      <CheckCircle2 size={13} className="fq-panel__check" />
+                      <strong>{filteredFaqs.length}</strong>&nbsp;
+                      result{filteredFaqs.length !== 1 ? "s" : ""} for&nbsp;
+                      <em>"{searchQuery}"</em>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="fq-panel__title">
+                      {categories.find((c) => c.id === activeCategory)?.label}
+                    </h2>
+                    <p className="fq-panel__meta">
+                      {filteredFaqs.length}&nbsp;article{filteredFaqs.length !== 1 ? "s" : ""}
+                    </p>
+                  </>
+                )}
+              </div>
 
-          <div className="fq-panel">
-            <div className="fq-panel__hdr">
-              {loading ? (
-                <>
-                  <h2 className="fq-panel__title">Loading…</h2>
-                  <p className="fq-panel__meta">Fetching FAQs</p>
-                </>
+              {!loading && !loadErr && filteredFaqs.length > 0 ? (
+                <ul className="fq-list">
+                  {filteredFaqs.map((faq, i) => {
+                    const open = activeFaq === i;
+                    const catMeta = categories.find((c) => c.id === faq.category);
+
+                    return (
+                      <li
+                        key={faq.faq_id ?? i}
+                        className={`fq-item ${open ? "fq-item--open" : ""}`}
+                        style={{ "--delay": `${i * 0.035}s` }}
+                        onClick={() => toggleFaq(i)}
+                      >
+                        <div className="fq-item__head">
+                          <div className="fq-item__ico">{catMeta?.icon}</div>
+
+                          <div className="fq-item__mid">
+                            <p className="fq-item__q">{faq.question}</p>
+                            <span className="fq-item__tag">{catMeta?.label}</span>
+                          </div>
+
+                          <ChevronDown
+                            size={15}
+                            strokeWidth={2.5}
+                            className={`fq-item__chevron ${
+                              open ? "fq-item__chevron--open" : ""
+                            }`}
+                          />
+                        </div>
+
+                        <div className={`fq-item__body ${open ? "fq-item__body--open" : ""}`}>
+                          <p className="fq-item__ans">{faq.answer}</p>
+
+                          <div className="fq-item__foot">
+                            <span>Helpful?</span>
+
+                            <button
+                              type="button"
+                              className="fq-helpful fq-helpful--yes"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Yes, this helped"
+                            >
+                              <ThumbsUp size={13} strokeWidth={2} />
+                              <span>Yes</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className="fq-helpful fq-helpful--no"
+                              onClick={(e) => e.stopPropagation()}
+                              title="No, not helpful"
+                            >
+                              <ThumbsDown size={13} strokeWidth={2} />
+                              <span>No</span>
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : loading ? (
+                <div className="fq-empty">
+                  <div className="fq-empty__ico">
+                    <HelpCircle size={28} strokeWidth={1.5} />
+                  </div>
+                  <h3>Loading…</h3>
+                  <p>Please wait</p>
+                </div>
               ) : loadErr ? (
-                <>
-                  <h2 className="fq-panel__title">FAQs</h2>
-                  <p className="fq-panel__meta">
-                    {loadErr}{" "}
-                    <button
-                      className="fq-popular__chip"
-                      onClick={() => window.location.reload()}
-                      style={{ marginLeft: 10 }}
-                    >
-                      Retry
-                    </button>
-                  </p>
-                </>
-              ) : searchQuery ? (
-                <>
-                  <h2 className="fq-panel__title">Search Results</h2>
-                  <p className="fq-panel__meta">
-                    <CheckCircle2 size={13} className="fq-panel__check" />
-                    <strong>{filteredFaqs.length}</strong>&nbsp;
-                    result{filteredFaqs.length !== 1 ? "s" : ""} for&nbsp;
-                    <em>"{searchQuery}"</em>
-                  </p>
-                </>
+                <div className="fq-empty">
+                  <div className="fq-empty__ico">
+                    <HelpCircle size={28} strokeWidth={1.5} />
+                  </div>
+                  <h3>Couldn't load FAQs</h3>
+                  <p>{loadErr}</p>
+                  <button
+                    type="button"
+                    className="fq-empty__btn"
+                    onClick={() => window.location.reload()}
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : (
-                <>
-                  <h2 className="fq-panel__title">
-                    {categories.find((c) => c.id === activeCategory)?.label}
-                  </h2>
-                  <p className="fq-panel__meta">
-                    {filteredFaqs.length}&nbsp;article{filteredFaqs.length !== 1 ? "s" : ""}
-                  </p>
-                </>
+                <div className="fq-empty">
+                  <div className="fq-empty__ico">
+                    <HelpCircle size={28} strokeWidth={1.5} />
+                  </div>
+                  <h3>No results found</h3>
+                  <p>Try different keywords or browse a topic from the sidebar</p>
+                  <button
+                    type="button"
+                    className="fq-empty__btn"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setActiveCategory("all");
+                    }}
+                  >
+                    View All Articles
+                  </button>
+                </div>
               )}
             </div>
+          </div>
+        </section>
 
-            {!loading && !loadErr && filteredFaqs.length > 0 ? (
-              <ul className="fq-list">
-                {filteredFaqs.map((faq, i) => {
-                  const open = activeFaq === i;
-                  const catMeta = categories.find((c) => c.id === faq.category);
-                  return (
-                    <li
-                      key={faq.faq_id ?? i}
-                      className={`fq-item ${open ? "fq-item--open" : ""}`}
-                      style={{ "--delay": `${i * 0.035}s` }}
-                      onClick={() => toggleFaq(i)}
+        <section className="fq-contact">
+          <div className="fq-wrap">
+            <div className="fq-contact__hdr">
+              <p className="fq-contact__eyebrow">Support</p>
+              <h2 className="fq-contact__title">
+                Still need <em>help?</em>
+              </h2>
+              <p className="fq-contact__sub">
+                Our support team is standing by — reach us any way you prefer.
+              </p>
+            </div>
+
+            <div className="fq-contact__grid">
+              {contactOptions.map((o, i) => (
+                <div key={i} className="fq-ccard">
+                  <div className="fq-ccard__ico">{o.icon}</div>
+                  <h3 className="fq-ccard__title">{o.title}</h3>
+
+                  {o.href ? (
+                    <a
+                      href={o.href}
+                      target={o.type === "phone" ? undefined : "_blank"}
+                      rel={o.type === "phone" ? undefined : "noopener noreferrer"}
+                      className="fq-ccard__detail"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="fq-item__head">
-                        <div className="fq-item__ico">{catMeta?.icon}</div>
-                        <div className="fq-item__mid">
-                          <p className="fq-item__q">{faq.question}</p>
-                          <span className="fq-item__tag">{catMeta?.label}</span>
-                        </div>
-                        <ChevronDown
-                          size={15}
-                          strokeWidth={2.5}
-                          className={`fq-item__chevron ${open ? "fq-item__chevron--open" : ""}`}
-                        />
-                      </div>
+                      {o.detail}
+                    </a>
+                  ) : (
+                    <p className="fq-ccard__detail">{o.detail}</p>
+                  )}
 
-                      <div className={`fq-item__body ${open ? "fq-item__body--open" : ""}`}>
-                        <p className="fq-item__ans">{faq.answer}</p>
-                        <div className="fq-item__foot">
-                          <span>Helpful?</span>
-                          <button
-                            className="fq-helpful fq-helpful--yes"
-                            onClick={(e) => e.stopPropagation()}
-                            title="Yes, this helped"
-                          >
-                            <ThumbsUp size={13} strokeWidth={2} />
-                            <span>Yes</span>
-                          </button>
-                          <button
-                            className="fq-helpful fq-helpful--no"
-                            onClick={(e) => e.stopPropagation()}
-                            title="No, not helpful"
-                          >
-                            <ThumbsDown size={13} strokeWidth={2} />
-                            <span>No</span>
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : loading ? (
-              <div className="fq-empty">
-                <div className="fq-empty__ico">
-                  <HelpCircle size={28} strokeWidth={1.5} />
-                </div>
-                <h3>Loading…</h3>
-                <p>Please wait</p>
-              </div>
-            ) : loadErr ? (
-              <div className="fq-empty">
-                <div className="fq-empty__ico">
-                  <HelpCircle size={28} strokeWidth={1.5} />
-                </div>
-                <h3>Couldn't load FAQs</h3>
-                <p>{loadErr}</p>
-                <button className="fq-empty__btn" onClick={() => window.location.reload()}>
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <div className="fq-empty">
-                <div className="fq-empty__ico">
-                  <HelpCircle size={28} strokeWidth={1.5} />
-                </div>
-                <h3>No results found</h3>
-                <p>Try different keywords or browse a topic from the sidebar</p>
-                <button
-                  className="fq-empty__btn"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setActiveCategory("all");
-                  }}
-                >
-                  View All Articles
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+                  <p className="fq-ccard__desc">{o.description}</p>
 
-      <section className="fq-contact">
-        <div className="fq-wrap">
-          <div className="fq-contact__hdr">
-            <p className="fq-contact__eyebrow">Support</p>
-            <h2 className="fq-contact__title">
-              Still need <em>help?</em>
-            </h2>
-            <p className="fq-contact__sub">
-              Our support team is standing by — reach us any way you prefer.
-            </p>
-          </div>
-
-          <div className="fq-contact__grid">
-            {contactOptions.map((o, i) => (
-              <div key={i} className="fq-ccard">
-                <div className="fq-ccard__ico">{o.icon}</div>
-                <h3 className="fq-ccard__title">{o.title}</h3>
-
-                {o.href ? (
-                  <a
-                    href={o.href}
-                    target={o.type === "phone" ? undefined : "_blank"}
-                    rel={o.type === "phone" ? undefined : "noopener noreferrer"}
-                    className="fq-ccard__detail"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {o.detail}
-                  </a>
-                ) : (
-                  <p className="fq-ccard__detail">{o.detail}</p>
-                )}
-
-                <p className="fq-ccard__desc">{o.description}</p>
-
-                <button
-                  className="fq-ccard__btn"
-                  onClick={() => {
-                    if (o.href) {
-                      if (o.type === "phone") {
-                        window.location.href = o.href;
-                      } else {
-                        window.open(o.href, "_blank", "noopener,noreferrer");
+                  <button
+                    type="button"
+                    className="fq-ccard__btn"
+                    onClick={() => {
+                      if (o.href) {
+                        if (o.type === "phone") {
+                          window.location.href = o.href;
+                        } else {
+                          window.open(o.href, "_blank", "noopener,noreferrer");
+                        }
                       }
-                    }
-                  }}
-                  disabled={!o.href}
-                  style={!o.href ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
-                >
-                  Get in Touch
-                </button>
-              </div>
-            ))}
+                    }}
+                    disabled={!o.href}
+                    style={!o.href ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
+                  >
+                    Get in Touch
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="fq-cta">
-        <div className="fq-wrap fq-cta__inner">
-          <div>
-            <h2 className="fq-cta__title">
-              Can't find <em>what you're looking for?</em>
-            </h2>
-            <p className="fq-cta__sub">
-              Send us a message — we'll get back to you within 24 hours.
-            </p>
+        <section className="fq-cta">
+          <div className="fq-wrap fq-cta__inner">
+            <div>
+              <h2 className="fq-cta__title">
+                Can't find <em>what you're looking for?</em>
+              </h2>
+              <p className="fq-cta__sub">
+                Send us a message — we'll get back to you within 24 hours.
+              </p>
+            </div>
+
+            <a
+              href={gmailSupportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="fq-cta__btn"
+            >
+              <Mail size={15} strokeWidth={2.5} />
+              Contact Support
+            </a>
           </div>
-
-          <a
-            href={gmailSupportUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="fq-cta__btn"
-          >
-            <Mail size={15} strokeWidth={2.5} />
-            Contact Support
-          </a>
-        </div>
-      </section>
-
-    </div>
+        </section>
+        
+      </div>
+            <Footer />
+      
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import {
   Eye,
@@ -21,7 +21,6 @@ import { allowedUiModes } from "../../utils/roles";
 import { setUiMode } from "../../utils/appMode";
 
 const LOGO_LEFT_SRC = "/src/assets/exersearchlogo.png";
-
 
 function prettyModeLabel(m) {
   if (m === "user") return "User";
@@ -103,12 +102,17 @@ const LEFT_CONTENT = {
 
 function LeftPanel({ view }) {
   const c = LEFT_CONTENT[view] || LEFT_CONTENT.login;
+
   return (
     <div className="auth-left">
       <div className="auth-left__photo" />
       <div className="auth-left__content">
         <div className="auth-logo">
-          <img className="auth-logo__wordmark" src={LOGO_LEFT_SRC} alt="ExerSearch" />
+          <img
+            className="auth-logo__wordmark"
+            src={LOGO_LEFT_SRC}
+            alt="ExerSearch"
+          />
         </div>
 
         <div className="auth-left__copy">
@@ -116,9 +120,11 @@ function LeftPanel({ view }) {
             <div className="auth-left__tag-line" />
             <span className="auth-left__tag-text">{c.tag}</span>
           </div>
+
           <h1 className="auth-left__title" key={view}>
             {c.title}
           </h1>
+
           <p className="auth-left__desc">{c.desc}</p>
 
           <div className="auth-left__stats">
@@ -154,7 +160,6 @@ function LoginView({ onSwitch, onSubmit, loading, error, googleNode }) {
       </div>
 
       <div className="auth-googleWrap">
-
         <div className="auth-googleReal">{googleNode}</div>
       </div>
 
@@ -273,7 +278,12 @@ function RoleView({ user, onSelectMode, onBack, onLogout, loading }) {
         {modes.map((m) => {
           const label = prettyModeLabel(m);
           const Icon =
-            m === "owner" ? Store : m === "superadmin" || m === "admin" ? ShieldCheck : UserIcon;
+            m === "owner"
+              ? Store
+              : m === "superadmin" || m === "admin"
+              ? ShieldCheck
+              : UserIcon;
+
           const desc =
             m === "owner"
               ? "Manage gyms, listings, promos, and inquiries"
@@ -292,10 +302,12 @@ function RoleView({ user, onSelectMode, onBack, onLogout, loading }) {
               <div className="auth-role-card__icon">
                 <Icon size={18} strokeWidth={2} />
               </div>
+
               <div style={{ flex: 1 }}>
                 <p className="auth-role-card__label">{label}</p>
                 <p className="auth-role-card__desc">{desc}</p>
               </div>
+
               <div className="auth-role-card__check">
                 {sel === m && <Check size={11} strokeWidth={3} />}
               </div>
@@ -321,7 +333,12 @@ function RoleView({ user, onSelectMode, onBack, onLogout, loading }) {
         )}
       </button>
 
-      <button className="auth-vbtn auth-vbtn--ghost" onClick={onLogout} disabled={loading} type="button">
+      <button
+        className="auth-vbtn auth-vbtn--ghost"
+        onClick={onLogout}
+        disabled={loading}
+        type="button"
+      >
         <LogOut size={14} />
         Logout
       </button>
@@ -337,6 +354,7 @@ function SignupView({ onSwitch, onSubmit, loading, error, googleNode }) {
     password: "",
     confirm: "",
   });
+
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const [showPw, setShowPw] = useState(false);
   const [showCfm, setShowCfm] = useState(false);
@@ -354,7 +372,6 @@ function SignupView({ onSwitch, onSubmit, loading, error, googleNode }) {
       </div>
 
       <div className="auth-googleWrap">
-
         <div className="auth-googleReal">{googleNode}</div>
       </div>
 
@@ -393,6 +410,7 @@ function SignupView({ onSwitch, onSubmit, loading, error, googleNode }) {
               />
             </div>
           </div>
+
           <div className="auth-field">
             <label className="auth-field__label">Last name</label>
             <div className="auth-field__row">
@@ -438,7 +456,12 @@ function SignupView({ onSwitch, onSubmit, loading, error, googleNode }) {
               required
               disabled={loading}
             />
-            <button type="button" className="auth-eye" onClick={() => setShowPw((v) => !v)} disabled={loading}>
+            <button
+              type="button"
+              className="auth-eye"
+              onClick={() => setShowPw((v) => !v)}
+              disabled={loading}
+            >
               {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
           </div>
@@ -448,7 +471,9 @@ function SignupView({ onSwitch, onSubmit, loading, error, googleNode }) {
           <label className="auth-field__label">Confirm password</label>
           <div className="auth-field__row">
             <input
-              className={`auth-input${match ? " auth-input--ok" : noMatch ? " auth-input--bad" : ""}`}
+              className={`auth-input${
+                match ? " auth-input--ok" : noMatch ? " auth-input--bad" : ""
+              }`}
               type={showCfm ? "text" : "password"}
               placeholder="Re-enter your password"
               value={f.confirm}
@@ -457,12 +482,23 @@ function SignupView({ onSwitch, onSubmit, loading, error, googleNode }) {
               required
               disabled={loading}
             />
+
             {f.confirm && (
               <span className={`auth-match${noMatch ? " auth-match--bad" : ""}`}>
-                {match ? <Check size={13} strokeWidth={3} /> : <span style={{ fontSize: 13 }}>✕</span>}
+                {match ? (
+                  <Check size={13} strokeWidth={3} />
+                ) : (
+                  <span style={{ fontSize: 13 }}>✕</span>
+                )}
               </span>
             )}
-            <button type="button" className="auth-eye" onClick={() => setShowCfm((v) => !v)} disabled={loading}>
+
+            <button
+              type="button"
+              className="auth-eye"
+              onClick={() => setShowCfm((v) => !v)}
+              disabled={loading}
+            >
               {showCfm ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
           </div>
@@ -489,10 +525,12 @@ function VerifyView({ email, onResend, onVerified, onLogout, loading }) {
 
   useEffect(() => {
     if (cd <= 0) return;
+
     const t = setTimeout(() => {
       setCd((c) => c - 1);
       if (cd === 1) setSent(false);
     }, 1000);
+
     return () => clearTimeout(t);
   }, [cd]);
 
@@ -526,7 +564,12 @@ function VerifyView({ email, onResend, onVerified, onLogout, loading }) {
         </p>
 
         <div className="auth-verify__btns">
-          <button className="auth-vbtn auth-vbtn--primary" onClick={onVerified} disabled={loading} type="button">
+          <button
+            className="auth-vbtn auth-vbtn--primary"
+            onClick={onVerified}
+            disabled={loading}
+            type="button"
+          >
             <Check size={15} strokeWidth={2.5} />
             I've verified my email
           </button>
@@ -541,7 +584,12 @@ function VerifyView({ email, onResend, onVerified, onLogout, loading }) {
             {cd > 0 ? `Send again in ${cd}s` : "Send verification email"}
           </button>
 
-          <button className="auth-vbtn auth-vbtn--ghost" onClick={onLogout} disabled={loading} type="button">
+          <button
+            className="auth-vbtn auth-vbtn--ghost"
+            onClick={onLogout}
+            disabled={loading}
+            type="button"
+          >
             Sign out &amp; try again
           </button>
         </div>
@@ -554,9 +602,15 @@ function VerifyView({ email, onResend, onVerified, onLogout, loading }) {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const API_BASE = "https://exersearch.test/api/v1";
 
-  const [view, setView] = useState("login"); // login | signup | role | verify
+  const getViewFromQuery = () => {
+    const mode = searchParams.get("mode");
+    return mode === "signup" ? "signup" : "login";
+  };
+
+  const [view, setView] = useState(getViewFromQuery()); // login | signup | role | verify
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -568,7 +622,22 @@ export default function Auth() {
   const go = (v) => {
     setError("");
     setView(v);
+
+    if (v === "signup") {
+      navigate("/login?mode=signup", { replace: true });
+    } else if (v === "login") {
+      navigate("/login?mode=login", { replace: true });
+    }
   };
+
+  useEffect(() => {
+    const mode = searchParams.get("mode");
+    if (mode === "signup") {
+      setView("signup");
+    } else if (mode === "login") {
+      setView("login");
+    }
+  }, [searchParams]);
 
   const handleAxiosError = (err, fallbackMsg = "Server error") => {
     const status = err?.response?.status;
@@ -608,12 +677,14 @@ export default function Auth() {
     setUser(me);
 
     if (!me?.email_verified_at) {
-      go("verify");
+      setError("");
+      setView("verify");
       return;
     }
 
     if (hasUiChoice(me.role)) {
-      go("role");
+      setError("");
+      setView("role");
       return;
     }
 
@@ -651,6 +722,7 @@ export default function Auth() {
   async function handleLogin({ email, password }) {
     setLoading(true);
     setError("");
+
     try {
       const res = await axios.post(
         `${API_BASE}/auth/login`,
@@ -678,8 +750,11 @@ export default function Auth() {
   async function handleSignup(data) {
     setLoading(true);
     setError("");
+
     try {
-      const name = `${String(data.firstName || "").trim()} ${String(data.lastName || "").trim()}`.trim();
+      const name = `${String(data.firstName || "").trim()} ${String(
+        data.lastName || ""
+      ).trim()}`.trim();
 
       const res = await axios.post(
         `${API_BASE}/auth/register`,
@@ -715,7 +790,6 @@ export default function Auth() {
   };
 
   const resendVerificationEmail = async () => {
-    // Adjust this endpoint if your backend route differs
     await axios.post(`${API_BASE}/auth/email/resend`, null, {
       headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
       withCredentials: true,
@@ -727,11 +801,13 @@ export default function Auth() {
     if (!token) return;
 
     setAuthToken(token);
+
     finalizeAuth(token).catch((err) => {
       if (err?.response?.status === 503) {
         navigate("/maintenance", { replace: true });
         return;
       }
+
       localStorage.removeItem("token");
       setUser(null);
       setAuthToken(null);
@@ -741,7 +817,10 @@ export default function Auth() {
   }, [navigate]);
 
   const googleNode = (
-    <GoogleLogin onSuccess={handleGoogleLogin} onError={() => setError("Google sign-in failed")} />
+    <GoogleLogin
+      onSuccess={handleGoogleLogin}
+      onError={() => setError("Google sign-in failed")}
+    />
   );
 
   return (
@@ -753,13 +832,12 @@ export default function Auth() {
           <button
             className="auth-home-btn"
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             title="Back to home"
           >
             <Home size={15} strokeWidth={2} />
             Home
           </button>
-          
         </div>
 
         <div className="auth-right__inner">

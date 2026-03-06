@@ -45,7 +45,6 @@ const MUSCLE_OPTIONS = [
   "cardio",
 ];
 
-/* ✅ Persist last generated plan id so back button returns to generated plan */
 const LAST_PLAN_ID_KEY = "exersearch_last_user_plan_id";
 
 function loadLastPlanId() {
@@ -84,6 +83,7 @@ export default function WorkoutWeek() {
 
   const [plan, setPlan] = useState(null);
   const [activePlanId, setActivePlanId] = useState(null);
+  const [hasExistingPlan, setHasExistingPlan] = useState(false);
 
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(false);
@@ -91,7 +91,6 @@ export default function WorkoutWeek() {
 
   const [enter, setEnter] = useState(false);
 
-  // ✅ Recalibrate modal state
   const [showPrefs, setShowPrefs] = useState(false);
   const [prefsLoading, setPrefsLoading] = useState(false);
   const [prefsSaving, setPrefsSaving] = useState(false);
@@ -110,7 +109,6 @@ export default function WorkoutWeek() {
   const [equipmentOptions, setEquipmentOptions] = useState([]);
   const [preferredEquipmentIds, setPreferredEquipmentIds] = useState([]);
 
-  // ✅ landing / three / gsap state
   const [showLanding, setShowLanding] = useState(true);
   const [landingAction, setLandingAction] = useState(null);
   const [contentReady, setContentReady] = useState(false);
@@ -141,7 +139,6 @@ export default function WorkoutWeek() {
     return () => clearTimeout(t);
   }, []);
 
-  // ✅ On first mount: restore last plan id so returning from DayDetails shows the generated plan
   useEffect(() => {
     const last = loadLastPlanId();
     if (last && !activePlanId) {
@@ -195,13 +192,13 @@ export default function WorkoutWeek() {
 
       setPlan(newPlan);
       setActivePlanId(newPlan.user_plan_id);
-
-      // ✅ persist so when user goes back from details, they see this plan again
+      setHasExistingPlan(true);
       saveLastPlanId(newPlan.user_plan_id);
 
       console.log("[WorkoutWeek] Generated plan:", newPlan);
     } catch (e) {
       console.error("[WorkoutWeek] Generate error:", e);
+      setHasExistingPlan(false);
       setError(e?.message || "Failed to generate plan.");
     } finally {
       setLoadingGenerate(false);
@@ -209,23 +206,35 @@ export default function WorkoutWeek() {
   }
 
   async function handleLoadPlan(id) {
-    if (!id) return;
+    if (!id) {
+      setHasExistingPlan(false);
+      setPlan(null);
+      return;
+    }
+
     setError("");
     setLoadingPlan(true);
 
     try {
       const res = await getUserWorkoutPlan(id);
       const loaded = res?.data || null;
-      setPlan(loaded);
 
-      // ✅ also persist the id if load works
-      saveLastPlanId(id);
+      if (!loaded?.user_plan_id) {
+        setHasExistingPlan(false);
+        setPlan(null);
+        return;
+      }
+
+      setPlan(loaded);
+      setHasExistingPlan(true);
+      saveLastPlanId(loaded.user_plan_id);
 
       console.log("[WorkoutWeek] Loaded plan:", loaded);
     } catch (e) {
       console.error("[WorkoutWeek] Load plan error:", e);
-      // silently ignore for first-time users
       console.warn("[WorkoutWeek] No existing plan found.");
+      setHasExistingPlan(false);
+      setPlan(null);
     } finally {
       setLoadingPlan(false);
     }
@@ -540,7 +549,9 @@ export default function WorkoutWeek() {
           face.color.b += (base.b - face.color.b) * 0.02;
 
           face.color.setStyle(
-            `rgb(${Math.floor(face.color.r)},${Math.floor(face.color.g)},${Math.floor(face.color.b)})`
+            `rgb(${Math.floor(face.color.r)},${Math.floor(face.color.g)},${Math.floor(
+              face.color.b
+            )})`
           );
         });
 
@@ -604,6 +615,7 @@ export default function WorkoutWeek() {
 
     setLandingAction(action);
     setTransitioningToContent(true);
+    setError("");
 
     const camera = cameraRef.current;
     const plane = planeRef.current;
@@ -726,7 +738,7 @@ export default function WorkoutWeek() {
   };
 
   const hasPlan = !!plan;
-  const hasSavedPlan = !!activePlanId;
+  const canViewSavedPlan = hasExistingPlan;
 
   return (
     <div
@@ -782,7 +794,7 @@ export default function WorkoutWeek() {
                   </div>
                 </div>
 
-                {hasSavedPlan && (
+                {canViewSavedPlan && (
                   <div
                     className="button shift-camera-button"
                     onClick={() => animateIntoContent("view")}
@@ -792,9 +804,7 @@ export default function WorkoutWeek() {
                       <div className="right-plane" />
                     </div>
                     <div className="text">
-                      {landingAction === "view" || loadingPlan
-                        ? "Loading..."
-                        : "View Plan"}
+                      {landingAction === "view" || loadingPlan ? "Loading..." : "View Plan"}
                     </div>
                   </div>
                 )}
@@ -817,25 +827,11 @@ export default function WorkoutWeek() {
             transform: contentReady ? "translateY(0)" : "translateY(12px)",
           }}
         >
-          {!hasPlan ? (
-            <section className="ww-landing">
-              <div className="ww-landing-inner">
-                <h1 className="ww-landing-title">
-                  FIND YOUR WORKOUT <br />
-                  PLAN
-                </h1>
-
-                <button
-                  className="ww-landing-btn"
-                  onClick={() => handleGenerate({})}
-                  disabled={loadingGenerate}
-                  type="button"
-                >
-                  {loadingGenerate ? "Generating..." : "Generate Plan"}
-                </button>
-              </div>
+          {loadingPlan && !hasPlan ? (
+            <section className="ww-loading-screen">
+              <div className="ww-loading-screen-inner">Loading your workout plan...</div>
             </section>
-          ) : (
+          ) : hasPlan ? (
             <>
               <div className="ww-headerbar">
                 <div className="ww-container">
@@ -896,9 +892,7 @@ export default function WorkoutWeek() {
                       <DayCard
                         key={day.weekday}
                         day={day}
-                        onViewDetails={(userPlanDayId) =>
-                          goToDayDetails(userPlanDayId, day)
-                        }
+                        onViewDetails={(userPlanDayId) => goToDayDetails(userPlanDayId, day)}
                       />
                     ))}
                   </div>
@@ -908,9 +902,7 @@ export default function WorkoutWeek() {
                       <DayCard
                         key={day.weekday}
                         day={day}
-                        onViewDetails={(userPlanDayId) =>
-                          goToDayDetails(userPlanDayId, day)
-                        }
+                        onViewDetails={(userPlanDayId) => goToDayDetails(userPlanDayId, day)}
                       />
                     ))}
                   </div>
@@ -927,6 +919,12 @@ export default function WorkoutWeek() {
                 </footer>
               </div>
             </>
+          ) : (
+            <section className="ww-loading-screen">
+              <div className="ww-loading-screen-inner">
+                {error || "No saved workout plan found."}
+              </div>
+            </section>
           )}
         </div>
       )}
@@ -969,9 +967,7 @@ function DayCard({ day, onViewDetails }) {
           <div className="ww-card-day">{day.weekday_name || "Day"}</div>
 
           <div className="ww-card-chip">
-            <span className="ww-card-chip-num">
-              {day.day_number || day.weekday}
-            </span>
+            <span className="ww-card-chip-num">{day.day_number || day.weekday}</span>
             <span className="ww-card-chip-label">{focusLabel}</span>
           </div>
         </div>
@@ -1035,10 +1031,6 @@ function DayCard({ day, onViewDetails }) {
     </article>
   );
 }
-
-/* ------------------------------------------------------------------
- * ✅ Preferences Modal
- * ------------------------------------------------------------------ */
 
 function PreferencesModal({
   loading,
@@ -1238,8 +1230,8 @@ function PreferencesModal({
                 </div>
 
                 <div className="ww-muted" style={{ color: "#6b7280", marginTop: 8 }}>
-                  Example: If you add “Back”, exercises with primary muscle “back”
-                  will be filtered out during generation.
+                  Example: If you add “Back”, exercises with primary muscle “back” will be
+                  filtered out during generation.
                 </div>
               </div>
             </div>
