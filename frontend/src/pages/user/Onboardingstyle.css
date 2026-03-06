@@ -603,3 +603,53 @@
     font-size: 1rem;
   }
 }
+
+.unit-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+.unit-toggle-btn {
+  appearance: none;
+  border: 1.5px solid #d8d8d8;
+  background: #ffffff;
+  color: #555;
+  border-radius: 999px;
+  padding: 10px 18px;
+  min-width: 82px;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: "Montserrat", sans-serif;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.unit-toggle-btn:hover {
+  border-color: #ff8a00;
+  color: #111;
+  transform: translateY(-1px);
+}
+
+.unit-toggle-btn.active {
+  background: linear-gradient(135deg, #ff8a00, #ffa726);
+  border-color: #ff8a00;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(255, 138, 0, 0.28);
+}
+
+.unit-toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

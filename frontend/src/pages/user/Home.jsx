@@ -1118,7 +1118,6 @@ export default function Home() {
 
   return (
     <div className="uhv-app">
-      {/* ✅ Header extracted */}
       <HomeHeader
         appLogo={appLogo}
         fallbackLogo={fallbackLogo}

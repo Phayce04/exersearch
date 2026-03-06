@@ -1,8 +1,11 @@
 // WorkoutWeek.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
+import * as THREE from "three";
+import { gsap } from "gsap";
 import "./workoutWeek.css";
+import "./../owner/OwnerGymsPage.scss";
 import {
   generateUserWorkoutPlan,
   getUserWorkoutPlan,
@@ -86,6 +89,8 @@ export default function WorkoutWeek() {
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [error, setError] = useState("");
 
+  const [enter, setEnter] = useState(false);
+
   // ✅ Recalibrate modal state
   const [showPrefs, setShowPrefs] = useState(false);
   const [prefsLoading, setPrefsLoading] = useState(false);
@@ -104,6 +109,37 @@ export default function WorkoutWeek() {
 
   const [equipmentOptions, setEquipmentOptions] = useState([]);
   const [preferredEquipmentIds, setPreferredEquipmentIds] = useState([]);
+
+  // ✅ landing / three / gsap state
+  const [showLanding, setShowLanding] = useState(true);
+  const [landingAction, setLandingAction] = useState(null);
+  const [contentReady, setContentReady] = useState(false);
+  const [transitioningToContent, setTransitioningToContent] = useState(false);
+
+  const mountRef = useRef(null);
+  const introRef = useRef(null);
+  const pageRevealRef = useRef(null);
+  const landingOverlayRef = useRef(null);
+
+  const cameraRef = useRef(null);
+  const sceneRef = useRef(null);
+  const rendererRef = useRef(null);
+  const planeRef = useRef(null);
+
+  const rafRef = useRef(0);
+  const timerRef = useRef(0);
+
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const mouseRef = useRef({ x: 0, y: -180 });
+
+  const nearStarsRef = useRef(null);
+  const farStarsRef = useRef(null);
+  const farthestStarsRef = useRef(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setEnter(true), 40);
+    return () => clearTimeout(t);
+  }, []);
 
   // ✅ On first mount: restore last plan id so returning from DayDetails shows the generated plan
   useEffect(() => {
@@ -319,122 +355,579 @@ export default function WorkoutWeek() {
     navigate(path);
   }
 
+  useEffect(() => {
+    if (!showLanding) return;
+
+    const mountEl = mountRef.current;
+    if (!mountEl) return;
+
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 50;
+    cameraRef.current = camera;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setClearColor("#070707", 1.0);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    rendererRef.current = renderer;
+
+    mountEl.appendChild(renderer.domElement);
+
+    const topLight = new THREE.DirectionalLight(0xffb14a, 1.1);
+    topLight.position.set(0, 1, 1).normalize();
+    scene.add(topLight);
+
+    const bottomLight = new THREE.DirectionalLight(0xff6a00, 0.35);
+    bottomLight.position.set(1, -1, 1).normalize();
+    scene.add(bottomLight);
+
+    const fillA = new THREE.DirectionalLight(0x331100, 0.25);
+    fillA.position.set(-1, -0.5, 0.2).normalize();
+    scene.add(fillA);
+
+    const fillB = new THREE.DirectionalLight(0x220a00, 0.18);
+    fillB.position.set(1, -0.8, 0.1).normalize();
+    scene.add(fillB);
+
+    const geometry = new THREE.PlaneGeometry(400, 400, 70, 70);
+
+    if (geometry.vertices) {
+      geometry.vertices.forEach((v) => {
+        v.x += (Math.random() - 0.5) * 4;
+        v.y += (Math.random() - 0.5) * 4;
+        v.z += (Math.random() - 0.5) * 4;
+
+        v.dx = Math.random() - 0.5;
+        v.dy = Math.random() - 0.5;
+        v.randomDelay = Math.random() * 5;
+      });
+    }
+
+    const TOP = { r: 255, g: 168, b: 60 };
+    const MID = { r: 255, g: 106, b: 0 };
+    const BOT = { r: 0, g: 0, b: 0 };
+
+    const clamp01 = (n) => Math.max(0, Math.min(1, n));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    const yMin = -200;
+    const yMax = 200;
+
+    const colorAtT = (t) => {
+      if (t < 0.55) {
+        const tt = t / 0.55;
+        return {
+          r: Math.round(lerp(BOT.r, MID.r, tt)),
+          g: Math.round(lerp(BOT.g, MID.g, tt)),
+          b: Math.round(lerp(BOT.b, MID.b, tt)),
+        };
+      }
+      const tt = (t - 0.55) / 0.45;
+      return {
+        r: Math.round(lerp(MID.r, TOP.r, tt)),
+        g: Math.round(lerp(MID.g, TOP.g, tt)),
+        b: Math.round(lerp(MID.b, TOP.b, tt)),
+      };
+    };
+
+    const faceCenterY = (face) => {
+      const a = geometry.vertices[face.a];
+      const b = geometry.vertices[face.b];
+      const c = geometry.vertices[face.c];
+      return (a.y + b.y + c.y) / 3;
+    };
+
+    if (geometry.faces) {
+      for (let i = 0; i < geometry.faces.length; i++) {
+        const face = geometry.faces[i];
+        const cy = faceCenterY(face);
+
+        const tLinear = (cy - yMin) / (yMax - yMin);
+        const t = clamp01(Math.pow(tLinear, 2.6));
+        const c = colorAtT(t);
+        face.color.setStyle(`rgb(${c.r},${c.g},${c.b})`);
+        face.baseColor = { ...c };
+      }
+    }
+
+    const material = new THREE.MeshPhongMaterial({
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+      vertexColors: THREE.FaceColors,
+      flatShading: true,
+      shininess: 12,
+    });
+
+    const plane = new THREE.Mesh(geometry, material);
+    planeRef.current = plane;
+    plane.position.y = 40;
+    plane.rotation.x = -0.12;
+    scene.add(plane);
+
+    function createStars(amount, yDistance, color = "#ff8c1a") {
+      const starGeometry = new THREE.Geometry();
+
+      const starMaterial = new THREE.PointsMaterial({
+        color,
+        opacity: 0.7,
+        transparent: true,
+        size: 2.2,
+        sizeAttenuation: true,
+      });
+
+      for (let i = 0; i < amount; i++) {
+        const vertex = new THREE.Vector3();
+        vertex.z = (Math.random() - 0.5) * 1500;
+        vertex.y = yDistance;
+        vertex.x = (Math.random() - 0.5) * 1500;
+        starGeometry.vertices.push(vertex);
+      }
+
+      return new THREE.Points(starGeometry, starMaterial);
+    }
+
+    const farthestStars = createStars(900, 420, "#ff6a00");
+    const farStars = createStars(900, 370, "#ff8c1a");
+    const nearStars = createStars(900, 290, "#ffb14a");
+
+    farStars.rotation.x = 0.25;
+    nearStars.rotation.x = 0.25;
+
+    farthestStarsRef.current = farthestStars;
+    farStarsRef.current = farStars;
+    nearStarsRef.current = nearStars;
+
+    scene.add(farthestStars);
+    scene.add(farStars);
+    scene.add(nearStars);
+
+    const renderLoop = () => {
+      rafRef.current = requestAnimationFrame(renderLoop);
+
+      timerRef.current += 0.01;
+      const t = timerRef.current;
+
+      const verts = plane.geometry.vertices || [];
+      for (let i = 0; i < verts.length; i++) {
+        verts[i].x -= (Math.sin(t + verts[i].randomDelay) / 40) * verts[i].dx;
+        verts[i].y += (Math.sin(t + verts[i].randomDelay) / 40) * verts[i].dy;
+      }
+
+      const raycaster = raycasterRef.current;
+      const normalizedMouse = mouseRef.current;
+
+      raycaster.setFromCamera(normalizedMouse, camera);
+      const intersects = raycaster.intersectObjects([plane]);
+
+      if (intersects.length > 0 && plane.geometry.faces) {
+        plane.geometry.faces.forEach((face) => {
+          const base = face.baseColor || { r: 0, g: 0, b: 0 };
+
+          face.color.r *= 255;
+          face.color.g *= 255;
+          face.color.b *= 255;
+
+          face.color.r += (base.r - face.color.r) * 0.02;
+          face.color.g += (base.g - face.color.g) * 0.02;
+          face.color.b += (base.b - face.color.b) * 0.02;
+
+          face.color.setStyle(
+            `rgb(${Math.floor(face.color.r)},${Math.floor(face.color.g)},${Math.floor(face.color.b)})`
+          );
+        });
+
+        intersects[0].face.color.setStyle("#ffb14a");
+        plane.geometry.colorsNeedUpdate = true;
+      }
+
+      plane.geometry.verticesNeedUpdate = true;
+      plane.geometry.elementsNeedUpdate = true;
+
+      farthestStars.rotation.y -= 0.00001;
+      farStars.rotation.y -= 0.00005;
+      nearStars.rotation.y -= 0.00011;
+
+      renderer.render(scene, camera);
+    };
+
+    renderLoop();
+
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    const onMouseMove = (event) => {
+      mouseRef.current.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouseRef.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    };
+
+    window.addEventListener("resize", onResize);
+    window.addEventListener("mousemove", onMouseMove);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMouseMove);
+
+      cancelAnimationFrame(rafRef.current);
+
+      try {
+        scene.remove(plane);
+        plane.geometry.dispose();
+        plane.material.dispose();
+
+        [nearStars, farStars, farthestStars].forEach((s) => {
+          scene.remove(s);
+          s.geometry.dispose();
+          s.material.dispose();
+        });
+
+        renderer.dispose();
+        if (renderer.domElement?.parentNode) {
+          renderer.domElement.parentNode.removeChild(renderer.domElement);
+        }
+      } catch {}
+    };
+  }, [showLanding]);
+
+  const animateIntoContent = async (action = "generate") => {
+    if (loadingGenerate || loadingPlan || transitioningToContent) return;
+
+    setLandingAction(action);
+    setTransitioningToContent(true);
+
+    const camera = cameraRef.current;
+    const plane = planeRef.current;
+    const intro = introRef.current;
+    const overlay = landingOverlayRef.current;
+
+    const runContentAction = async () => {
+      if (action === "generate") {
+        await handleGenerate({});
+      } else if (action === "view" && activePlanId) {
+        await handleLoadPlan(activePlanId);
+      }
+    };
+
+    if (!camera || !plane || !intro) {
+      if (overlay) {
+        gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
+      }
+
+      await runContentAction();
+
+      setShowLanding(false);
+      setContentReady(true);
+
+      requestAnimationFrame(() => {
+        if (pageRevealRef.current) {
+          gsap.fromTo(
+            pageRevealRef.current,
+            { opacity: 0, y: 28, scale: 0.985 },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.8,
+              ease: "power3.out",
+            }
+          );
+        }
+
+        if (overlay) {
+          gsap.to(overlay, {
+            opacity: 0,
+            duration: 0.6,
+            ease: "power2.out",
+            onComplete: () => {
+              setTransitioningToContent(false);
+              setLandingAction(null);
+            },
+          });
+        } else {
+          setTransitioningToContent(false);
+          setLandingAction(null);
+        }
+      });
+
+      return;
+    }
+
+    if (overlay) {
+      gsap.set(overlay, { opacity: 0, pointerEvents: "auto" });
+    }
+
+    await new Promise((resolve) => {
+      const tl = gsap.timeline({ onComplete: resolve });
+
+      tl.to(intro, { duration: 0.45, opacity: 0, y: -24, ease: "power3.in" }, 0);
+      tl.to(camera.rotation, { duration: 2.4, x: Math.PI / 2, ease: "power3.inOut" }, 0);
+      tl.to(camera.position, { duration: 2.2, z: 20, ease: "power3.inOut" }, 0);
+      tl.to(camera.position, { duration: 2.6, y: 120, ease: "power3.inOut" }, 0);
+      tl.to(plane.scale, { duration: 2.4, x: 2, ease: "power3.inOut" }, 0);
+
+      if (overlay) {
+        tl.to(
+          overlay,
+          {
+            opacity: 1,
+            duration: 0.5,
+            ease: "power2.inOut",
+          },
+          1.75
+        );
+      }
+    });
+
+    await runContentAction();
+
+    setShowLanding(false);
+    setContentReady(true);
+
+    requestAnimationFrame(() => {
+      if (pageRevealRef.current) {
+        gsap.fromTo(
+          pageRevealRef.current,
+          { opacity: 0, y: 32, scale: 0.985 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.82,
+            ease: "power3.out",
+          }
+        );
+      }
+
+      if (overlay) {
+        gsap.to(overlay, {
+          opacity: 0,
+          duration: 0.7,
+          ease: "power2.out",
+          onComplete: () => {
+            setTransitioningToContent(false);
+            setLandingAction(null);
+          },
+        });
+      } else {
+        setTransitioningToContent(false);
+        setLandingAction(null);
+      }
+    });
+  };
+
   const hasPlan = !!plan;
+  const hasSavedPlan = !!activePlanId;
 
   return (
-    <div className="ww" style={{ "--brand": BRAND }}>
-      {!hasPlan ? (
-        <section className="ww-landing">
-          <div className="ww-landing-inner">
-            <h1 className="ww-landing-title">
-              FIND YOUR WORKOUT <br />
-              PLAN
-            </h1>
+    <div
+      className={`ww ${enter ? "content-enter-active" : "content-enter"}`}
+      style={{ "--brand": BRAND }}
+    >
+      {showLanding ? (
+        <div className="find-gyms-page">
+          <div className="star-intro-root">
+            <div className="three-mount" ref={mountRef} />
 
-            <button
-              className="ww-landing-btn"
-              onClick={() => handleGenerate({})}
-              disabled={loadingGenerate}
-              type="button"
-            >
-              {loadingGenerate ? "Generating..." : "Generate Plan"}
-            </button>
+            <div
+              ref={landingOverlayRef}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "#0a0a0a",
+                opacity: 0,
+                pointerEvents: "none",
+                zIndex: 8,
+              }}
+            />
 
-            {/* ✅ removed recalibrate button from landing */}
-          </div>
-        </section>
-      ) : (
-        <div className="ww-page">
-          <div className="ww-headerbar">
-            <div className="ww-container">
-              <header className="ww-header">
-                <div className="ww-header-left">
-                  <h1 className="ww-title">My Weekly Workout Plan</h1>
+            <div className="intro-container" ref={introRef} style={{ zIndex: 10 }}>
+              <h2 className="fancy-text">Exersearch</h2>
+              <h1>
+                BUILD YOUR WORKOUT
+                <br />
+                PLAN
+              </h1>
 
-                  <div className="ww-meta">
-                    {loadingPlan && <span className="ww-muted">Loading…</span>}
-
-                    {plan?.template && (
-                      <span className="ww-pill">
-                        {prettyLabel(plan.template.goal)} •{" "}
-                        {prettyLabel(plan.template.split_type)} •{" "}
-                        {plan.template.days_per_week} days/week
-                      </span>
-                    )}
-
-                    {plan?.start_date && (
-                      <span className="ww-muted">
-                        Start: <b>{new Date(plan.start_date).toDateString()}</b>
-                      </span>
-                    )}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "14px",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  className="button shift-camera-button"
+                  onClick={() => animateIntoContent("generate")}
+                >
+                  <div className="border">
+                    <div className="left-plane" />
+                    <div className="right-plane" />
+                  </div>
+                  <div className="text">
+                    {landingAction === "generate" || loadingGenerate
+                      ? "Generating..."
+                      : "Build Plan"}
                   </div>
                 </div>
 
-                <div className="ww-header-right">
-                  <button
-                    className="ww-btn ww-btn-ghost"
-                    onClick={() => handleGenerate({})}
-                    disabled={loadingGenerate}
-                    type="button"
-                    title="Generate a fresh plan"
+                {hasSavedPlan && (
+                  <div
+                    className="button shift-camera-button"
+                    onClick={() => animateIntoContent("view")}
                   >
-                    {loadingGenerate ? "Generating..." : "Regenerate"}
-                  </button>
+                    <div className="border">
+                      <div className="left-plane" />
+                      <div className="right-plane" />
+                    </div>
+                    <div className="text">
+                      {landingAction === "view" || loadingPlan
+                        ? "Loading..."
+                        : "View Plan"}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                  {/* ✅ only shows after plan exists */}
-                  <button
-                    className="ww-btn"
-                    onClick={openRecalibrate}
-                    type="button"
-                    title="Edit preferences + preferred equipment"
-                    style={{ marginLeft: 10 }}
-                  >
-                    Recalibrate Preferences
-                  </button>
+              {error ? (
+                <div style={{ marginTop: 16, color: "#ffb4a2", fontWeight: 700 }}>
+                  {error}
                 </div>
-              </header>
-
-              {error ? <div className="ww-header-error">{error}</div> : null}
+              ) : null}
             </div>
           </div>
+        </div>
+      ) : (
+        <div
+          ref={pageRevealRef}
+          className="ww-page"
+          style={{
+            opacity: contentReady ? 1 : 0,
+            transform: contentReady ? "translateY(0)" : "translateY(12px)",
+          }}
+        >
+          {!hasPlan ? (
+            <section className="ww-landing">
+              <div className="ww-landing-inner">
+                <h1 className="ww-landing-title">
+                  FIND YOUR WORKOUT <br />
+                  PLAN
+                </h1>
 
-          <div className="ww-container ww-body">
-            <section className="ww-grid-wrap">
-              <div className="ww-grid ww-grid-top">
-                {topRow.map((day) => (
-                  <DayCard
-                    key={day.weekday}
-                    day={day}
-                    onViewDetails={(userPlanDayId) =>
-                      goToDayDetails(userPlanDayId, day)
-                    }
-                  />
-                ))}
-              </div>
-
-              <div className="ww-grid ww-grid-bottom">
-                {bottomRow.map((day) => (
-                  <DayCard
-                    key={day.weekday}
-                    day={day}
-                    onViewDetails={(userPlanDayId) =>
-                      goToDayDetails(userPlanDayId, day)
-                    }
-                  />
-                ))}
+                <button
+                  className="ww-landing-btn"
+                  onClick={() => handleGenerate({})}
+                  disabled={loadingGenerate}
+                  type="button"
+                >
+                  {loadingGenerate ? "Generating..." : "Generate Plan"}
+                </button>
               </div>
             </section>
+          ) : (
+            <>
+              <div className="ww-headerbar">
+                <div className="ww-container">
+                  <header className="ww-header">
+                    <div className="ww-header-left">
+                      <h1 className="ww-title">My Weekly Workout Plan</h1>
 
-            <footer className="ww-footer">
-              <button
-                className="ww-footer-btn"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                type="button"
-              >
-                Exersearch
-              </button>
-            </footer>
-          </div>
+                      <div className="ww-meta">
+                        {loadingPlan && <span className="ww-muted">Loading…</span>}
+
+                        {plan?.template && (
+                          <span className="ww-pill">
+                            {prettyLabel(plan.template.goal)} •{" "}
+                            {prettyLabel(plan.template.split_type)} •{" "}
+                            {plan.template.days_per_week} days/week
+                          </span>
+                        )}
+
+                        {plan?.start_date && (
+                          <span className="ww-muted">
+                            Start: <b>{new Date(plan.start_date).toDateString()}</b>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="ww-header-right">
+                      <button
+                        className="ww-btn ww-btn-ghost"
+                        onClick={() => handleGenerate({})}
+                        disabled={loadingGenerate}
+                        type="button"
+                        title="Generate a fresh plan"
+                      >
+                        {loadingGenerate ? "Generating..." : "Regenerate"}
+                      </button>
+
+                      <button
+                        className="ww-btn"
+                        onClick={openRecalibrate}
+                        type="button"
+                        title="Edit preferences + preferred equipment"
+                        style={{ marginLeft: 10 }}
+                      >
+                        Recalibrate Preferences
+                      </button>
+                    </div>
+                  </header>
+
+                  {error ? <div className="ww-header-error">{error}</div> : null}
+                </div>
+              </div>
+
+              <div className="ww-container ww-body">
+                <section className="ww-grid-wrap">
+                  <div className="ww-grid ww-grid-top">
+                    {topRow.map((day) => (
+                      <DayCard
+                        key={day.weekday}
+                        day={day}
+                        onViewDetails={(userPlanDayId) =>
+                          goToDayDetails(userPlanDayId, day)
+                        }
+                      />
+                    ))}
+                  </div>
+
+                  <div className="ww-grid ww-grid-bottom">
+                    {bottomRow.map((day) => (
+                      <DayCard
+                        key={day.weekday}
+                        day={day}
+                        onViewDetails={(userPlanDayId) =>
+                          goToDayDetails(userPlanDayId, day)
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                <footer className="ww-footer">
+                  <button
+                    className="ww-footer-btn"
+                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                    type="button"
+                  >
+                    Exersearch
+                  </button>
+                </footer>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -560,15 +1053,6 @@ function PreferencesModal({
   onSave,
 }) {
   const [injuryPick, setInjuryPick] = useState("");
-
-  function toggleEquipment(id) {
-    setPreferredEquipmentIds((prev) => {
-      const set = new Set(prev.map(Number));
-      if (set.has(id)) set.delete(id);
-      else set.add(id);
-      return Array.from(set);
-    });
-  }
 
   function addInjuredMuscle() {
     const t = String(injuryPick || "").trim();

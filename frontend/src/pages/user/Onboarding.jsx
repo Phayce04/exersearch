@@ -1,10 +1,3 @@
-/**
- * Location Autocomplete: Photon API (Free, No API Key Required)
- * Docs: https://photon.komoot.io/
- *
- * INSTALL:
- * npm install lucide-react axios leaflet react-leaflet
- */
 
 import React, { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -51,7 +44,7 @@ import {
 } from "lucide-react";
 import "./Onboardingstyle.css";
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -73,7 +66,16 @@ function ClickToPick({ onPick }) {
 }
 
 function FlyToLocation({ center }) {
-  useMapEvents({});
+  const map = useMap();
+
+  React.useEffect(() => {
+    if (!center) return;
+    map.flyTo([center.lat, center.lng], map.getZoom(), {
+      animate: true,
+      duration: 0.8,
+    });
+  }, [center, map]);
+
   return null;
 }
 
@@ -94,13 +96,20 @@ export default function Onboarding() {
   const [mapCenter, setMapCenter] = useState(pasigCenter);
   const [mapKey, setMapKey] = useState(0);
 
+  const [heightUnit, setHeightUnit] = useState("cm"); // cm | ftin
+  const [weightUnit, setWeightUnit] = useState("kg"); // kg | lb
+
   const [formData, setFormData] = useState({
     fitnessGoal: "",
     fitnessLevel: "",
     age: "",
     gender: "",
-    height: "",
-    weight: "",
+    height: "", // always stored in cm
+    weight: "", // always stored in kg
+    heightFeet: "",
+    heightInches: "",
+    weightDisplay: "",
+
     location: "",
     latitude: null,
     longitude: null,
@@ -133,6 +142,90 @@ export default function Onboarding() {
   const WEIGHT_MAX = 250;
   const HEIGHT_MIN = 120;
   const HEIGHT_MAX = 230;
+
+  const KG_TO_LB = 2.2046226218;
+  const CM_PER_IN = 2.54;
+  const IN_PER_FT = 12;
+
+  const cmToFeetInches = (cmValue) => {
+    const cm = Number(cmValue);
+    if (!Number.isFinite(cm) || cm <= 0) return { feet: "", inches: "" };
+
+    const totalInches = cm / CM_PER_IN;
+    const feet = Math.floor(totalInches / IN_PER_FT);
+    const inches = Math.round(totalInches - feet * IN_PER_FT);
+
+    if (inches === 12) {
+      return { feet: String(feet + 1), inches: "0" };
+    }
+
+    return { feet: String(feet), inches: String(inches) };
+  };
+
+  const feetInchesToCm = (feetValue, inchesValue) => {
+    const feet = Number(feetValue || 0);
+    const inches = Number(inchesValue || 0);
+
+    if (!Number.isFinite(feet) || !Number.isFinite(inches)) return "";
+    if (feet < 0 || inches < 0) return "";
+
+    const totalInches = feet * IN_PER_FT + inches;
+    if (totalInches <= 0) return "";
+
+    return String(Math.round(totalInches * CM_PER_IN));
+  };
+
+  const kgToLb = (kgValue) => {
+    const kg = Number(kgValue);
+    if (!Number.isFinite(kg) || kg <= 0) return "";
+    return (kg * KG_TO_LB).toFixed(1);
+  };
+
+  const lbToKg = (lbValue) => {
+    const lb = Number(lbValue);
+    if (!Number.isFinite(lb) || lb <= 0) return "";
+    return String((lb / KG_TO_LB).toFixed(2));
+  };
+
+  const switchHeightUnit = (nextUnit) => {
+    if (nextUnit === heightUnit) return;
+
+    if (nextUnit === "ftin") {
+      const converted = cmToFeetInches(formData.height);
+      setFormData((prev) => ({
+        ...prev,
+        heightFeet: converted.feet,
+        heightInches: converted.inches,
+      }));
+    } else {
+      const cm = feetInchesToCm(formData.heightFeet, formData.heightInches);
+      setFormData((prev) => ({
+        ...prev,
+        height: cm || prev.height,
+      }));
+    }
+
+    setHeightUnit(nextUnit);
+  };
+
+  const switchWeightUnit = (nextUnit) => {
+    if (nextUnit === weightUnit) return;
+
+    if (nextUnit === "lb") {
+      setFormData((prev) => ({
+        ...prev,
+        weightDisplay: kgToLb(prev.weight),
+      }));
+    } else {
+      const kg = lbToKg(formData.weightDisplay);
+      setFormData((prev) => ({
+        ...prev,
+        weight: kg || prev.weight,
+      }));
+    }
+
+    setWeightUnit(nextUnit);
+  };
 
   const questions = [
     {
@@ -401,6 +494,16 @@ export default function Onboarding() {
   };
 
   const handleInputChange = (questionId, value) => {
+    if (questionId === "height") {
+      setFormData((prev) => ({ ...prev, height: value }));
+      return;
+    }
+
+    if (questionId === "weight") {
+      setFormData((prev) => ({ ...prev, weight: value }));
+      return;
+    }
+
     setFormData((prev) => {
       const next = { ...prev, [questionId]: value };
       if (questionId === "location") {
@@ -414,6 +517,38 @@ export default function Onboarding() {
       if (inputRef.current) clearTimeout(inputRef.current);
       inputRef.current = setTimeout(() => fetchLocationSuggestions(value), 300);
     }
+  };
+
+  const handleHeightFeetChange = (value) => {
+    setFormData((prev) => {
+      const nextFeet = value;
+      const nextCm = feetInchesToCm(nextFeet, prev.heightInches);
+      return {
+        ...prev,
+        heightFeet: nextFeet,
+        height: nextCm,
+      };
+    });
+  };
+
+  const handleHeightInchesChange = (value) => {
+    setFormData((prev) => {
+      const nextInches = value;
+      const nextCm = feetInchesToCm(prev.heightFeet, nextInches);
+      return {
+        ...prev,
+        heightInches: nextInches,
+        height: nextCm,
+      };
+    });
+  };
+
+  const handleWeightDisplayChange = (value) => {
+    setFormData((prev) => ({
+      ...prev,
+      weightDisplay: value,
+      weight: lbToKg(value),
+    }));
   };
 
   const handleLocationSelect = (suggestion) => {
@@ -554,40 +689,72 @@ export default function Onboarding() {
 
   const inputError = useMemo(() => {
     if (currentQ.type !== "input") return "";
+
     if (currentQ.id === "age") {
       if (formData.age === "") return "";
       return numberInRange(formData.age, AGE_MIN, AGE_MAX)
         ? ""
         : `Age must be between ${AGE_MIN} and ${AGE_MAX}.`;
     }
+
     if (currentQ.id === "weight") {
-      if (formData.weight === "") return "";
+      if (weightUnit === "kg") {
+        if (formData.weight === "") return "";
+      } else {
+        if (formData.weightDisplay === "") return "";
+      }
+
       return numberInRange(formData.weight, WEIGHT_MIN, WEIGHT_MAX)
         ? ""
         : `Weight must be between ${WEIGHT_MIN} and ${WEIGHT_MAX} kg.`;
     }
+
     if (currentQ.id === "height") {
-      if (formData.height === "") return "";
+      if (heightUnit === "cm") {
+        if (formData.height === "") return "";
+      } else {
+        if (formData.heightFeet === "" && formData.heightInches === "") return "";
+      }
+
       return numberInRange(formData.height, HEIGHT_MIN, HEIGHT_MAX)
         ? ""
         : `Height must be between ${HEIGHT_MIN} and ${HEIGHT_MAX} cm.`;
     }
+
     return "";
-  }, [currentQ, formData]);
+  }, [currentQ, formData, heightUnit, weightUnit]);
 
   const canContinue = useMemo(() => {
     if (submitting) return false;
 
     if (currentQ.type === "input") {
+      if (currentQ.id === "age") {
+        const v = formData.age;
+        if (!v) return false;
+        return numberInRange(v, AGE_MIN, AGE_MAX);
+      }
+
+      if (currentQ.id === "height") {
+        if (heightUnit === "cm") {
+          return numberInRange(formData.height, HEIGHT_MIN, HEIGHT_MAX);
+        }
+        return (
+          (formData.heightFeet !== "" || formData.heightInches !== "") &&
+          numberInRange(formData.height, HEIGHT_MIN, HEIGHT_MAX)
+        );
+      }
+
+      if (currentQ.id === "weight") {
+        if (weightUnit === "kg") {
+          return numberInRange(formData.weight, WEIGHT_MIN, WEIGHT_MAX);
+        }
+        return (
+          String(formData.weightDisplay).trim().length > 0 &&
+          numberInRange(formData.weight, WEIGHT_MIN, WEIGHT_MAX)
+        );
+      }
+
       const v = formData[currentQ.id];
-      if (!v) return false;
-
-      if (currentQ.id === "age") return numberInRange(v, AGE_MIN, AGE_MAX);
-      if (currentQ.id === "weight")
-        return numberInRange(v, WEIGHT_MIN, WEIGHT_MAX);
-      if (currentQ.id === "height")
-        return numberInRange(v, HEIGHT_MIN, HEIGHT_MAX);
-
       return String(v).trim().length > 0;
     }
 
@@ -600,7 +767,7 @@ export default function Onboarding() {
     }
 
     return true;
-  }, [currentQ, formData, submitting]);
+  }, [currentQ, formData, submitting, heightUnit, weightUnit]);
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("token");
@@ -617,8 +784,8 @@ export default function Onboarding() {
 
     const profilePayload = {
       age: formData.age ? Number(formData.age) : null,
-      height: formData.height ? Number(formData.height) : null,
-      weight: formData.weight ? Number(formData.weight) : null,
+      height: formData.height ? Number(formData.height) : null, // still cm
+      weight: formData.weight ? Number(formData.weight) : null, // still kg
       address: formData.location || null,
       latitude,
       longitude,
@@ -913,23 +1080,155 @@ export default function Onboarding() {
 
           {currentQ.type === "input" && (
             <>
-              <div className="input-wrapper">
-                <input
-                  type={currentQ.inputType}
-                  placeholder={currentQ.placeholder}
-                  value={formData[currentQ.id]}
-                  min={currentQ.min}
-                  max={currentQ.max}
-                  onChange={(e) => handleInputChange(currentQ.id, e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  autoFocus
-                  className={`input-field ${currentQ.unit ? "has-unit" : ""}`}
-                  disabled={submitting}
-                />
-                {currentQ.unit && (
-                  <span className="input-unit">{currentQ.unit}</span>
-                )}
-              </div>
+              {currentQ.id === "height" ? (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: 10,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className={`unit-toggle-btn ${heightUnit === "cm" ? "active" : ""}`}
+                      onClick={() => switchHeightUnit("cm")}
+                      disabled={submitting}
+                    >
+                      cm
+                    </button>
+                    <button
+                      type="button"
+                      className={`unit-toggle-btn ${heightUnit === "ftin" ? "active" : ""}`}
+                      onClick={() => switchHeightUnit("ftin")}
+                      disabled={submitting}
+                    >
+                      ft / in
+                    </button>
+                  </div>
+
+                  {heightUnit === "cm" ? (
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        placeholder="170"
+                        value={formData.height}
+                        min={HEIGHT_MIN}
+                        max={HEIGHT_MAX}
+                        onChange={(e) => handleInputChange("height", e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        autoFocus
+                        className="input-field has-unit"
+                        disabled={submitting}
+                      />
+                      <span className="input-unit">cm</span>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 12,
+                      }}
+                    >
+                      <div className="input-wrapper">
+                        <input
+                          type="number"
+                          placeholder="5"
+                          value={formData.heightFeet}
+                          min={0}
+                          onChange={(e) => handleHeightFeetChange(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          autoFocus
+                          className="input-field has-unit"
+                          disabled={submitting}
+                        />
+                        <span className="input-unit">ft</span>
+                      </div>
+
+                      <div className="input-wrapper">
+                        <input
+                          type="number"
+                          placeholder="7"
+                          value={formData.heightInches}
+                          min={0}
+                          max={11}
+                          onChange={(e) => handleHeightInchesChange(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className="input-field has-unit"
+                          disabled={submitting}
+                        />
+                        <span className="input-unit">in</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : currentQ.id === "weight" ? (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: 10,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className={`unit-toggle-btn ${weightUnit === "kg" ? "active" : ""}`}
+                      onClick={() => switchWeightUnit("kg")}
+                      disabled={submitting}
+                    >
+                      kg
+                    </button>
+                    <button
+                      type="button"
+                      className={`unit-toggle-btn ${weightUnit === "lb" ? "active" : ""}`}
+                      onClick={() => switchWeightUnit("lb")}
+                      disabled={submitting}
+                    >
+                      lb
+                    </button>
+                  </div>
+
+                  <div className="input-wrapper">
+                    <input
+                      type="number"
+                      placeholder={weightUnit === "kg" ? "70" : "154.3"}
+                      value={weightUnit === "kg" ? formData.weight : formData.weightDisplay}
+                      onChange={(e) =>
+                        weightUnit === "kg"
+                          ? handleInputChange("weight", e.target.value)
+                          : handleWeightDisplayChange(e.target.value)
+                      }
+                      onKeyPress={handleKeyPress}
+                      autoFocus
+                      className="input-field has-unit"
+                      disabled={submitting}
+                    />
+                    <span className="input-unit">{weightUnit}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="input-wrapper">
+                  <input
+                    type={currentQ.inputType}
+                    placeholder={currentQ.placeholder}
+                    value={formData[currentQ.id]}
+                    min={currentQ.min}
+                    max={currentQ.max}
+                    onChange={(e) => handleInputChange(currentQ.id, e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    autoFocus
+                    className={`input-field ${currentQ.unit ? "has-unit" : ""}`}
+                    disabled={submitting}
+                  />
+                  {currentQ.unit && (
+                    <span className="input-unit">{currentQ.unit}</span>
+                  )}
+                </div>
+              )}
 
               {inputError && (
                 <div style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>

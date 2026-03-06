@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
-
 import {
   Search,
   X,
@@ -20,7 +19,10 @@ import {
   LogOut,
 } from "lucide-react";
 
-import { FALLBACK_AVATAR as FALLBACK_AVATAR_FROM_API, initials } from "../../utils/userHomeApi";
+import {
+  FALLBACK_AVATAR as FALLBACK_AVATAR_FROM_API,
+  initials,
+} from "../../utils/userHomeApi";
 
 import {
   listNotifications,
@@ -35,6 +37,7 @@ const TOKEN_KEY = "token";
 function safeStr(v) {
   return v == null ? "" : String(v);
 }
+
 function safeNum(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -61,7 +64,6 @@ function iconForNotifType(type) {
 }
 
 function notifTitle(n) {
-  // backend sends these for collapsed inquiry groups
   return safeStr(n?.collapsed_title) || safeStr(n?.title) || "Notification";
 }
 
@@ -75,17 +77,13 @@ function notifBadgeCount(n) {
 }
 
 function notifIsUnread(n) {
-  // for collapsed inquiry rows, use collapsed_count (unread in that group)
   const isCollapsed = n?.collapsed === true || String(n?.collapsed) === "true";
   if (isCollapsed) return safeNum(n?.collapsed_count) > 0;
-  // for normal rows, use is_read
-  return !n?.is_read && (n?.unread === true || n?.unread == null); // keeps your older API compat
+  return !n?.is_read && (n?.unread === true || n?.unread == null);
 }
 
 function notifId(n) {
-  // support both shapes: {notification_id} (backend) or {id} (older normalize)
-  const id = safeNum(n?.notification_id || n?.id);
-  return id;
+  return safeNum(n?.notification_id || n?.id);
 }
 
 function notifUrl(n) {
@@ -93,24 +91,22 @@ function notifUrl(n) {
 }
 
 export default function HomeHeader({
-  // NOTE: now optional — we can fetch logo if not provided
   appLogo: appLogoProp,
   fallbackLogo: fallbackLogoProp,
 
-  searchQuery,
-  setSearchQuery,
-  onClearSearch,
-  goBestMatch,
+  searchQuery = "",
+  setSearchQuery = () => {},
+  onClearSearch = () => {},
+  goBestMatch = () => {},
 
-  // props are still supported, but now optional:
   avatarSrc: avatarSrcProp,
   displayName: displayNameProp,
   displayEmail: displayEmailProp,
 
-  isOwnerPlus,
-  switchModes,
-  labelForUiMode,
-  handleSwitchUi,
+  isOwnerPlus = false,
+  switchModes = [],
+  labelForUiMode = (v) => v,
+  handleSwitchUi = () => {},
 
   handleLogout,
 }) {
@@ -125,9 +121,44 @@ export default function HomeHeader({
 
   const token = localStorage.getItem(TOKEN_KEY);
 
-  // =========================
-  // Logo fetch (NEW)
-  // =========================
+  const fallbackLogout = useCallback(
+    async (e) => {
+      e?.preventDefault?.();
+
+      try {
+        if (token) {
+          await axios.post(
+            `${API_BASE}/api/v1/logout`,
+            {},
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true,
+            }
+          );
+        }
+      } catch {
+        // ignore
+      } finally {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem("ui_mode");
+        sessionStorage.removeItem("user_layout_loaded_once");
+        navigate("/login", { replace: true });
+      }
+    },
+    [navigate, token]
+  );
+
+  const doLogout = useCallback(
+    async (e) => {
+      if (typeof handleLogout === "function") {
+        await handleLogout(e);
+        return;
+      }
+      await fallbackLogout(e);
+    },
+    [handleLogout, fallbackLogout]
+  );
+
   const [fetchedLogoUrl, setFetchedLogoUrl] = useState("");
 
   useEffect(() => {
@@ -149,7 +180,6 @@ export default function HomeHeader({
       }
     }
 
-    // only fetch if parent didn't pass a logo
     if (!appLogoProp) loadLogo();
 
     return () => {
@@ -157,12 +187,9 @@ export default function HomeHeader({
     };
   }, [appLogoProp]);
 
-  const effectiveFallbackLogo = fallbackLogoProp || "/defaultlogo.png"; // change if you want
+  const effectiveFallbackLogo = fallbackLogoProp || "/defaultlogo.png";
   const effectiveAppLogo = appLogoProp || fetchedLogoUrl || effectiveFallbackLogo;
 
-  // =========================
-  // Profile (/me) fetch
-  // =========================
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(false);
 
@@ -179,16 +206,19 @@ export default function HomeHeader({
         });
         if (!mounted) return;
         setMe(res.data || null);
-      } catch (err) {
-        // keep silent (header shouldn't block UI)
+      } catch {
+        // ignore
       } finally {
         if (mounted) setMeLoading(false);
       }
     }
 
-    // only fetch if parent didn't pass details
     const needsProfile =
-      !avatarSrcProp || !displayNameProp || displayEmailProp == null || displayEmailProp === "";
+      !avatarSrcProp ||
+      !displayNameProp ||
+      displayEmailProp == null ||
+      displayEmailProp === "";
+
     if (!me && needsProfile && token) loadMe();
 
     return () => {
@@ -227,9 +257,6 @@ export default function HomeHeader({
     return abs || fallback;
   }, [avatarSrcProp, me]);
 
-  // =========================
-  // Notifications
-  // =========================
   const [notifications, setNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifErr, setNotifErr] = useState("");
@@ -238,7 +265,7 @@ export default function HomeHeader({
   const refreshUnread = useCallback(async () => {
     if (!token) return;
     try {
-      const c = await getUnreadNotificationsCount(); // should call /notifications/unread-count?role=user
+      const c = await getUnreadNotificationsCount();
       setUnreadCount(Number(c) || 0);
     } catch {
       // ignore
@@ -276,6 +303,7 @@ export default function HomeHeader({
       if (notifOpen && notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
       if (profileOpen && profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
     };
+
     const esc = (e) => {
       if (e.key === "Escape") {
         setNotifOpen(false);
@@ -283,8 +311,10 @@ export default function HomeHeader({
         setMobileMenuOpen(false);
       }
     };
+
     document.addEventListener("mousedown", close);
     document.addEventListener("keydown", esc);
+
     return () => {
       document.removeEventListener("mousedown", close);
       document.removeEventListener("keydown", esc);
@@ -373,7 +403,6 @@ export default function HomeHeader({
             </span>
           </Link>
 
-          {/* ✅ Notifications */}
           <div className="uhv-notif-wrap" ref={notifRef}>
             <button
               type="button"
@@ -395,6 +424,7 @@ export default function HomeHeader({
               <div className="uhv-notif-pop">
                 <div className="uhv-notif-pop__hdr">
                   <span>Notifications</span>
+
                   <div className="uhv-notif-actions">
                     <button
                       type="button"
@@ -442,30 +472,24 @@ export default function HomeHeader({
                           type="button"
                           className={"uhv-notif-item" + (unread ? " unread" : "")}
                           onClick={async () => {
-                            // Optimistic: update unread badge + row
                             if (unreadCount > 0 && unread) {
                               setUnreadCount((c) => Math.max(0, c - 1));
                             }
 
-                            // set local unread off (works for both shapes)
                             setNotifications((prev) =>
                               prev.map((x) => {
                                 const xid = notifId(x);
                                 if (xid !== id) return x;
-                                // keep both compat flags
                                 return { ...x, unread: false, is_read: true, collapsed_count: 0 };
                               })
                             );
 
                             try {
-                              // IMPORTANT: markRead will mark whole inquiry group read if this is an inquiry notif
                               await markNotificationRead(id);
                             } catch {
-                              // fallback: reload truth
                               await refreshAllNotifs();
                             }
 
-                            // Navigate
                             if (url) {
                               setNotifOpen(false);
                               navigate(url);
@@ -491,7 +515,6 @@ export default function HomeHeader({
             )}
           </div>
 
-          {/* Profile */}
           <div className="uhv-profile-wrap" ref={profileRef}>
             <button
               type="button"
@@ -528,6 +551,7 @@ export default function HomeHeader({
                     />
                     <span>{initials(effectiveName)}</span>
                   </div>
+
                   <div>
                     <p className="uhv-profile-pop__name">{effectiveName}</p>
                     <p className="uhv-profile-pop__email">{effectiveEmail || " "}</p>
@@ -616,14 +640,15 @@ export default function HomeHeader({
                   )}
 
                   <div className="uhv-profile-pop__divider" />
+
                   <button
                     type="button"
                     className="uhv-profile-menu-item uhv-profile-menu-item--logout"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       setProfileOpen(false);
                       setNotifOpen(false);
                       setMobileMenuOpen(false);
-                      handleLogout(e);
+                      await doLogout(e);
                     }}
                   >
                     <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
@@ -637,7 +662,6 @@ export default function HomeHeader({
           </div>
         </div>
 
-        {/* hamburger */}
         <div className="hamburger" onClick={() => setMobileMenuOpen((p) => !p)}>
           <span />
           <span />
@@ -645,14 +669,15 @@ export default function HomeHeader({
         </div>
       </header>
 
-      {/* mobile menu */}
       <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
         <Link to="/home" onClick={() => setMobileMenuOpen(false)}>
           DASHBOARD
         </Link>
+
         <Link to="/home/saved-gyms" onClick={() => setMobileMenuOpen(false)}>
           SAVED GYMS
         </Link>
+
         <Link
           to="/home/find-gyms"
           onClick={() => {
@@ -662,15 +687,19 @@ export default function HomeHeader({
         >
           BEST MATCH GYMS
         </Link>
+
         <Link to="/home/workout" onClick={() => setMobileMenuOpen(false)}>
           WORKOUT PLAN
         </Link>
+
         <Link to="/home/meal-plan" onClick={() => setMobileMenuOpen(false)}>
           MEAL PLAN
         </Link>
+
         <Link to="/home/profile" onClick={() => setMobileMenuOpen(false)}>
           MY PROFILE
         </Link>
+
         <Link to="/home/inquiries" onClick={() => setMobileMenuOpen(false)}>
           INQUIRIES
         </Link>
@@ -699,9 +728,9 @@ export default function HomeHeader({
 
         <Link
           to="/login"
-          onClick={(e) => {
+          onClick={async (e) => {
             setMobileMenuOpen(false);
-            handleLogout(e);
+            await doLogout(e);
           }}
         >
           LOGOUT
