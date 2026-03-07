@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\UserWorkoutPlanDay;
 use App\Models\UserWorkoutPlanDayExercise;
+use App\Services\UserWorkoutPlanGeneratorService;
 use Illuminate\Http\Request;
 
 class UserWorkoutPlanDayExerciseController extends Controller
@@ -49,6 +50,41 @@ class UserWorkoutPlanDayExerciseController extends Controller
         ]);
     }
 
+    public function replacementOptions(Request $request, int $id, UserWorkoutPlanGeneratorService $svc)
+    {
+        $userId = (int) $request->user()->user_id;
+        $limit = (int) $request->query('limit', 5);
+
+        $data = $svc->getReplacementOptions(
+            userId: $userId,
+            userPlanExerciseId: (int) $id,
+            limit: $limit
+        );
+
+        return response()->json($data);
+    }
+
+    public function replaceWithChoice(Request $request, int $id, UserWorkoutPlanGeneratorService $svc)
+    {
+        $userId = (int) $request->user()->user_id;
+
+        $validated = $request->validate([
+            'new_exercise_id' => ['required', 'integer'],
+        ]);
+
+        $day = $svc->replaceExerciseWithChoice(
+            userId: $userId,
+            userPlanExerciseId: (int) $id,
+            newExerciseId: (int) $validated['new_exercise_id']
+        );
+
+        return response()->json([
+            'message' => 'Exercise replaced successfully.',
+            'data' => $day,
+            'swap_notice' => $day->swap_notice ?? null,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $userId = (int) $request->user()->user_id;
@@ -67,30 +103,27 @@ class UserWorkoutPlanDayExerciseController extends Controller
             'original_exercise_id' => 'nullable|integer|exists:exercises,exercise_id',
         ]);
 
-        // Ensure day belongs to this user
         UserWorkoutPlanDay::where('user_plan_day_id', (int) $data['user_plan_day_id'])
             ->whereHas('plan', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             })
             ->firstOrFail();
 
-        // reps validation
         if (!empty($data['reps_min']) && !empty($data['reps_max'])) {
-            if ((int)$data['reps_min'] > (int)$data['reps_max']) {
+            if ((int) $data['reps_min'] > (int) $data['reps_max']) {
                 return response()->json([
                     'message' => 'reps_min must be <= reps_max'
                 ], 422);
             }
         }
 
-        // Auto order_index
         if (empty($data['order_index'])) {
             $max = UserWorkoutPlanDayExercise::where(
                 'user_plan_day_id',
-                (int)$data['user_plan_day_id']
+                (int) $data['user_plan_day_id']
             )->max('order_index');
 
-            $data['order_index'] = ($max ? (int)$max : 0) + 1;
+            $data['order_index'] = ($max ? (int) $max : 0) + 1;
         }
 
         $item = UserWorkoutPlanDayExercise::create($data);
@@ -105,7 +138,7 @@ class UserWorkoutPlanDayExerciseController extends Controller
     {
         $userId = (int) $request->user()->user_id;
 
-        $item = UserWorkoutPlanDayExercise::where('user_plan_exercise_id', (int)$id)
+        $item = UserWorkoutPlanDayExercise::where('user_plan_exercise_id', (int) $id)
             ->whereHas('planDay.plan', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             })
@@ -126,7 +159,7 @@ class UserWorkoutPlanDayExerciseController extends Controller
         $merged = array_merge($item->toArray(), $data);
 
         if (!empty($merged['reps_min']) && !empty($merged['reps_max'])) {
-            if ((int)$merged['reps_min'] > (int)$merged['reps_max']) {
+            if ((int) $merged['reps_min'] > (int) $merged['reps_max']) {
                 return response()->json([
                     'message' => 'reps_min must be <= reps_max'
                 ], 422);
@@ -145,7 +178,7 @@ class UserWorkoutPlanDayExerciseController extends Controller
     {
         $userId = (int) $request->user()->user_id;
 
-        $item = UserWorkoutPlanDayExercise::where('user_plan_exercise_id', (int)$id)
+        $item = UserWorkoutPlanDayExercise::where('user_plan_exercise_id', (int) $id)
             ->whereHas('planDay.plan', function ($q) use ($userId) {
                 $q->where('user_id', $userId);
             })

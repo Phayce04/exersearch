@@ -646,6 +646,294 @@ class UserWorkoutPlanGeneratorService
         });
     }
 
+    /**
+     * ✅ MANUAL SWAP OPTIONS
+     * User dislikes an exercise and wants alternatives.
+     * Returns top candidate replacements without changing the plan yet.
+     */
+    public function getReplacementOptions(int $userId, int $userPlanExerciseId, int $limit = 5): array
+    {
+        $limit = max(1, min(10, (int)$limit));
+
+        $row = UserWorkoutPlanDayExercise::query()
+            ->with(['planDay.plan.template', 'exercise.equipments'])
+            ->where('user_plan_exercise_id', (int)$userPlanExerciseId)
+            ->first();
+
+        if (!$row) {
+            throw new \Exception('Workout exercise not found.');
+        }
+
+        $day = $row->planDay ?? null;
+        $plan = $day?->plan ?? null;
+
+        if (!$day || !$plan || (int)$plan->user_id !== (int)$userId) {
+            throw new \Exception('Unauthorized exercise access.');
+        }
+
+        $prefs = UserPreference::where('user_id', $userId)->first();
+        if (!$prefs) {
+            throw new \Exception('User preferences not found.');
+        }
+
+        $ctx = $this->resolveEquipmentContextFromPlanDay($day);
+
+        $level = (string)($prefs->workout_level ?? $this->levelFromActivity($prefs->activity_level));
+        $workoutPlace = $prefs->workout_place ?? null;
+        $preferredStyle = $prefs->preferred_style ?? null;
+
+        $injuries = $prefs->injuries ?? [];
+        if (!is_array($injuries)) $injuries = [];
+
+        $preferredEquipmentIds = $this->getPreferredEquipmentIds($userId);
+
+        $slot = null;
+        if (!empty($row->template_day_exercise_id)) {
+            $slot = WorkoutTemplateDayExercise::query()
+                ->select('tde_id', 'target_muscle', 'movement_pattern', 'slot_type')
+                ->where('tde_id', (int)$row->template_day_exercise_id)
+                ->first();
+        }
+
+        $target = $this->normStr($slot?->target_muscle ?? $row->exercise?->primary_muscle ?? '');
+        $pattern = $this->normStr($slot?->movement_pattern ?? '');
+        $slotType = $this->normStr($slot?->slot_type ?? ($row->slot_type ?? ''));
+
+        $excludeExerciseIds = UserWorkoutPlanDayExercise::query()
+            ->where('user_plan_day_id', (int)$day->user_plan_day_id)
+            ->pluck('exercise_id')
+            ->map(fn($x) => (int)$x)
+            ->filter(fn($x) => $x > 0)
+            ->values()
+            ->all();
+
+        $ranked = $this->rankExerciseOptionsForSlot(
+            userId: $userId,
+            slotSeedId: (int)($row->template_day_exercise_id ?? 0),
+            targetMuscle: $target,
+            movementPattern: $pattern,
+            slotType: $slotType,
+            level: $level,
+            workoutPlace: $workoutPlace,
+            preferredStyle: $preferredStyle,
+            injuries: $injuries,
+            preferredEquipmentIds: $preferredEquipmentIds,
+            availableEquipmentIds: $ctx['available_equipment_ids'],
+            excludeExerciseIds: $excludeExerciseIds,
+            enforceEquipment: (bool)$ctx['enforce_equipment']
+        );
+
+        $ranked = array_slice($ranked, 0, $limit);
+
+        $out = [];
+        foreach ($ranked as $r) {
+            /** @var Exercise $ex */
+            $ex = $r['exercise']->loadMissing('equipments');
+
+            $out[] = [
+                'exercise_id' => (int)$ex->exercise_id,
+                'name' => (string)$ex->name,
+                'primary_muscle' => $ex->primary_muscle,
+                'difficulty' => $ex->difficulty,
+                'equipment' => $ex->equipment ?? null,
+                'equipments' => $ex->equipments->map(function ($eq) {
+                    return [
+                        'equipment_id' => (int)$eq->equipment_id,
+                        'name' => (string)($eq->name ?? ''),
+                    ];
+                })->values()->all(),
+                'score' => round((float)($r['score'] ?? 0), 6),
+                'reason_context' => [
+                    'target_muscle' => (string)$target,
+                    'movement_pattern' => (string)$pattern,
+                    'slot_type' => (string)$slotType,
+                    'gym_id' => $ctx['gym_id'],
+                    'equipment_enforced' => (bool)$ctx['enforce_equipment'],
+                ],
+            ];
+        }
+
+        return [
+            'user_plan_exercise_id' => (int)$userPlanExerciseId,
+            'current_exercise' => [
+                'exercise_id' => (int)($row->exercise_id ?? 0),
+                'name' => (string)($row->exercise?->name ?? ''),
+                'primary_muscle' => $row->exercise?->primary_muscle,
+                'difficulty' => $row->exercise?->difficulty,
+            ],
+            'options' => $out,
+        ];
+    }
+
+    /**
+     * ✅ APPLY MANUAL SWAP
+     * User picked a specific replacement exercise.
+     * Keeps all existing generation/recalibration logic untouched.
+     */
+    public function replaceExerciseWithChoice(
+        int $userId,
+        int $userPlanExerciseId,
+        int $newExerciseId
+    ): UserWorkoutPlanDay {
+        $row = UserWorkoutPlanDayExercise::query()
+            ->with(['planDay.plan.template', 'exercise'])
+            ->where('user_plan_exercise_id', (int)$userPlanExerciseId)
+            ->first();
+
+        if (!$row) {
+            throw new \Exception('Workout exercise not found.');
+        }
+
+        $day = $row->planDay ?? null;
+        $plan = $day?->plan ?? null;
+
+        if (!$day || !$plan || (int)$plan->user_id !== (int)$userId) {
+            throw new \Exception('Unauthorized exercise access.');
+        }
+
+        $prefs = UserPreference::where('user_id', $userId)->first();
+        if (!$prefs) {
+            throw new \Exception('User preferences not found.');
+        }
+
+        $ctx = $this->resolveEquipmentContextFromPlanDay($day);
+
+        $level = (string)($prefs->workout_level ?? $this->levelFromActivity($prefs->activity_level));
+        $sessionMinutes = (int)($prefs->session_minutes ?? 0);
+        $workoutPlace = $prefs->workout_place ?? null;
+        $preferredStyle = $prefs->preferred_style ?? null;
+
+        $injuries = $prefs->injuries ?? [];
+        if (!is_array($injuries)) $injuries = [];
+
+        $preferredEquipmentIds = $this->getPreferredEquipmentIds($userId);
+
+        $template = $plan->template ?? null;
+        $timePolicy = $this->computeTimePolicy(
+            sessionMinutes: $sessionMinutes,
+            templateMin: (int)($template?->session_minutes_min ?? 0),
+            templateMax: (int)($template?->session_minutes_max ?? 0),
+            goal: (string)($template?->goal ?? ''),
+            level: (string)($template?->level ?? '')
+        );
+
+        $slot = null;
+        if (!empty($row->template_day_exercise_id)) {
+            $slot = WorkoutTemplateDayExercise::query()
+                ->select('tde_id', 'target_muscle', 'movement_pattern', 'slot_type')
+                ->where('tde_id', (int)$row->template_day_exercise_id)
+                ->first();
+        }
+
+        $target = $this->normStr($slot?->target_muscle ?? $row->exercise?->primary_muscle ?? '');
+        $pattern = $this->normStr($slot?->movement_pattern ?? '');
+        $slotType = $this->normStr($slot?->slot_type ?? ($row->slot_type ?? ''));
+
+        $excludeExerciseIds = UserWorkoutPlanDayExercise::query()
+            ->where('user_plan_day_id', (int)$day->user_plan_day_id)
+            ->where('user_plan_exercise_id', '!=', (int)$userPlanExerciseId)
+            ->pluck('exercise_id')
+            ->map(fn($x) => (int)$x)
+            ->filter(fn($x) => $x > 0)
+            ->values()
+            ->all();
+
+        if (in_array((int)$newExerciseId, $excludeExerciseIds, true)) {
+            throw new \Exception('Exercise already exists in this workout day.');
+        }
+
+        $ranked = $this->rankExerciseOptionsForSlot(
+            userId: $userId,
+            slotSeedId: (int)($row->template_day_exercise_id ?? 0),
+            targetMuscle: $target,
+            movementPattern: $pattern,
+            slotType: $slotType,
+            level: $level,
+            workoutPlace: $workoutPlace,
+            preferredStyle: $preferredStyle,
+            injuries: $injuries,
+            preferredEquipmentIds: $preferredEquipmentIds,
+            availableEquipmentIds: $ctx['available_equipment_ids'],
+            excludeExerciseIds: array_values(array_unique(array_merge($excludeExerciseIds, [(int)$row->exercise_id]))),
+            enforceEquipment: (bool)$ctx['enforce_equipment']
+        );
+
+        $allowedIds = array_map(
+            fn($r) => (int)($r['exercise']->exercise_id ?? 0),
+            $ranked
+        );
+
+        if (!in_array((int)$newExerciseId, $allowedIds, true)) {
+            throw new \Exception('Selected exercise is not a valid replacement for this slot.');
+        }
+
+        $newExercise = Exercise::query()
+            ->where('exercise_id', (int)$newExerciseId)
+            ->first();
+
+        if (!$newExercise) {
+            throw new \Exception('Replacement exercise not found.');
+        }
+
+        return DB::transaction(function () use (
+            $row,
+            $day,
+            $newExercise,
+            $target,
+            $pattern,
+            $slotType,
+            $timePolicy
+        ) {
+            $currentId = (int)($row->exercise_id ?? 0);
+            $newId = (int)$newExercise->exercise_id;
+
+            if ($currentId === $newId) {
+                $out = $this->loadDayPayload((int)$day->user_plan_day_id);
+                $out->setAttribute('swap_notice', null);
+                return $out;
+            }
+
+            $baseSets = (int)($row->sets ?? 0);
+            $adjustedSets = $this->adjustSetsByTime(
+                baseSets: $baseSets,
+                slotType: (string)$slotType,
+                timePolicy: $timePolicy
+            );
+
+            // preserve the true original if already modified before
+            $originalExerciseId = !empty($row->original_exercise_id)
+                ? (int)$row->original_exercise_id
+                : $currentId;
+
+            UserWorkoutPlanDayExercise::query()
+                ->where('user_plan_exercise_id', (int)$row->user_plan_exercise_id)
+                ->update([
+                    'exercise_id' => $newId,
+                    'is_modified' => true,
+                    'original_exercise_id' => $originalExerciseId,
+                    'sets' => $adjustedSets > 0 ? $adjustedSets : $row->sets,
+                ]);
+
+            $out = $this->loadDayPayload((int)$day->user_plan_day_id);
+            $out->setAttribute('swap_notice', [
+                'type' => 'exercise_replaced_manual',
+                'scope' => 'day',
+                'user_plan_day_id' => (int)$day->user_plan_day_id,
+                'user_plan_exercise_id' => (int)$row->user_plan_exercise_id,
+                'from_exercise_id' => $currentId,
+                'from_exercise_name' => optional(Exercise::find($currentId))->name,
+                'to_exercise_id' => $newId,
+                'to_exercise_name' => (string)($newExercise->name ?? ''),
+                'target_muscle' => (string)$target,
+                'movement_pattern' => (string)$pattern,
+                'slot_type' => (string)$slotType,
+                'reason' => 'Exercise was manually replaced by the user.',
+            ]);
+
+            return $out;
+        });
+    }
+
     private function loadDayPayload(int $userPlanDayId): UserWorkoutPlanDay
     {
         return UserWorkoutPlanDay::query()
@@ -1248,6 +1536,225 @@ class UserWorkoutPlanGeneratorService
         $picked = $topK[$idx];
 
         return $picked['exercise'];
+    }
+
+    /**
+     * ✅ MANUAL-SWAP RANKING
+     * Same logic style as TOPSIS picker, but returns a ranked list.
+     * Added without changing your existing working picker.
+     */
+    private function rankExerciseOptionsForSlot(
+        int $userId,
+        int $slotSeedId,
+        string $targetMuscle,
+        string $movementPattern,
+        string $slotType,
+        string $level,
+        ?string $workoutPlace,
+        ?string $preferredStyle,
+        array $injuries,
+        array $preferredEquipmentIds,
+        array $availableEquipmentIds,
+        array $excludeExerciseIds = [],
+        bool $enforceEquipment = false
+    ): array {
+        $target = strtolower(trim((string)$targetMuscle));
+        $pattern = strtolower(trim((string)$movementPattern));
+        $slotTypeNorm = strtolower(trim((string)$slotType));
+        $lvl = strtolower(trim((string)$level));
+
+        $q = Exercise::query()->select(['exercise_id', 'name', 'primary_muscle', 'difficulty', 'equipment']);
+
+        if ($target !== '') {
+            $q->whereRaw("LOWER(COALESCE(primary_muscle,'')) = ?", [$target]);
+        }
+
+        $nameAllowlist = $this->nameAllowlistForPattern($pattern ?: $slotTypeNorm);
+        if (!empty($nameAllowlist)) {
+            $q->whereIn('name', $nameAllowlist);
+        }
+
+        if (!empty($excludeExerciseIds)) {
+            $q->whereNotIn('exercise_id', $excludeExerciseIds);
+        }
+
+        $blocked = $this->blockedMusclesFromInjuries($injuries);
+        if (!empty($blocked)) {
+            $q->whereNotIn(DB::raw("LOWER(COALESCE(primary_muscle,''))"), $blocked);
+        }
+
+        $candidates = $q->orderBy('exercise_id', 'asc')->limit(120)->get();
+        if ($candidates->isEmpty()) return [];
+
+        $candIds = $candidates->pluck('exercise_id')->map(fn($x) => (int)$x)->values()->all();
+
+        $equipRows = DB::table('exercise_equipments')
+            ->select('exercise_id', 'equipment_id')
+            ->whereIn('exercise_id', $candIds)
+            ->get();
+
+        $equipByExercise = [];
+        foreach ($equipRows as $r) {
+            $eid = (int)$r->exercise_id;
+            $eq  = (int)$r->equipment_id;
+            if (!isset($equipByExercise[$eid])) $equipByExercise[$eid] = [];
+            $equipByExercise[$eid][$eq] = true;
+        }
+
+        $availableSet = array_fill_keys(array_map('intval', $availableEquipmentIds), true);
+        $preferredSet = array_fill_keys(array_map('intval', $preferredEquipmentIds), true);
+
+        $homeIds = [50, 35, 39];
+        $homeSet = array_fill_keys($homeIds, true);
+        $isHome = $workoutPlace && strtolower(trim((string)$workoutPlace)) === 'home';
+
+        $weights = [
+            'target_match'     => 0.30,
+            'pattern_match'    => 0.20,
+            'equip_fit'        => 0.20,
+            'level_match'      => 0.15,
+            'pref_equip_bonus' => 0.10,
+            'home_bonus'       => 0.05,
+        ];
+
+        $rows = [];
+
+        foreach ($candidates as $ex) {
+            $eid  = (int)$ex->exercise_id;
+            $pm   = strtolower(trim((string)($ex->primary_muscle ?? '')));
+            $diff = strtolower(trim((string)($ex->difficulty ?? '')));
+
+            $hasEquipReq = !empty($equipByExercise[$eid]);
+            $equipIds = $hasEquipReq ? array_keys($equipByExercise[$eid]) : [];
+
+            if ($enforceEquipment && $hasEquipReq) {
+                foreach ($equipIds as $eqId) {
+                    if (!isset($availableSet[(int)$eqId])) {
+                        continue 2;
+                    }
+                }
+            }
+
+            $targetMatch = ($target !== '' && $pm === $target) ? 1.0 : ($target === '' ? 0.5 : 0.0);
+
+            $patternMatch = 0.5;
+            if (!empty($nameAllowlist)) {
+                $patternMatch = 1.0;
+            } else {
+                $patternAllow = $this->nameAllowlistForPattern($pattern ?: $slotTypeNorm);
+                if (!empty($patternAllow)) {
+                    $patternMatch = in_array($ex->name, $patternAllow, true) ? 1.0 : 0.3;
+                }
+            }
+
+            $equipFit = 1.0;
+
+            $prefBonus = 0.0;
+            if (!empty($preferredSet) && $hasEquipReq) {
+                foreach ($equipIds as $eqId) {
+                    if (isset($preferredSet[(int)$eqId])) {
+                        $prefBonus = 1.0;
+                        break;
+                    }
+                }
+            }
+
+            $homeBonus = 0.0;
+            if ($isHome && $hasEquipReq) {
+                foreach ($equipIds as $eqId) {
+                    if (isset($homeSet[(int)$eqId])) {
+                        $homeBonus = 1.0;
+                        break;
+                    }
+                }
+            }
+
+            $levelMatch = $this->levelMatchScore($diff, $lvl);
+
+            if ($preferredStyle) {
+                $style = strtolower(trim((string)$preferredStyle));
+                if ($style === 'strength') {
+                    $levelMatch = min(1.0, $levelMatch + ($diff === 'advanced' ? 0.10 : 0.0));
+                } elseif ($style === 'endurance') {
+                    $levelMatch = min(1.0, $levelMatch + ($diff === 'beginner' ? 0.10 : 0.0));
+                }
+            }
+
+            $rows[] = [
+                'exercise' => $ex,
+                'v' => [
+                    'target_match'     => $targetMatch,
+                    'pattern_match'    => $patternMatch,
+                    'equip_fit'        => $equipFit,
+                    'level_match'      => $levelMatch,
+                    'pref_equip_bonus' => $prefBonus,
+                    'home_bonus'       => $homeBonus,
+                ],
+            ];
+        }
+
+        if (empty($rows)) return [];
+
+        $ranked = $this->topsisRank($rows, $weights);
+        if (empty($ranked)) return [];
+
+        // Stable tie-shaping so options stay consistent per user/slot.
+        $seed = $this->stablePickSeed(
+            userId: $userId,
+            slotSeedId: $slotSeedId,
+            target: $target,
+            pattern: $pattern,
+            slotType: $slotTypeNorm,
+            workoutPlace: (string)($workoutPlace ?? ''),
+            preferredStyle: (string)($preferredStyle ?? ''),
+            injuries: $injuries,
+            preferredEquipmentIds: $preferredEquipmentIds,
+            availableEquipmentIds: $availableEquipmentIds
+        );
+
+        foreach ($ranked as $i => &$r) {
+            $r['_stable_sort_key'] = (($seed + $i) % 9973);
+        }
+        unset($r);
+
+        usort($ranked, function ($a, $b) {
+            $scoreCmp = ($b['score'] <=> $a['score']);
+            if ($scoreCmp !== 0) return $scoreCmp;
+            return ($a['_stable_sort_key'] ?? 0) <=> ($b['_stable_sort_key'] ?? 0);
+        });
+
+        foreach ($ranked as &$r) {
+            unset($r['_stable_sort_key']);
+        }
+        unset($r);
+
+        return $ranked;
+    }
+
+    /**
+     * Resolve active equipment context for manual swapping.
+     * day.gym_id wins over plan.gym_id.
+     */
+    private function resolveEquipmentContextFromPlanDay(UserWorkoutPlanDay $day): array
+    {
+        $dayGymId = !empty($day->gym_id) ? (int)$day->gym_id : null;
+        $planGymId = !empty($day->plan?->gym_id) ? (int)$day->plan->gym_id : null;
+
+        $gymId = $dayGymId ?: $planGymId;
+
+        if (!$gymId) {
+            return [
+                'gym_id' => null,
+                'available_equipment_ids' => [],
+                'enforce_equipment' => false,
+            ];
+        }
+
+        return [
+            'gym_id' => (int)$gymId,
+            'available_equipment_ids' => $this->getGymEquipmentIds((int)$gymId),
+            'enforce_equipment' => true,
+        ];
     }
 
     /**

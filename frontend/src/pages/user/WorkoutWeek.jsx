@@ -762,8 +762,15 @@ export default function WorkoutWeek() {
               }}
             />
 
-            <div className="intro-container" ref={introRef} style={{ zIndex: 10 }}>
-              <h2 className="fancy-text">Exersearch</h2>
+<div
+  className="intro-container"
+  ref={introRef}
+  style={{
+    zIndex: 10,
+    position: "relative",
+    marginTop: "-60px",
+  }}
+>              <h2 className="fancy-text">Exersearch</h2>
               <h1>
                 BUILD YOUR WORKOUT
                 <br />

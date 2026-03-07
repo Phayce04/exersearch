@@ -1,4 +1,3 @@
-// ✅ UPDATED API FILE: src/utils/workoutPlanApi.js
 const API = "https://exersearch.test";
 
 export function getTokenMaybe() {
@@ -35,9 +34,10 @@ async function request(path, options = {}) {
   return data;
 }
 
-/* ------------------------------------------------------------------
- * USER PREFERENCES + PREFERRED EQUIPMENTS
- * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* USER PREFERENCES + PREFERRED EQUIPMENTS                            */
+/* ------------------------------------------------------------------ */
+
 export function getUserPreferences() {
   return request(`/api/v1/user/preferences`);
 }
@@ -67,9 +67,10 @@ export function getEquipments(params = {}) {
   return request(`/api/v1/equipments${qs ? `?${qs}` : ""}`);
 }
 
-/* ------------------------------------------------------------------
- * EXERCISES
- * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* EXERCISES                                                          */
+/* ------------------------------------------------------------------ */
+
 export function getExercises(params = {}) {
   const qs = new URLSearchParams(params).toString();
   return request(`/api/v1/exercises${qs ? `?${qs}` : ""}`);
@@ -79,9 +80,10 @@ export function getExercise(id) {
   return request(`/api/v1/exercises/${id}`);
 }
 
-/* ------------------------------------------------------------------
- * WORKOUT TEMPLATES
- * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* WORKOUT TEMPLATES                                                  */
+/* ------------------------------------------------------------------ */
+
 export function getWorkoutTemplates(params = {}) {
   const qs = new URLSearchParams(params).toString();
   return request(`/api/v1/workout-templates${qs ? `?${qs}` : ""}`);
@@ -91,9 +93,10 @@ export function getWorkoutTemplate(id) {
   return request(`/api/v1/workout-templates/${id}`);
 }
 
-/* ------------------------------------------------------------------
- * USER WORKOUT PLANS
- * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* USER WORKOUT PLANS                                                 */
+/* ------------------------------------------------------------------ */
+
 export function generateUserWorkoutPlan(payload = {}) {
   return request(`/api/v1/user/workout-plans/generate`, {
     method: "POST",
@@ -128,10 +131,11 @@ export function updateUserWorkoutPlan(id, payload) {
 }
 
 export function deleteUserWorkoutPlan(id) {
-  return request(`/api/v1/user/workout-plans/${id}`, { method: "DELETE" });
+  return request(`/api/v1/user/workout-plans/${id}`, {
+    method: "DELETE",
+  });
 }
 
-/* ✅ Recalibrate WHOLE PLAN (week) for gym */
 export function recalibrateWorkoutPlanGym(user_plan_id, gym_id) {
   return request(`/api/v1/user/workout-plans/${user_plan_id}/recalibrate-gym`, {
     method: "POST",
@@ -140,9 +144,10 @@ export function recalibrateWorkoutPlanGym(user_plan_id, gym_id) {
   });
 }
 
-/* ------------------------------------------------------------------
- * USER WORKOUT PLAN DAYS
- * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* USER WORKOUT PLAN DAYS                                             */
+/* ------------------------------------------------------------------ */
+
 export function getUserWorkoutPlanDays(params = {}) {
   const qs = new URLSearchParams(params).toString();
   return request(`/api/v1/user/workout-plan-days${qs ? `?${qs}` : ""}`);
@@ -169,10 +174,11 @@ export function updateUserWorkoutPlanDay(id, payload) {
 }
 
 export function deleteUserWorkoutPlanDay(id) {
-  return request(`/api/v1/user/workout-plan-days/${id}`, { method: "DELETE" });
+  return request(`/api/v1/user/workout-plan-days/${id}`, {
+    method: "DELETE",
+  });
 }
 
-/* ✅ Recalibrate SINGLE DAY for gym */
 export function recalibrateWorkoutDayGym(user_plan_day_id, gym_id) {
   return request(
     `/api/v1/user/workout-plan-days/${user_plan_day_id}/recalibrate-gym`,
@@ -184,9 +190,10 @@ export function recalibrateWorkoutDayGym(user_plan_day_id, gym_id) {
   );
 }
 
-/* ------------------------------------------------------------------
- * USER WORKOUT PLAN DAY EXERCISES
- * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* USER WORKOUT PLAN DAY EXERCISES                                    */
+/* ------------------------------------------------------------------ */
+
 export function getUserWorkoutPlanDayExercises(params = {}) {
   const qs = new URLSearchParams(params).toString();
   return request(`/api/v1/user/workout-plan-day-exercises${qs ? `?${qs}` : ""}`);
@@ -218,9 +225,25 @@ export function deleteUserWorkoutPlanDayExercise(id) {
   });
 }
 
-/* ------------------------------------------------------------------
- * GYMS
- * ------------------------------------------------------------------ */
+export function getWorkoutExerciseReplacementOptions(id, limit = 5) {
+  const qs = new URLSearchParams({ limit: String(limit) }).toString();
+  return request(
+    `/api/v1/user/workout-plan-day-exercises/${id}/replacement-options${qs ? `?${qs}` : ""}`
+  );
+}
+
+export function replaceWorkoutExerciseWithChoice(id, new_exercise_id) {
+  return request(`/api/v1/user/workout-plan-day-exercises/${id}/replace`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ new_exercise_id }),
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* GYMS                                                               */
+/* ------------------------------------------------------------------ */
+
 export function getUserSavedGyms() {
   return request(`/api/v1/user/saved-gyms`);
 }
@@ -242,9 +265,10 @@ export function getGym(id) {
   return request(`/api/v1/gyms/${id}`);
 }
 
-/* ------------------------------------------------------------------
- * URL UTILS
- * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* URL UTILS                                                          */
+/* ------------------------------------------------------------------ */
+
 export function absoluteUrl(maybeRelativeUrl) {
   if (!maybeRelativeUrl) return "";
   if (/^https?:\/\//i.test(maybeRelativeUrl)) return maybeRelativeUrl;

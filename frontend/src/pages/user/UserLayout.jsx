@@ -82,9 +82,14 @@ export default function UserLayout() {
   if (!ready) return null;
 
   const hideHeader = location.pathname === "/home";
+
   const useHomeHeader =
     location.pathname.includes("/inquiries") ||
-    location.pathname.includes("/find-gyms");
+    location.pathname.includes("/find-gyms") ||
+    location.pathname.includes("/meal-plan") ||
+    location.pathname.includes("/workout");
+
+  const showFooter = true;
 
   return (
     <>
@@ -93,7 +98,7 @@ export default function UserLayout() {
 
       <Outlet />
 
-      <Footer />
+      {showFooter && <Footer />}
     </>
   );
 }

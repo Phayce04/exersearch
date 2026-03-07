@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 
 class AdminAppSettingsController extends Controller
 {
-    // GET /api/v1/admin/settings
     public function show()
     {
         $settings = AppSetting::query()->find(1);
@@ -22,7 +21,6 @@ class AdminAppSettingsController extends Controller
         return response()->json(['data' => $settings]);
     }
 
-    // PUT /api/v1/admin/settings
     public function update(Request $request)
     {
         $settings = AppSetting::query()->find(1);
@@ -38,7 +36,7 @@ class AdminAppSettingsController extends Controller
             'app_name' => ['sometimes', 'string', 'max:120'],
 
             'logo_url' => ['sometimes', 'nullable', 'string'],
-            'user_logo_url' => ['sometimes', 'nullable', 'string'], // ✅ NEW
+            'user_logo_url' => ['sometimes', 'nullable', 'string'],
             'favicon_url' => ['sometimes', 'nullable', 'string'],
 
             'contact_phone' => ['sometimes', 'nullable', 'string', 'max:50'],
@@ -49,18 +47,19 @@ class AdminAppSettingsController extends Controller
             'facebook_url' => ['sometimes', 'nullable', 'string'],
             'instagram_url' => ['sometimes', 'nullable', 'string'],
             'tiktok_url' => ['sometimes', 'nullable', 'string'],
+            'youtube_url' => ['sometimes', 'nullable', 'string'],
+            'twitter_url' => ['sometimes', 'nullable', 'string'],
             'website_url' => ['sometimes', 'nullable', 'string'],
 
             'maintenance_mode' => ['sometimes', 'boolean'],
             'signup_enabled' => ['sometimes', 'boolean'],
             'owner_application_enabled' => ['sometimes', 'boolean'],
 
-            // allow object/associative array
             'extras' => ['sometimes', 'array'],
         ]);
 
         $settings->fill($validated);
-        $settings->updated_at = now(); // since timestamps are off
+        $settings->updated_at = now();
         $settings->save();
 
         return response()->json([

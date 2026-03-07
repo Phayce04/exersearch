@@ -6,7 +6,7 @@ import {
   normalizeInquiryListResponse,
 } from "../../utils/gymInquiriesApi";
 import InquiryComposeModal from "./InquiryComposeModal";
-import { ExternalLink, RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw, Menu, Info, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const PH_TZ = "Asia/Manila";
@@ -229,8 +229,16 @@ export default function GymInquiryHistory() {
   const [chatSending, setChatSending] = useState(false);
   const [theme, setTheme] = useState("orange");
 
+  const [showList, setShowList] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+
   const listRef = useRef(null);
   const chatRef = useRef(null);
+
+  const closePanels = () => {
+    setShowList(false);
+    setShowDetail(false);
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -362,6 +370,7 @@ export default function GymInquiryHistory() {
       setComposeOpen(false);
       setActiveGymId(Number(gymId));
       await refresh();
+      closePanels();
     } catch (e) {
       alert(e?.response?.data?.message || "Failed to send inquiry");
       throw e;
@@ -408,7 +417,9 @@ export default function GymInquiryHistory() {
   const detailAvatar = useMemo(() => pickGymAvatarFromGym(gym), [gym]);
 
   return (
-    <div className="ih-page">
+    <div className={`ih-page ${showList ? "show-list" : ""} ${showDetail ? "show-detail" : ""}`}>
+      <div className="ih-mobile-backdrop" onClick={closePanels} />
+
       <div className="app" ref={listRef}>
         <div className="header">
           <div className="logo">
@@ -430,34 +441,38 @@ export default function GymInquiryHistory() {
             />
           </div>
 
-          <div className="user-settings" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div className="user-settings">
             <button
               type="button"
               onClick={refresh}
               disabled={loading}
               title="Refresh"
               aria-label="Refresh"
-              style={{
-                height: 36,
-                width: 36,
-                borderRadius: 12,
-                border: "none",
-                cursor: loading ? "not-allowed" : "pointer",
-                display: "grid",
-                placeItems: "center",
-                background: "rgba(255,255,255,0.18)",
-                boxShadow: "0 10px 22px rgba(0,0,0,0.10)",
-              }}
+              className="ih-header-icon-btn"
             >
               <RefreshCw size={18} />
             </button>
 
-            <div className="header-pill">{meta?.total != null ? `${meta.total} inquiries` : "Inquiries"}</div>
+            <div className="header-pill">
+              {meta?.total != null ? `${meta.total} inquiries` : "Inquiries"}
+            </div>
           </div>
         </div>
 
         <div className="wrapper">
           <div className="conversation-area">
+            <div className="ih-panel-close-wrap">
+              <button
+                type="button"
+                className="ih-panel-close-btn"
+                onClick={() => setShowList(false)}
+                aria-label="Close conversations"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
             <div className="ih-left-header">
               <div className="ih-left-top">
                 <div className="ih-left-title">
@@ -512,9 +527,19 @@ export default function GymInquiryHistory() {
                     <div
                       key={c.gymId}
                       className={`msg ${isActive ? "active" : ""} ${online ? "online" : ""}`}
-                      onClick={() => setActiveGymId(c.gymId)}
+                      onClick={() => {
+                        setActiveGymId(c.gymId);
+                        setShowList(false);
+                      }}
                       role="button"
                       tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setActiveGymId(c.gymId);
+                          setShowList(false);
+                        }
+                      }}
                     >
                       <div
                         className="msg-profile group"
@@ -553,6 +578,33 @@ export default function GymInquiryHistory() {
               <div className="chat-area-group">
                 <button
                   type="button"
+                  className="ih-open-gym-btn ih-mobile-only"
+                  onClick={() => {
+                    setShowDetail(false);
+                    setShowList(true);
+                  }}
+                  title="Conversations"
+                  aria-label="Open conversations"
+                >
+                  <Menu size={18} />
+                </button>
+
+                <button
+                  type="button"
+                  className="ih-open-gym-btn ih-mobile-only"
+                  onClick={() => {
+                    setShowList(false);
+                    setShowDetail(true);
+                  }}
+                  title="Details"
+                  aria-label="Open details"
+                  disabled={!activeConv}
+                >
+                  <Info size={18} />
+                </button>
+
+                <button
+                  type="button"
                   className="ih-open-gym-btn"
                   onClick={refresh}
                   title="Refresh"
@@ -580,7 +632,7 @@ export default function GymInquiryHistory() {
               {!activeConv ? (
                 <div className="ih-chat-empty">
                   <div className="ih-chat-empty-title">No inquiry selected</div>
-                  <div className="ih-chat-empty-sub">Choose one on the left, or tap the plus button.</div>
+                  <div className="ih-chat-empty-sub">Choose one from the list or tap the plus button.</div>
                 </div>
               ) : thread.length === 0 ? (
                 <div className="ih-chat-empty">
@@ -656,6 +708,18 @@ export default function GymInquiryHistory() {
           </div>
 
           <div className="detail-area">
+            <div className="ih-panel-close-wrap">
+              <button
+                type="button"
+                className="ih-panel-close-btn"
+                onClick={() => setShowDetail(false)}
+                aria-label="Close details"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
             <div className="detail-area-header">
               <div
                 className="ih-detail-avatar"

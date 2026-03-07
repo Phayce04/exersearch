@@ -6,7 +6,6 @@ use App\Models\AppSetting;
 
 class AppSettingsPublicController extends Controller
 {
-    // GET /api/v1/settings/public
     public function show()
     {
         $settings = AppSetting::query()->find(1);
@@ -31,6 +30,8 @@ class AppSettingsPublicController extends Controller
                 'facebook_url' => $settings->facebook_url,
                 'instagram_url' => $settings->instagram_url,
                 'tiktok_url' => $settings->tiktok_url,
+                'youtube_url' => $settings->youtube_url,
+                'twitter_url' => $settings->twitter_url,
                 'website_url' => $settings->website_url,
             ],
         ]);

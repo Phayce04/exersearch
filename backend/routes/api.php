@@ -77,12 +77,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/faqs/active', [FaqController::class, 'active']);
     Route::get('/faqs/{faq}', [FaqController::class, 'show']);
 
-    Route::post('/faqs', [FaqController::class, 'store']);
-    Route::put('/faqs/{faq}', [FaqController::class, 'update']);
-    Route::patch('/faqs/{faq}', [FaqController::class, 'update']);
-    Route::patch('/faqs/{faq}/toggle', [FaqController::class, 'toggle']);
-    Route::delete('/faqs/{faq}', [FaqController::class, 'destroy']);
-
     Route::post('/auth/login', [UserAuthController::class, 'login']);
     Route::post('/auth/register', [UserAuthController::class, 'register']);
     Route::post('/auth/google', [UserAuthController::class, 'google']);
@@ -139,14 +133,7 @@ Route::prefix('v1')->group(function () {
 
     Route::post('/chat', [ChatController::class, 'sendMessage']);
 
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/chat/history', [ChatController::class, 'getUserHistory']);
-    });
-
-    Route::delete('/api/v1/chat/clear', [ChatController::class, 'clearHistory']);
-
     Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
-
         if (!URL::hasValidSignature($request)) {
             return response()->view('email-verify-result', [
                 'ok' => false,
@@ -174,12 +161,14 @@ Route::prefix('v1')->group(function () {
             'title' => 'Email verified',
             'message' => 'Your email has been verified successfully. You can now go back and log in.',
         ], 200);
-
     })->middleware('signed')->name('verification.verify');
 
     Route::get('/gyms/free-first-visits', [GymFreeVisitController::class, 'listEnabledGyms']);
 
     Route::middleware('auth:sanctum')->group(function () {
+
+        Route::get('/chat/history', [ChatController::class, 'getUserHistory']);
+        Route::delete('/chat/clear', [ChatController::class, 'clearHistory']);
 
         Route::post('/email/verification-notification', function (Request $request) {
             if ($request->user()->hasVerifiedEmail()) {
@@ -194,7 +183,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('verified')->group(function () {
 
             Route::get('/notifications', [NotificationController::class, 'index']);
-                        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']); 
+            Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
             Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
             Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
@@ -208,7 +197,7 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/owner/home/cards', [\App\Http\Controllers\OwnerHomeCardsController::class, 'index']);
             Route::get('/gyms/ratings/summary', [\App\Http\Controllers\GymRatingSummaryController::class, 'index']);
-            Route::get('/ratings/latest', [GymRatingController::class, 'latest'])->middleware('auth:sanctum');
+            Route::get('/ratings/latest', [GymRatingController::class, 'latest']);
 
             Route::post('/media/upload', [MediaUploadController::class, 'upload']);
             Route::delete('/media/delete', [MediaUploadController::class, 'delete']);
@@ -261,7 +250,6 @@ Route::prefix('v1')->group(function () {
             Route::post('/user/workout-plan-days', [UserWorkoutPlanDayController::class, 'store']);
             Route::match(['put', 'patch'], '/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'update'])->whereNumber('id');
             Route::delete('/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'destroy'])->whereNumber('id');
-
             Route::post('/user/workout-plan-days/{id}/recalibrate-gym', [UserWorkoutPlanDayController::class, 'recalibrateGym'])->whereNumber('id');
 
             Route::get('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'index']);
@@ -269,6 +257,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'store']);
             Route::match(['put', 'patch'], '/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'update'])->whereNumber('id');
             Route::delete('/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'destroy'])->whereNumber('id');
+            Route::get('/user/workout-plan-day-exercises/{id}/replacement-options', [UserWorkoutPlanDayExerciseController::class, 'replacementOptions'])->whereNumber('id');
+            Route::post('/user/workout-plan-day-exercises/{id}/replace', [UserWorkoutPlanDayExerciseController::class, 'replaceWithChoice'])->whereNumber('id');
 
             Route::get('/my-gyms', [GymController::class, 'myGyms']);
             Route::post('/gyms', [GymController::class, 'store']);
@@ -343,6 +333,12 @@ Route::prefix('v1')->group(function () {
                 ->whereNumber('announcementId');
 
             Route::middleware('admin')->group(function () {
+                Route::post('/faqs', [FaqController::class, 'store']);
+                Route::put('/faqs/{faq}', [FaqController::class, 'update']);
+                Route::patch('/faqs/{faq}', [FaqController::class, 'update']);
+                Route::patch('/faqs/{faq}/toggle', [FaqController::class, 'toggle']);
+                Route::delete('/faqs/{faq}', [FaqController::class, 'destroy']);
+
                 Route::get('/admin/activities', [GymInteractionController::class, 'adminIndex']);
                 Route::get('/admin/settings', [AdminAppSettingsController::class, 'show']);
                 Route::put('/admin/settings', [AdminAppSettingsController::class, 'update']);
@@ -350,23 +346,27 @@ Route::prefix('v1')->group(function () {
                 Route::get('/admin/profile', [AdminProfileController::class, 'show']);
                 Route::put('/admin/profile', [AdminProfileController::class, 'update']);
                 Route::get('/admin/chat-history', [ChatController::class, 'adminIndex']);
-Route::post('/admin/chat-history/clear', [ChatController::class, 'adminClear']);
-Route::get('/admin/ingredients', [IngredientController::class, 'adminIndex']);
-Route::post('/admin/ingredients', [IngredientController::class, 'store']);
-Route::patch('/admin/ingredients/{id}', [IngredientController::class, 'update'])->whereNumber('id');
-Route::delete('/admin/ingredients/{id}', [IngredientController::class, 'destroy'])->whereNumber('id');
-Route::patch('/admin/ingredients/{id}/toggle', [IngredientController::class, 'toggle'])->whereNumber('id');
-Route::get('/admin/macro-presets', [MacroPresetController::class, 'adminIndex']);
-Route::post('/admin/macro-presets', [MacroPresetController::class, 'store']);
-Route::match(['put','patch'], '/admin/macro-presets/{id}', [MacroPresetController::class, 'update'])->whereNumber('id');
-Route::delete('/admin/macro-presets/{id}', [MacroPresetController::class, 'destroy'])->whereNumber('id');
-Route::patch('/admin/macro-presets/{id}/toggle', [MacroPresetController::class, 'toggle'])->whereNumber('id');
-Route::get('/admin/meals', [MealController::class, 'adminIndex']);
-Route::get('/admin/meals/{id}', [MealController::class, 'adminShow'])->whereNumber('id');
-Route::post('/admin/meals', [MealController::class, 'store']);
-Route::match(['put','patch'], '/admin/meals/{id}', [MealController::class, 'update'])->whereNumber('id');
-Route::delete('/admin/meals/{id}', [MealController::class, 'destroy'])->whereNumber('id');
-Route::patch('/admin/meals/{id}/toggle', [MealController::class, 'toggle'])->whereNumber('id');
+                Route::post('/admin/chat-history/clear', [ChatController::class, 'adminClear']);
+
+                Route::get('/admin/ingredients', [IngredientController::class, 'adminIndex']);
+                Route::post('/admin/ingredients', [IngredientController::class, 'store']);
+                Route::patch('/admin/ingredients/{id}', [IngredientController::class, 'update'])->whereNumber('id');
+                Route::delete('/admin/ingredients/{id}', [IngredientController::class, 'destroy'])->whereNumber('id');
+                Route::patch('/admin/ingredients/{id}/toggle', [IngredientController::class, 'toggle'])->whereNumber('id');
+
+                Route::get('/admin/macro-presets', [MacroPresetController::class, 'adminIndex']);
+                Route::post('/admin/macro-presets', [MacroPresetController::class, 'store']);
+                Route::match(['put', 'patch'], '/admin/macro-presets/{id}', [MacroPresetController::class, 'update'])->whereNumber('id');
+                Route::delete('/admin/macro-presets/{id}', [MacroPresetController::class, 'destroy'])->whereNumber('id');
+                Route::patch('/admin/macro-presets/{id}/toggle', [MacroPresetController::class, 'toggle'])->whereNumber('id');
+
+                Route::get('/admin/meals', [MealController::class, 'adminIndex']);
+                Route::get('/admin/meals/{id}', [MealController::class, 'adminShow'])->whereNumber('id');
+                Route::post('/admin/meals', [MealController::class, 'store']);
+                Route::match(['put', 'patch'], '/admin/meals/{id}', [MealController::class, 'update'])->whereNumber('id');
+                Route::delete('/admin/meals/{id}', [MealController::class, 'destroy'])->whereNumber('id');
+                Route::patch('/admin/meals/{id}/toggle', [MealController::class, 'toggle'])->whereNumber('id');
+
                 Route::get('/admin/admins', [AdminAdminController::class, 'index']);
                 Route::get('/admin/admins/{user}', [AdminAdminController::class, 'show']);
                 Route::post('/admin/admins', [AdminAdminController::class, 'store']);
@@ -433,18 +433,13 @@ Route::patch('/admin/meals/{id}/toggle', [MealController::class, 'toggle'])->whe
                 Route::get('/admin/db/backups/{name}/download', [DatabaseBackupController::class, 'download']);
 
                 Route::get('/admin/announcements', [GymAnnouncementController::class, 'adminList']);
-
                 Route::delete('/admin/announcements/{announcementId}', [GymAnnouncementController::class, 'adminDelete'])
                     ->whereNumber('announcementId');
-
                 Route::post('/admin/gyms/{gymId}/announcements/block', [GymAnnouncementController::class, 'adminBlockGym'])
                     ->whereNumber('gymId');
-
                 Route::post('/admin/gyms/{gymId}/announcements/unblock', [GymAnnouncementController::class, 'adminUnblockGym'])
                     ->whereNumber('gymId');
             });
-
         });
     });
-
 });

@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
-import { Eye } from "lucide-react";
+import { Eye, RefreshCcw, CheckCircle2 } from "lucide-react";
 import "./workoutDayDetails.css";
+import gymHeroImage from "../../assets/gym-cta-hero.png";
 import {
   getUserWorkoutPlanDay,
+  updateUserWorkoutPlanDay,
   absoluteUrl,
   getUserSavedGyms,
-  searchGyms,
   recalibrateWorkoutDayGym,
   recalibrateWorkoutPlanGym,
   getGym,
+  getWorkoutExerciseReplacementOptions,
+  replaceWorkoutExerciseWithChoice,
 } from "../../utils/workoutPlanApi";
 
 const FALLBACK_EQUIPMENT_IMG = "https://i.imghippo.com/files/XIsw8670efM.jpg";
@@ -69,8 +72,9 @@ function eqAlias(norm = "") {
   if (n.includes("adjustable bench")) return "bench";
   if (n === "bench") return "bench";
 
-  if (n.includes("assisted pullups") || n.includes("assisted pull-up"))
+  if (n.includes("assisted pullups") || n.includes("assisted pull-up")) {
     return "assisted pullup machine";
+  }
 
   return n;
 }
@@ -146,70 +150,6 @@ function buildChangeSummary(updatedDay) {
   return changes;
 }
 
-function htmlChangeList(changes, summaryText = "") {
-  const safeSummary = summaryText
-    ? `
-      <div style="text-align:left;padding:10px 12px;border:1px solid #fde68a;border-radius:12px;background:#fffbeb;margin-bottom:12px;">
-        <div style="font-weight:900;color:#92400e;margin-bottom:4px;">Note</div>
-        <div style="color:#92400e;font-weight:800;line-height:1.5;">
-          ${summaryText}
-        </div>
-      </div>
-    `
-    : "";
-
-  if (!changes.length) {
-    return `
-      ${safeSummary}
-      <div style="text-align:left;">
-        <div style="font-weight:900;color:#111827;margin-bottom:6px;">No swaps were needed</div>
-        <div style="font-weight:700;color:#6b7280;line-height:1.5;">
-          Everything already matches this gym’s equipment.
-        </div>
-      </div>
-    `;
-  }
-
-  const rows = changes
-    .map((c) => {
-      const badge =
-        c.kind === "dropped"
-          ? `<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#fee2e2;color:#991b1b;font-weight:900;font-size:12px;margin-left:8px;">REMOVED</span>`
-          : `<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:900;font-size:12px;margin-left:8px;">SWAPPED</span>`;
-
-      const setsLine =
-        c.kind === "dropped" && c.setsLost
-          ? `<div style="color:#6b7280;font-weight:800;margin-top:6px;">Sets redistributed: <span style="color:#111827;font-weight:900;">${c.setsLost}</span></div>`
-          : "";
-
-      const reasonLine = c.reason
-        ? `<div style="color:#6b7280;font-weight:800;margin-top:6px;line-height:1.45;">${c.reason}</div>`
-        : "";
-
-      return `
-        <div style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#fff;text-align:left;">
-          <div style="font-weight:900;color:#111827;margin-bottom:6px;">
-            ${c.slot} ${badge}
-          </div>
-
-          <div style="color:#6b7280;font-weight:800;">Was:
-            <span style="color:#111827;font-weight:900;"> ${c.from}</span>
-          </div>
-
-          <div style="color:#6b7280;font-weight:800;">Now:
-            <span style="color:#111827;font-weight:900;"> ${c.to}</span>
-          </div>
-
-          ${setsLine}
-          ${reasonLine}
-        </div>
-      `;
-    })
-    .join("");
-
-  return `<div style="text-align:left;">${safeSummary}${rows}</div>`;
-}
-
 function countKinds(changes = []) {
   let swapped = 0;
   let removed = 0;
@@ -231,6 +171,187 @@ function getExerciseTutorial(ex) {
   };
 }
 
+function escapeHtml(s = "") {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function swalPanel(html) {
+  return `<div class="wdp-swal">${html}</div>`;
+}
+
+function swalInfoRow(label, value) {
+  return `
+    <div class="wdp-swal-row">
+      ${escapeHtml(label)}:
+      <span class="wdp-swal-strong"> ${escapeHtml(value)}</span>
+    </div>
+  `;
+}
+
+function swalNote(text) {
+  return `
+    <div class="wdp-swal-note">
+      <div class="wdp-swal-note-title">Note</div>
+      <div class="wdp-swal-note-body">${escapeHtml(text)}</div>
+    </div>
+  `;
+}
+
+function swalBadge(kind) {
+  if (kind === "removed") {
+    return `<span class="wdp-swal-badge wdp-swal-badge--danger">REMOVED</span>`;
+  }
+  return `<span class="wdp-swal-badge wdp-swal-badge--success">SWAPPED</span>`;
+}
+
+function htmlChangeList(changes, summaryText = "") {
+  const safeSummary = summaryText ? swalNote(summaryText) : "";
+
+  if (!changes.length) {
+    return `
+      ${safeSummary}
+      <div class="wdp-swal-block">
+        <div class="wdp-swal-heading">No swaps were needed</div>
+        <div class="wdp-swal-muted">
+          Everything already matches this gym’s equipment.
+        </div>
+      </div>
+    `;
+  }
+
+  const rows = changes
+    .map((c) => {
+      const setsLine =
+        c.kind === "dropped" && c.setsLost
+          ? `<div class="wdp-swal-row wdp-swal-row--mt">Sets redistributed: <span class="wdp-swal-strong">${c.setsLost}</span></div>`
+          : "";
+
+      const reasonLine = c.reason
+        ? `<div class="wdp-swal-muted wdp-swal-muted--mt">${escapeHtml(
+            c.reason
+          )}</div>`
+        : "";
+
+      return `
+        <div class="wdp-swal-card">
+          <div class="wdp-swal-card-title">
+            ${escapeHtml(c.slot)} ${swalBadge(c.kind)}
+          </div>
+
+          ${swalInfoRow("Was", c.from)}
+          ${swalInfoRow("Now", c.to)}
+
+          ${setsLine}
+          ${reasonLine}
+        </div>
+      `;
+    })
+    .join("");
+
+  return `<div class="wdp-swal-stack">${safeSummary}${rows}</div>`;
+}
+
+function weekDigestHtml(notices) {
+  const topItems = notices.slice(0, 8).map((n) => {
+    if (n?.type === "exercise_replaced") {
+      const from =
+        n?.from_exercise_name || `Exercise #${n?.from_exercise_id || ""}`;
+      const to = n?.to_exercise_name || `Exercise #${n?.to_exercise_id || ""}`;
+      const dayName = n?.user_plan_day_id ? `Day #${n.user_plan_day_id}` : "";
+
+      return `
+        <div class="wdp-swal-card">
+          <div class="wdp-swal-card-title">
+            Swapped ${dayName ? `• ${escapeHtml(dayName)}` : ""}
+          </div>
+          ${swalInfoRow("Was", from)}
+          ${swalInfoRow("Now", to)}
+        </div>
+      `;
+    }
+
+    if (n?.type === "exercise_dropped") {
+      const exn = n?.exercise_name || `Exercise #${n?.exercise_id || ""}`;
+      const sets = Number(n?.sets_lost || 0);
+      const dayName = n?.user_plan_day_id ? `Day #${n.user_plan_day_id}` : "";
+
+      return `
+        <div class="wdp-swal-card">
+          <div class="wdp-swal-card-title">
+            Removed ${dayName ? `• ${escapeHtml(dayName)}` : ""}
+            ${swalBadge("removed")}
+          </div>
+          <div class="wdp-swal-muted">${escapeHtml(exn)}</div>
+          ${
+            sets
+              ? `<div class="wdp-swal-row wdp-swal-row--mt">Sets redistributed: <span class="wdp-swal-strong">${sets}</span></div>`
+              : ""
+          }
+          ${
+            n?.reason
+              ? `<div class="wdp-swal-muted wdp-swal-muted--mt">${escapeHtml(
+                  n.reason
+                )}</div>`
+              : ""
+          }
+        </div>
+      `;
+    }
+
+    return "";
+  });
+
+  if (!topItems.length || !topItems.join("").trim()) return "";
+
+  return `
+    <div class="wdp-swal-section">
+      <div class="wdp-swal-heading">Top changes</div>
+      <div class="wdp-swal-stack">${topItems.join("")}</div>
+      ${
+        notices.length > topItems.length
+          ? `<div class="wdp-swal-muted wdp-swal-muted--mt">And ${
+              notices.length - topItems.length
+            } more change(s)…</div>`
+          : ""
+      }
+    </div>
+  `;
+}
+
+async function fireDarkSwal({
+  title,
+  html,
+  icon = "success",
+  confirmButtonText = "OK",
+}) {
+  await Swal.fire({
+    title,
+    html: swalPanel(html),
+    icon,
+    confirmButtonText,
+    confirmButtonColor: "#b84221",
+    background: "#1a1116",
+    color: "#f6efe7",
+    customClass: {
+      popup: "wdp-swal-popup",
+      title: "wdp-swal-title",
+      htmlContainer: "wdp-swal-html",
+      confirmButton: "wdp-swal-confirm",
+    },
+  });
+}
+
+function formatCompletedAt(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString();
+}
+
 export default function WorkoutDayDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -238,6 +359,7 @@ export default function WorkoutDayDetails() {
   const [day, setDay] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [completionLoading, setCompletionLoading] = useState(false);
 
   const [imgModal, setImgModal] = useState({
     open: false,
@@ -255,9 +377,6 @@ export default function WorkoutDayDetails() {
   });
 
   const [savedGyms, setSavedGyms] = useState([]);
-  const [gymQuery, setGymQuery] = useState("");
-  const [gymResults, setGymResults] = useState([]);
-  const [gymLoading, setGymLoading] = useState(false);
   const [gymErr, setGymErr] = useState("");
   const [recalibratingGymId, setRecalibratingGymId] = useState(null);
 
@@ -272,6 +391,16 @@ export default function WorkoutDayDetails() {
   const [gymWeekConfirm, setGymWeekConfirm] = useState({
     open: false,
     gym: null,
+  });
+
+  const [swapModal, setSwapModal] = useState({
+    open: false,
+    loading: false,
+    submitting: false,
+    exerciseRow: null,
+    currentExercise: null,
+    options: [],
+    error: "",
   });
 
   const closeImgModal = () =>
@@ -304,6 +433,17 @@ export default function WorkoutDayDetails() {
     setGymWeekConfirm({
       open: false,
       gym: null,
+    });
+
+  const closeSwapModal = () =>
+    setSwapModal({
+      open: false,
+      loading: false,
+      submitting: false,
+      exerciseRow: null,
+      currentExercise: null,
+      options: [],
+      error: "",
     });
 
   async function refreshDay() {
@@ -354,51 +494,28 @@ export default function WorkoutDayDetails() {
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
-    const t = setTimeout(async () => {
-      const q = gymQuery.trim();
-      if (!q) {
-        setGymResults([]);
-        return;
-      }
-
-      setGymLoading(true);
-      setGymErr("");
-      try {
-        const res = await searchGyms({ search: q });
-        if (!alive) return;
-        setGymResults(Array.isArray(res?.data) ? res.data : []);
-      } catch (e) {
-        if (!alive) return;
-        setGymErr(e?.message || "Failed to search gyms.");
-        setGymResults([]);
-      } finally {
-        if (!alive) return;
-        setGymLoading(false);
-      }
-    }, 350);
-
-    return () => {
-      alive = false;
-      clearTimeout(t);
-    };
-  }, [gymQuery]);
-
-  useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
         if (imgModal.open) closeImgModal();
         if (tutorialModal.open) closeTutorialModal();
         if (gymConfirm.open) closeGymConfirm();
         if (gymWeekConfirm.open) closeGymWeekConfirm();
+        if (swapModal.open) closeSwapModal();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [imgModal.open, tutorialModal.open, gymConfirm.open, gymWeekConfirm.open]);
+  }, [
+    imgModal.open,
+    tutorialModal.open,
+    gymConfirm.open,
+    gymWeekConfirm.open,
+    swapModal.open,
+  ]);
 
   const isRest = !!day?.is_rest || (day?.exercises?.length ?? 0) === 0;
+  const isCompleted = !!day?.completed_at;
+  const hasSavedGyms = savedGyms?.length > 0;
 
   function buildDayPreviewAndOpen(fullGym) {
     const gymEquipments = Array.isArray(fullGym?.equipments)
@@ -504,35 +621,34 @@ export default function WorkoutDayDetails() {
           ? `${removed} exercise(s) were removed because no compatible replacement was found. Volume was redistributed.`
           : "");
 
-      await Swal.fire({
+      await fireDarkSwal({
         title: "Day recalibration complete",
         html: `
-          <div style="text-align:left;font-weight:800;color:#374151;margin-bottom:10px;">
-            Gym: <span style="font-weight:900;color:#111827;">${
+          <div class="wdp-swal-row wdp-swal-row--mb">
+            Gym: <span class="wdp-swal-strong">${escapeHtml(
               gym?.name || "Selected gym"
-            }</span>
+            )}</span>
           </div>
 
-          <div style="text-align:left;color:#6b7280;font-weight:800;line-height:1.6;margin-bottom:12px;">
-            Results: <span style="color:#111827;font-weight:900;">${swapped}</span> swapped •
-            <span style="color:#111827;font-weight:900;"> ${removed}</span> removed
+          <div class="wdp-swal-row wdp-swal-row--mb">
+            Results:
+            <span class="wdp-swal-strong">${swapped}</span> swapped •
+            <span class="wdp-swal-strong">${removed}</span> removed
           </div>
 
           ${htmlChangeList(changes, summaryText)}
         `,
         icon: "success",
-        confirmButtonText: "OK",
-        confirmButtonColor: "#d23f0b",
       });
     } catch (e) {
       setGymErr(e?.message || "Failed to recalibrate day for selected gym.");
 
-      await Swal.fire({
+      await fireDarkSwal({
         title: "Day recalibration failed",
-        text: e?.message || "Failed to recalibrate day for selected gym.",
+        html: `<div class="wdp-swal-muted">${escapeHtml(
+          e?.message || "Failed to recalibrate day for selected gym."
+        )}</div>`,
         icon: "error",
-        confirmButtonText: "OK",
-        confirmButtonColor: "#d23f0b",
       });
     } finally {
       setRecalibratingGymId(null);
@@ -554,7 +670,7 @@ export default function WorkoutDayDetails() {
 
       closeGymWeekConfirm();
 
-      const updatedDay = await refreshDay();
+      await refreshDay();
       await refreshSavedGyms();
 
       const notices = Array.isArray(planPayload?.recalibration_notices)
@@ -573,125 +689,206 @@ export default function WorkoutDayDetails() {
           ? `${removed} exercise(s) were removed because no compatible replacement was found. Volume was redistributed.`
           : "");
 
-      const topItems = notices.slice(0, 8).map((n) => {
-        if (n?.type === "exercise_replaced") {
-          const from =
-            n?.from_exercise_name ||
-            `Exercise #${n?.from_exercise_id || ""}`;
-          const to =
-            n?.to_exercise_name || `Exercise #${n?.to_exercise_id || ""}`;
-          const dayName = n?.user_plan_day_id
-            ? `Day #${n.user_plan_day_id}`
-            : "";
-          return `
-            <div style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#fff;text-align:left;">
-              <div style="font-weight:900;color:#111827;margin-bottom:4px;">Swapped ${
-                dayName ? `• ${dayName}` : ""
-              }</div>
-              <div style="color:#6b7280;font-weight:800;">Was: <span style="color:#111827;font-weight:900;">${from}</span></div>
-              <div style="color:#6b7280;font-weight:800;">Now: <span style="color:#111827;font-weight:900;">${to}</span></div>
-            </div>
-          `;
-        }
+      const digestHtml = weekDigestHtml(notices);
 
-        if (n?.type === "exercise_dropped") {
-          const exn = n?.exercise_name || `Exercise #${n?.exercise_id || ""}`;
-          const sets = Number(n?.sets_lost || 0);
-          const dayName = n?.user_plan_day_id
-            ? `Day #${n.user_plan_day_id}`
-            : "";
-          return `
-            <div style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#fff;text-align:left;">
-              <div style="font-weight:900;color:#111827;margin-bottom:4px;">
-                Removed ${dayName ? `• ${dayName}` : ""} 
-                <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#fee2e2;color:#991b1b;font-weight:900;font-size:12px;margin-left:8px;">REMOVED</span>
-              </div>
-              <div style="color:#6b7280;font-weight:800;">${exn}</div>
-              ${
-                sets
-                  ? `<div style="color:#6b7280;font-weight:800;margin-top:6px;">Sets redistributed: <span style="color:#111827;font-weight:900;">${sets}</span></div>`
-                  : ""
-              }
-              ${
-                n?.reason
-                  ? `<div style="color:#6b7280;font-weight:800;margin-top:6px;line-height:1.45;">${String(
-                      n.reason
-                    )}</div>`
-                  : ""
-              }
-            </div>
-          `;
-        }
-
-        return "";
-      });
-
-      const digestHtml =
-        topItems.length && topItems.join("").trim()
-          ? `<div style="text-align:left;margin-top:12px;">
-               <div style="font-weight:900;color:#111827;margin-bottom:8px;">Top changes</div>
-               ${topItems.join("")}
-               ${
-                 notices.length > topItems.length
-                   ? `<div style="color:#6b7280;font-weight:800;margin-top:6px;">
-                        And ${notices.length - topItems.length} more change(s)…
-                      </div>`
-                   : ""
-               }
-             </div>`
-          : "";
-
-      await Swal.fire({
+      await fireDarkSwal({
         title: "Week recalibration complete",
         html: `
-          <div style="text-align:left;font-weight:800;color:#374151;margin-bottom:10px;">
+          <div class="wdp-swal-row wdp-swal-row--mb">
             Gym applied to your full 7-day plan:
-            <span style="font-weight:900;color:#111827;"> ${
+            <span class="wdp-swal-strong">${escapeHtml(
               gym?.name || "Selected gym"
-            }</span>
+            )}</span>
           </div>
 
-          <div style="text-align:left;color:#6b7280;font-weight:800;line-height:1.6;margin-bottom:12px;">
-            Results: <span style="color:#111827;font-weight:900;">${swapped}</span> swapped •
-            <span style="color:#111827;font-weight:900;"> ${removed}</span> removed
+          <div class="wdp-swal-row wdp-swal-row--mb">
+            Results:
+            <span class="wdp-swal-strong">${swapped}</span> swapped •
+            <span class="wdp-swal-strong">${removed}</span> removed
           </div>
 
-          ${
-            summaryText
-              ? `
-              <div style="text-align:left;padding:10px 12px;border:1px solid #fde68a;border-radius:12px;background:#fffbeb;margin-bottom:12px;">
-                <div style="font-weight:900;color:#92400e;margin-bottom:4px;">Note</div>
-                <div style="color:#92400e;font-weight:800;line-height:1.5;">
-                  ${summaryText}
-                </div>
-              </div>
-            `
-              : ""
-          }
+          ${summaryText ? swalNote(summaryText) : ""}
 
           ${
             digestHtml ||
-            `<div style="text-align:left;color:#6b7280;font-weight:800;line-height:1.6;">
+            `<div class="wdp-swal-muted">
               We checked every day in your plan against this gym’s equipment and swapped unsupported exercises where needed.
             </div>`
           }
         `,
         icon: "success",
-        confirmButtonText: "OK",
-        confirmButtonColor: "#d23f0b",
       });
     } catch (e) {
       setGymErr(e?.message || "Failed to recalibrate whole week.");
 
-      await Swal.fire({
+      await fireDarkSwal({
         title: "Week recalibration failed",
-        text: e?.message || "Failed to recalibrate whole week.",
+        html: `<div class="wdp-swal-muted">${escapeHtml(
+          e?.message || "Failed to recalibrate whole week."
+        )}</div>`,
         icon: "error",
-        confirmButtonText: "OK",
-        confirmButtonColor: "#d23f0b",
       });
     } finally {
       setRecalibratingGymId(null);
+    }
+  }
+
+  async function openSwapModal(it) {
+    if (!it?.user_plan_exercise_id) return;
+
+    setSwapModal({
+      open: true,
+      loading: true,
+      submitting: false,
+      exerciseRow: it,
+      currentExercise: it?.exercise || null,
+      options: [],
+      error: "",
+    });
+
+    try {
+      const res = await getWorkoutExerciseReplacementOptions(
+        it.user_plan_exercise_id,
+        5
+      );
+
+      setSwapModal((prev) => ({
+        ...prev,
+        loading: false,
+        options: Array.isArray(res?.options) ? res.options : [],
+        currentExercise:
+          res?.current_exercise || prev.currentExercise || it?.exercise || null,
+      }));
+    } catch (e) {
+      setSwapModal((prev) => ({
+        ...prev,
+        loading: false,
+        error: e?.message || "Failed to load replacement options.",
+      }));
+    }
+  }
+
+  async function confirmSwapOption(option) {
+    const rowId = swapModal?.exerciseRow?.user_plan_exercise_id;
+    const newExerciseId = option?.exercise_id;
+
+    if (!rowId || !newExerciseId) return;
+
+    setSwapModal((prev) => ({
+      ...prev,
+      submitting: true,
+      error: "",
+    }));
+
+    try {
+      const updatedDay = await replaceWorkoutExerciseWithChoice(
+        rowId,
+        newExerciseId
+      );
+
+      const newDay = updatedDay?.data || updatedDay || null;
+      if (newDay) {
+        setDay(newDay);
+      } else {
+        await refreshDay();
+      }
+
+      const notice = updatedDay?.swap_notice || newDay?.swap_notice || null;
+
+      closeSwapModal();
+
+      await fireDarkSwal({
+        title: "Exercise replaced",
+        html: `
+          ${swalInfoRow(
+            "Was",
+            notice?.from_exercise_name ||
+              swapModal?.currentExercise?.name ||
+              "Previous exercise"
+          )}
+
+          <div class="wdp-swal-spacer"></div>
+
+          ${swalInfoRow(
+            "Now",
+            notice?.to_exercise_name || option?.name || "Replacement exercise"
+          )}
+
+          ${
+            notice?.slot_type
+              ? `<div class="wdp-swal-row wdp-swal-row--mt">Slot: <span class="wdp-swal-strong">${escapeHtml(
+                  prettyLabel(notice.slot_type)
+                )}</span></div>`
+              : ""
+          }
+
+          ${
+            notice?.reason
+              ? `<div class="wdp-swal-muted wdp-swal-muted--mt">${escapeHtml(
+                  String(notice.reason)
+                )}</div>`
+              : ""
+          }
+        `,
+        icon: "success",
+      });
+    } catch (e) {
+      setSwapModal((prev) => ({
+        ...prev,
+        submitting: false,
+        error: e?.message || "Failed to replace exercise.",
+      }));
+    }
+  }
+
+  async function toggleCompleted() {
+    if (!id || completionLoading) return;
+
+    const nextCompleted = !isCompleted;
+    setCompletionLoading(true);
+
+    try {
+      const res = await updateUserWorkoutPlanDay(id, {
+        mark_completed: nextCompleted,
+      });
+
+      const updated = res?.data || null;
+      if (updated) {
+        setDay(updated);
+      } else {
+        await refreshDay();
+      }
+
+      await fireDarkSwal({
+        title: nextCompleted ? "Day marked complete" : "Completion removed",
+        html: nextCompleted
+          ? `
+            <div class="wdp-swal-row">
+              ${escapeHtml(day?.weekday_name || "Workout day")} is now
+              <span class="wdp-swal-strong">completed</span>.
+            </div>
+          `
+          : `
+            <div class="wdp-swal-row">
+              Completion status for
+              <span class="wdp-swal-strong"> ${escapeHtml(
+                day?.weekday_name || "Workout day"
+              )}</span>
+              was removed.
+            </div>
+          `,
+        icon: "success",
+      });
+    } catch (e) {
+      await fireDarkSwal({
+        title: "Update failed",
+        html: `<div class="wdp-swal-muted">${escapeHtml(
+          e?.message || "Failed to update completion status."
+        )}</div>`,
+        icon: "error",
+      });
+    } finally {
+      setCompletionLoading(false);
     }
   }
 
@@ -713,6 +910,12 @@ export default function WorkoutDayDetails() {
                     {prettyLabel(day?.focus || "workout")}
                   </span>
                 )}
+
+                {isCompleted ? (
+                  <span className="wdp-header-pill wdp-header-pill--done">
+                    Completed
+                  </span>
+                ) : null}
 
                 {day?.plan?.start_date ? (
                   <span className="wdp-header-muted">
@@ -749,378 +952,430 @@ export default function WorkoutDayDetails() {
           <div className="wdp-card">
             <div className="wdp-error">No data found.</div>
           </div>
-        ) : isRest ? (
-          <div className="wdp-card">
-            <h2 className="wdp-section-title">Rest day</h2>
-            <ul className="wdp-rest">
-              <li>Recovery / Mobility</li>
-              <li>Optional walk 20–30 min</li>
-              <li>Hydrate + sleep</li>
-            </ul>
-          </div>
         ) : (
           <>
-            <section className="wdp-card">
-              <div className="wdp-card-head">
-                <div className="wdp-card-head-title">Exercises</div>
-                <div className="wdp-card-head-tag">
-                  {(day.exercises || []).length} items
-                </div>
+            {isRest ? (
+              <div className="wdp-card">
+                <h2 className="wdp-section-title">Rest day</h2>
+                <ul className="wdp-rest">
+                  <li>Recovery / Mobility</li>
+                  <li>Optional walk 20–30 min</li>
+                  <li>Hydrate + sleep</li>
+                </ul>
               </div>
+            ) : (
+              <section className="wdp-card">
+                <div className="wdp-card-head">
+                  <div className="wdp-card-head-title">Exercises</div>
+                  <div className="wdp-card-head-tag">
+                    {(day.exercises || []).length} items
+                  </div>
+                </div>
 
-              <div className="wdp-card-body">
-                <div className="wdp-exlist">
-                  {(day.exercises || []).map((it) => {
-                    const ex = it?.exercise || {};
-                    const eqsRaw = Array.isArray(ex?.equipments)
-                      ? ex.equipments
-                      : [];
-                    const eqs = uniqById(eqsRaw, "equipment_id");
+                <div className="wdp-card-body">
+                  <div className="wdp-exlist">
+                    {(day.exercises || []).map((it) => {
+                      const ex = it?.exercise || {};
+                      const eqsRaw = Array.isArray(ex?.equipments)
+                        ? ex.equipments
+                        : [];
+                      const eqs = uniqById(eqsRaw, "equipment_id");
 
-                    const tut = getExerciseTutorial(ex);
-                    const canShowTut = !!tut.imageUrl;
+                      const tut = getExerciseTutorial(ex);
+                      const canShowTut = !!tut.imageUrl;
 
-                    return (
-                      <article
-                        key={it.user_plan_exercise_id}
-                        className="wdp-exitem"
-                      >
-                        <div className="wdp-exleft">
-                          <div className="wdp-exname">
-                            {ex?.name || `Exercise #${it.exercise_id}`}
-                          </div>
-
-                          <div className="wdp-exmeta">
-                            <span className="wdp-tag">
-                              {prettyLabel(it?.slot_type || "slot")}
-                            </span>
-                            <span className="wdp-tag">
-                              {prettyLabel(ex?.difficulty || "—")}
-                            </span>
-                            <span className="wdp-tag">
-                              {prettyLabel(ex?.primary_muscle || "—")}
-                            </span>
-                          </div>
-
-                          <div className="wdp-prescription">
-                            <div className="wdp-presc">
-                              <span className="wdp-presc-label">Sets</span>
-                              <span className="wdp-presc-val">
-                                {it?.sets ?? "—"}
-                              </span>
-                            </div>
-                            <div className="wdp-presc">
-                              <span className="wdp-presc-label">Reps</span>
-                              <span className="wdp-presc-val">
-                                {fmtReps(it)}
-                              </span>
-                            </div>
-                            <div className="wdp-presc">
-                              <span className="wdp-presc-label">Rest</span>
-                              <span className="wdp-presc-val">
-                                {it?.rest_seconds ? `${it.rest_seconds}s` : "—"}
-                              </span>
-                            </div>
-                          </div>
-
-                          {Array.isArray(ex?.instructions) &&
-                          ex.instructions.length ? (
-                            <div className="wdp-instructions">
-                              <div className="wdp-mini-title-row">
-                                <div className="wdp-mini-title">
-                                  How to do it
-                                </div>
-
-                                <button
-                                  type="button"
-                                  className="wdp-viewicon"
-                                  title={
-                                    canShowTut
-                                      ? "View tutorial"
-                                      : "No tutorial image yet"
-                                  }
-                                  onClick={() => {
-                                    if (!canShowTut) return;
-                                    setTutorialModal({
-                                      open: true,
-                                      title: tut.title || ex?.name || "Tutorial",
-                                      imageUrl: tut.imageUrl,
-                                      videoUrl: tut.videoUrl || "",
-                                    });
-                                  }}
-                                  disabled={!canShowTut}
-                                  aria-disabled={!canShowTut}
-                                  style={
-                                    !canShowTut
-                                      ? { opacity: 0.5, cursor: "not-allowed" }
-                                      : undefined
-                                  }
-                                >
-                                  <Eye size={16} />
-                                  <span>View</span>
-                                </button>
+                      return (
+                        <article
+                          key={it.user_plan_exercise_id}
+                          className="wdp-exitem"
+                        >
+                          <div className="wdp-exleft">
+                            <div className="wdp-exheader">
+                              <div className="wdp-exname">
+                                {ex?.name || `Exercise #${it.exercise_id}`}
                               </div>
 
-                              <ol>
-                                {ex.instructions.slice(0, 8).map((step, idx) => (
-                                  <li key={idx}>{String(step)}</li>
-                                ))}
-                              </ol>
+                              <button
+                                type="button"
+                                className="wdp-exreplace"
+                                onClick={() => openSwapModal(it)}
+                                disabled={!!recalibratingGymId}
+                                title="Replace exercise"
+                                aria-label={`Replace ${ex?.name || "exercise"}`}
+                              >
+                                <RefreshCcw size={16} strokeWidth={2.2} />
+                              </button>
                             </div>
-                          ) : null}
-                        </div>
 
-                        <aside className="wdp-exright">
-                          <div className="wdp-mini-title">
-                            Machines / Equipment
+                            <div className="wdp-exmeta">
+                              <span className="wdp-tag">
+                                {prettyLabel(it?.slot_type || "slot")}
+                              </span>
+                              <span className="wdp-tag">
+                                {prettyLabel(ex?.difficulty || "—")}
+                              </span>
+                              <span className="wdp-tag">
+                                {prettyLabel(ex?.primary_muscle || "—")}
+                              </span>
+                            </div>
+
+                            <div className="wdp-prescription">
+                              <div className="wdp-presc">
+                                <span className="wdp-presc-label">Sets</span>
+                                <span className="wdp-presc-val">
+                                  {it?.sets ?? "—"}
+                                </span>
+                              </div>
+                              <div className="wdp-presc">
+                                <span className="wdp-presc-label">Reps</span>
+                                <span className="wdp-presc-val">
+                                  {fmtReps(it)}
+                                </span>
+                              </div>
+                              <div className="wdp-presc">
+                                <span className="wdp-presc-label">Rest</span>
+                                <span className="wdp-presc-val">
+                                  {it?.rest_seconds
+                                    ? `${it.rest_seconds}s`
+                                    : "—"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {Array.isArray(ex?.instructions) &&
+                            ex.instructions.length ? (
+                              <div className="wdp-instructions">
+                                <div className="wdp-mini-title-row">
+                                  <div className="wdp-mini-title">
+                                    How to do it
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    className="wdp-viewicon"
+                                    title={
+                                      canShowTut
+                                        ? "View tutorial"
+                                        : "No tutorial image yet"
+                                    }
+                                    onClick={() => {
+                                      if (!canShowTut) return;
+                                      setTutorialModal({
+                                        open: true,
+                                        title:
+                                          tut.title || ex?.name || "Tutorial",
+                                        imageUrl: tut.imageUrl,
+                                        videoUrl: tut.videoUrl || "",
+                                      });
+                                    }}
+                                    disabled={!canShowTut}
+                                    aria-disabled={!canShowTut}
+                                  >
+                                    <Eye size={16} />
+                                    <span>View</span>
+                                  </button>
+                                </div>
+
+                                <ol>
+                                  {ex.instructions
+                                    .slice(0, 8)
+                                    .map((step, idx) => (
+                                      <li key={idx}>{String(step)}</li>
+                                    ))}
+                                </ol>
+                              </div>
+                            ) : null}
                           </div>
 
-                          {eqs.length ? (
-                            <div className="wdp-eqstack">
-                              {eqs.map((eq) => {
-                                const title = prettyLabel(
-                                  eq?.name || `Equipment #${eq?.equipment_id}`
-                                );
-                                const img = imgUrl(eq?.image_url);
-
-                                return (
-                                  <div
-                                    key={eq.equipment_id}
-                                    className="wdp-eqcard"
-                                  >
-                                    <button
-                                      type="button"
-                                      className="wdp-eqimgbtn"
-                                      onClick={() =>
-                                        setImgModal({
-                                          open: true,
-                                          src: img || FALLBACK_EQUIPMENT_IMG,
-                                          title,
-                                          category: eq?.category
-                                            ? prettyLabel(eq.category)
-                                            : "",
-                                          description: eq?.description
-                                            ? String(eq.description)
-                                            : "",
-                                        })
-                                      }
-                                      aria-label={`Open image: ${title}`}
-                                    >
-                                      <div className="wdp-eqimgwrap">
-                                        <img
-                                          src={img || FALLBACK_EQUIPMENT_IMG}
-                                          alt={title}
-                                          className="wdp-eqimg"
-                                          loading="lazy"
-                                          onError={(e) => {
-                                            e.currentTarget.src =
-                                              FALLBACK_EQUIPMENT_IMG;
-                                          }}
-                                        />
-                                        <span className="wdp-eqzoom">Zoom</span>
-                                      </div>
-                                    </button>
-
-                                    <div className="wdp-eqcontent">
-                                      <div className="wdp-eqtitle">{title}</div>
-
-                                      {eq?.category ? (
-                                        <div className="wdp-eqmeta">
-                                          {prettyLabel(eq.category)}
-                                        </div>
-                                      ) : null}
-
-                                      {eq?.description ? (
-                                        <div className="wdp-eqdesc">
-                                          {eq.description}
-                                        </div>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                          <aside className="wdp-exright">
+                            <div className="wdp-mini-title">
+                              Machines / Equipment
                             </div>
-                          ) : (
-                            <div className="wdp-muted">None / bodyweight</div>
-                          )}
-                        </aside>
-                      </article>
-                    );
-                  })}
+
+                            {eqs.length ? (
+                              <div className="wdp-eqstack">
+                                {eqs.map((eq) => {
+                                  const title = prettyLabel(
+                                    eq?.name || `Equipment #${eq?.equipment_id}`
+                                  );
+                                  const img = imgUrl(eq?.image_url);
+
+                                  return (
+                                    <div
+                                      key={eq.equipment_id}
+                                      className="wdp-eqcard"
+                                    >
+                                      <button
+                                        type="button"
+                                        className="wdp-eqimgbtn"
+                                        onClick={() =>
+                                          setImgModal({
+                                            open: true,
+                                            src: img || FALLBACK_EQUIPMENT_IMG,
+                                            title,
+                                            category: eq?.category
+                                              ? prettyLabel(eq.category)
+                                              : "",
+                                            description: eq?.description
+                                              ? String(eq.description)
+                                              : "",
+                                          })
+                                        }
+                                        aria-label={`Open image: ${title}`}
+                                      >
+                                        <div className="wdp-eqimgwrap">
+                                          <img
+                                            src={img || FALLBACK_EQUIPMENT_IMG}
+                                            alt={title}
+                                            className="wdp-eqimg"
+                                            loading="lazy"
+                                            onError={(e) => {
+                                              e.currentTarget.src =
+                                                FALLBACK_EQUIPMENT_IMG;
+                                            }}
+                                          />
+                                          <span className="wdp-eqzoom">
+                                            Zoom
+                                          </span>
+                                        </div>
+                                      </button>
+
+                                      <div className="wdp-eqcontent">
+                                        <div className="wdp-eqtitle">
+                                          {title}
+                                        </div>
+
+                                        {eq?.category ? (
+                                          <div className="wdp-eqmeta">
+                                            {prettyLabel(eq.category)}
+                                          </div>
+                                        ) : null}
+
+                                        {eq?.description ? (
+                                          <div className="wdp-eqdesc">
+                                            {eq.description}
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="wdp-muted">None / bodyweight</div>
+                            )}
+                          </aside>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
             <div className="wdp-gap" />
 
-            <section className="wdp-card wdp-gymcard">
-              <div className="wdp-card-head">
-                <div className="wdp-card-head-title">
-                  Customize for your gyms. Choose: this day or the whole week.
+            <section
+              className={`wdp-complete-banner ${
+                isCompleted ? "is-completed" : ""
+              }`}
+            >
+              <div className="wdp-complete-left">
+                <div className="wdp-complete-icon">
+                  <CheckCircle2 size={22} />
                 </div>
-                <div className="wdp-card-head-tag">
-                  {day?.plan?.gym_id ? "Selected" : "Not set"}
+
+                <div className="wdp-complete-copy">
+                  <div className="wdp-complete-title">
+                    {isCompleted
+                      ? "Workout completed"
+                      : "Mark this day complete"}
+                  </div>
+
+                  <div className="wdp-complete-text">
+                    {isCompleted
+                      ? `Completed at ${
+                          formatCompletedAt(day?.completed_at) || "just now"
+                        }`
+                      : "Tap the button once you finish this day."}
+                  </div>
                 </div>
               </div>
 
-              <div className="wdp-card-body">
-                {gymErr ? (
-                  <div className="wdp-error" style={{ marginBottom: 12 }}>
-                    {gymErr}
-                  </div>
-                ) : null}
-
-                {savedGyms?.length ? (
-                  <div className="wdp-saved-list">
-                    {savedGyms.map((g) => (
-                      <div key={g.gym_id} className="wdp-saved-card">
-                        <div className="wdp-saved-image">
-                          <img
-                            src={
-                              g?.main_image_url
-                                ? imgUrl(g.main_image_url)
-                                : FALLBACK_EQUIPMENT_IMG
-                            }
-                            alt={g?.name || "Gym"}
-                            onError={(e) => {
-                              e.currentTarget.src = FALLBACK_EQUIPMENT_IMG;
-                            }}
-                          />
-                        </div>
-
-                        <div className="wdp-saved-details">
-                          <div className="wdp-saved-toprow">
-                            <div>
-                              <h3 className="wdp-saved-title">{g?.name}</h3>
-                              <p className="wdp-saved-location">
-                                {g?.address || ""}
-                              </p>
-                            </div>
-
-                            {g?.daily_price ? (
-                              <div className="wdp-saved-price">
-                                <span className="wdp-price-pill">
-                                  ₱{g.daily_price} / day
-                                </span>
-                              </div>
-                            ) : null}
-                          </div>
-
-                          <div className="wdp-saved-meta">
-                            {g?.gym_type ? (
-                              <span className="wdp-meta-pill">
-                                {prettyLabel(g.gym_type)}
-                              </span>
-                            ) : null}
-                            {g?.is_airconditioned ? (
-                              <span className="wdp-meta-pill">
-                                Airconditioned
-                              </span>
-                            ) : null}
-                            {g?.is_24_hours ? (
-                              <span className="wdp-meta-pill">24 hours</span>
-                            ) : null}
-                          </div>
-
-                          <div className="wdp-saved-actions">
-                            <button
-                              className="wdp-btn-solid"
-                              type="button"
-                              onClick={() => openGymDayModal(g)}
-                              disabled={!!recalibratingGymId}
-                            >
-                              Recalibrate this day
-                            </button>
-
-                            <button
-                              className="wdp-btn-outline"
-                              type="button"
-                              onClick={() => openGymWeekModal(g)}
-                              disabled={!!recalibratingGymId}
-                            >
-                              Recalibrate whole week
-                            </button>
-
-                            <button
-                              className="wdp-btn-outline"
-                              type="button"
-                              onClick={() => navigate(`/home/gym/${g.gym_id}`)}
-                            >
-                              View gym
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="wdp-muted" style={{ marginBottom: 12 }}>
-                    No saved gyms yet.
-                  </div>
-                )}
-
-                <div className="wdp-gymsearch-wrap">
-                  <div className="wdp-gymsearch-title">Find a gym</div>
-
-                  <div className="wdp-gymsearch">
-                    <div className="wdp-searchfield">
-                      <span className="wdp-searchicon" aria-hidden="true">
-                        🔎
-                      </span>
-                      <input
-                        className="wdp-input wdp-input--search"
-                        value={gymQuery}
-                        onChange={(e) => setGymQuery(e.target.value)}
-                        placeholder="Search gyms by name…"
-                      />
-                    </div>
-
-                    <button
-                      className="wdp-btn-outline wdp-btn-outline--finder"
-                      type="button"
-                      onClick={() => navigate("/home/find-gyms")}
-                    >
-                      Open gym finder
-                    </button>
-                  </div>
-
-                  {gymLoading ? (
-                    <div className="wdp-muted">Searching…</div>
-                  ) : null}
-
-                  {!gymLoading && gymResults.length ? (
-                    <div className="wdp-gymresults">
-                      {gymResults.slice(0, 8).map((g) => (
-                        <button
-                          key={g.gym_id}
-                          type="button"
-                          className="wdp-gymresult"
-                          onClick={() => openGymDayModal(g)}
-                          disabled={!!recalibratingGymId}
-                        >
-                          <div className="wdp-gymresult-left">
-                            <div className="wdp-gymname">{g.name}</div>
-                            <div className="wdp-gymaddr">
-                              {g.address ? g.address : ""}
-                            </div>
-                          </div>
-                          <div className="wdp-gymcta">Day</div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {!gymLoading && gymQuery.trim() && !gymResults.length ? (
-                    <div className="wdp-muted" style={{ marginTop: 10 }}>
-                      No gyms found.
-                    </div>
-                  ) : null}
-                </div>
+              <div className="wdp-complete-right">
+                <button
+                  className={`wdp-complete-btn ${
+                    isCompleted ? "is-completed" : ""
+                  }`}
+                  type="button"
+                  onClick={toggleCompleted}
+                  disabled={completionLoading}
+                >
+                  {completionLoading
+                    ? "Updating…"
+                    : isCompleted
+                    ? "Mark as incomplete"
+                    : "Mark as completed"}
+                </button>
               </div>
             </section>
+
+            {hasSavedGyms ? (
+              <>
+                <div className="wdp-gap" />
+
+                <section className="wdp-card wdp-gymcard">
+                  <div className="wdp-card-head">
+                    <div className="wdp-card-head-title">
+                      Customize for your gyms. Choose: this day or the whole
+                      week.
+                    </div>
+                    <div className="wdp-card-head-tag">
+                      {day?.plan?.gym_id ? "Selected" : "Not set"}
+                    </div>
+                  </div>
+
+                  <div className="wdp-card-body">
+                    {gymErr ? (
+                      <div className="wdp-error wdp-mb12">{gymErr}</div>
+                    ) : null}
+
+                    <div className="wdp-saved-list">
+                      {savedGyms.map((g) => (
+                        <div key={g.gym_id} className="wdp-saved-card">
+                          <div className="wdp-saved-image">
+                            <img
+                              src={
+                                g?.main_image_url
+                                  ? imgUrl(g.main_image_url)
+                                  : FALLBACK_EQUIPMENT_IMG
+                              }
+                              alt={g?.name || "Gym"}
+                              onError={(e) => {
+                                e.currentTarget.src = FALLBACK_EQUIPMENT_IMG;
+                              }}
+                            />
+                          </div>
+
+                          <div className="wdp-saved-details">
+                            <div className="wdp-saved-toprow">
+                              <div>
+                                <h3 className="wdp-saved-title">{g?.name}</h3>
+                                <p className="wdp-saved-location">
+                                  {g?.address || ""}
+                                </p>
+                              </div>
+
+                              {g?.daily_price ? (
+                                <div className="wdp-saved-price">
+                                  <span className="wdp-price-pill">
+                                    ₱{g.daily_price} / day
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="wdp-saved-meta">
+                              {g?.gym_type ? (
+                                <span className="wdp-meta-pill">
+                                  {prettyLabel(g.gym_type)}
+                                </span>
+                              ) : null}
+                              {g?.is_airconditioned ? (
+                                <span className="wdp-meta-pill">
+                                  Airconditioned
+                                </span>
+                              ) : null}
+                              {g?.is_24_hours ? (
+                                <span className="wdp-meta-pill">24 hours</span>
+                              ) : null}
+                            </div>
+
+                            <div className="wdp-saved-actions">
+                              <button
+                                className="wdp-btn-solid"
+                                type="button"
+                                onClick={() => openGymDayModal(g)}
+                                disabled={!!recalibratingGymId}
+                              >
+                                Recalibrate this day
+                              </button>
+
+                              <button
+                                className="wdp-btn-outline"
+                                type="button"
+                                onClick={() => openGymWeekModal(g)}
+                                disabled={!!recalibratingGymId}
+                              >
+                                Recalibrate whole week
+                              </button>
+
+                              <button
+                                className="wdp-btn-outline"
+                                type="button"
+                                onClick={() => navigate(`/home/gym/${g.gym_id}`)}
+                              >
+                                View gym
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              </>
+            ) : null}
           </>
         )}
       </div>
+
+      {!loading && !err && day ? (
+        <div className="wdp-gymhero-full">
+          <div className="wdp-gymhero">
+            <div className="wdp-gymhero-media">
+              <img
+                src={gymHeroImage}
+                alt="Find a gym that matches your workout plan"
+                className="wdp-gymhero-img"
+              />
+            </div>
+
+            <div className="wdp-gymhero-overlay">
+              <div className="wdp-gymhero-copy">
+                <div className="wdp-gymhero-kicker">Find the right gym</div>
+
+                <h3 className="wdp-gymhero-title">
+                  Match your plan with the right equipment
+                </h3>
+
+                <p className="wdp-gymhero-text">
+                  Browse gyms near you and quickly switch between finder and
+                  search pages.
+                </p>
+
+                <div className="wdp-gymhero-actions">
+                  <button
+                    className="wdp-btn-solid"
+                    type="button"
+                    onClick={() => navigate("/home/find-gyms")}
+                  >
+                    Find gyms
+                  </button>
+
+                  <button
+                    className="wdp-btn-outline wdp-btn-outline--light"
+                    type="button"
+                    onClick={() => navigate("/home/gyms")}
+                  >
+                    Search gyms
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {imgModal.open ? (
         <div
@@ -1283,7 +1538,7 @@ export default function WorkoutDayDetails() {
                 </div>
               </div>
 
-              <div className="wdp-mini-title" style={{ marginTop: 14 }}>
+              <div className="wdp-mini-title wdp-mt14">
                 Exercises likely to change today
               </div>
 
@@ -1292,7 +1547,7 @@ export default function WorkoutDayDetails() {
                   {gymConfirm.affected.slice(0, 40).map((a, i) => (
                     <div key={i} className="wdp-affected-row">
                       <div className="wdp-affected-ex">{a.exerciseName}</div>
-                      <div className="wdp-muted" style={{ marginTop: 4 }}>
+                      <div className="wdp-muted wdp-mt4">
                         Missing: {a.missingEquipNames.join(", ")}
                         {a.slot ? ` • Slot: ${prettyLabel(a.slot)}` : ""}
                       </div>
@@ -1363,18 +1618,19 @@ export default function WorkoutDayDetails() {
 
             <div className="wdp-modal-scroll">
               <div className="wdp-modal-note">
-                This will update your <b>entire 7-day plan</b> to match this gym’s
-                available equipment. More exercises may change compared to a
-                single day.
+                This will update your <b>entire 7-day plan</b> to match this
+                gym’s available equipment. More exercises may change compared to
+                a single day.
               </div>
 
-              <div className="wdp-affected" style={{ marginTop: 10 }}>
+              <div className="wdp-affected wdp-mt10">
                 <div className="wdp-affected-row">
                   <div className="wdp-affected-ex">What will happen</div>
-                  <div className="wdp-muted" style={{ marginTop: 4 }}>
+                  <div className="wdp-muted wdp-mt4">
                     • Each day will be checked for unsupported equipment
                     <br />
-                    • Unsupported exercises will be swapped to valid alternatives
+                    • Unsupported exercises will be swapped to valid
+                    alternatives
                     <br />
                     • If no alternatives exist, an exercise may be removed and
                     volume redistributed
@@ -1402,6 +1658,114 @@ export default function WorkoutDayDetails() {
                     : "Recalibrate whole week"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {swapModal.open ? (
+        <div
+          className="wdp-modal-overlay"
+          onClick={closeSwapModal}
+          role="presentation"
+        >
+          <div
+            className="wdp-modal wdp-modal--wide"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Replace exercise"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wdp-modal-head wdp-modal-head--orange">
+              <div className="wdp-modal-head-left">
+                <div className="wdp-modal-title wdp-modal-title--light">
+                  Replace exercise
+                </div>
+                <div className="wdp-modal-sub">
+                  {swapModal.currentExercise?.name || "Current exercise"}
+                </div>
+              </div>
+
+              <button
+                className="wdp-modal-close wdp-modal-close--light"
+                type="button"
+                onClick={closeSwapModal}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="wdp-modal-scroll">
+              <div className="wdp-modal-note">
+                Choose a replacement for this exercise.
+              </div>
+
+              {swapModal.error ? (
+                <div className="wdp-error wdp-mb12">{swapModal.error}</div>
+              ) : null}
+
+              {swapModal.loading ? (
+                <div className="wdp-loading">Loading options…</div>
+              ) : swapModal.options.length ? (
+                <div className="wdp-affected">
+                  {swapModal.options.map((opt) => (
+                    <div
+                      key={opt.exercise_id}
+                      className="wdp-affected-row wdp-mb12"
+                    >
+                      <div className="wdp-affected-ex">{opt.name}</div>
+
+                      <div className="wdp-exmeta wdp-mt8">
+                        <span className="wdp-tag">
+                          {prettyLabel(opt?.difficulty || "—")}
+                        </span>
+                        <span className="wdp-tag">
+                          {prettyLabel(opt?.primary_muscle || "—")}
+                        </span>
+                        {opt?.equipment ? (
+                          <span className="wdp-tag">
+                            {prettyLabel(opt.equipment)}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {Array.isArray(opt?.equipments) && opt.equipments.length ? (
+                        <div className="wdp-pillwrap wdp-mt10">
+                          {opt.equipments.map((eq) => (
+                            <span
+                              key={`${opt.exercise_id}-${eq.equipment_id}`}
+                              className="wdp-pill wdp-pill--ok"
+                            >
+                              {prettyLabel(eq?.name || "")}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="wdp-muted wdp-mt8">
+                          None / bodyweight
+                        </div>
+                      )}
+
+                      <div className="wdp-saved-actions wdp-mt12">
+                        <button
+                          className="wdp-btn-solid"
+                          type="button"
+                          onClick={() => confirmSwapOption(opt)}
+                          disabled={swapModal.submitting}
+                        >
+                          {swapModal.submitting
+                            ? "Replacing…"
+                            : "Use this exercise"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="wdp-muted">
+                  No replacement options available for this exercise.
+                </div>
+              )}
             </div>
           </div>
         </div>

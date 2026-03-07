@@ -15,21 +15,15 @@ import "./AdminEquipments.css";
 
 const API_BASE = "https://exersearch.test";
 const TOKEN_KEY = "token";
-
-// ✅ Brand color request
 const BRAND = "#d23f0b";
-
-// ✅ Upload constraints (frontend)
 const MAX_UPLOAD_MB = 5;
-const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"]; // add "image/heic" if you support it
+const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"];
 
 function authHeaders() {
   const token = localStorage.getItem(TOKEN_KEY);
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// ✅ Make relative URLs display correctly in <img src="...">
-// /storage/...  -> https://exersearch.test/storage/...
 function toAbsUrl(u) {
   if (!u) return "";
   const s = String(u).trim();
@@ -53,6 +47,8 @@ const EMPTY = {
   facebook_url: "",
   instagram_url: "",
   tiktok_url: "",
+  youtube_url: "",
+  twitter_url: "",
   website_url: "",
   maintenance_mode: false,
   signup_enabled: true,
@@ -79,24 +75,10 @@ async function updateAdminSettings(payload) {
   return res.data?.data ?? res.data;
 }
 
-/**
- * ✅ Uses YOUR MediaUploadController:
- * POST /api/v1/media/upload
- * required: type in [equipments, amenities, gyms, settings*]
- * required: file
- * optional: kind
- */
 async function uploadSettingsImage(file, kind = "logos") {
   const fd = new FormData();
-
-  // If your backend allows "settings" type:
   fd.append("type", "settings");
   fd.append("kind", kind);
-
-  // fallback if no "settings" allowed:
-  // fd.append("type", "gyms");
-  // fd.append("kind", kind);
-
   fd.append("file", file);
 
   const res = await axios.post(`${API_BASE}/api/v1/media/upload`, fd, {
@@ -107,13 +89,10 @@ async function uploadSettingsImage(file, kind = "logos") {
   return res.data?.url || null;
 }
 
-/* ---------------- Error explainer for SweetAlert ---------------- */
-
 function explainUploadError(err) {
   const status = err?.response?.status;
   const data = err?.response?.data;
 
-  // Laravel validation: { message, errors: { file: ["..."] } }
   const firstValidation =
     data?.errors && typeof data.errors === "object"
       ? Object.values(data.errors).flat()?.[0]
@@ -181,8 +160,6 @@ function validateFileBeforeUpload(file) {
   return { ok: true, reason: "" };
 }
 
-/* ---------------- Component ---------------- */
-
 export default function AdminSettings() {
   const { theme } = useOutletContext();
   const t = adminThemes[theme].app;
@@ -195,20 +172,16 @@ export default function AdminSettings() {
   const [err, setErr] = useState("");
   const [settings, setSettings] = useState(EMPTY);
 
-  // Header logo upload state
   const headerFileRef = useRef(null);
   const [headerLogoUploading, setHeaderLogoUploading] = useState(false);
-  const [headerLogoPreview, setHeaderLogoPreview] = useState(""); // blob url
+  const [headerLogoPreview, setHeaderLogoPreview] = useState("");
 
-  // User logo upload state
   const userFileRef = useRef(null);
   const [userLogoUploading, setUserLogoUploading] = useState(false);
-  const [userLogoPreview, setUserLogoPreview] = useState(""); // blob url
+  const [userLogoPreview, setUserLogoPreview] = useState("");
 
-  // ✅ superadmin-only
   const canEdit = isAdmin && me?.role === "superadmin";
 
-  // ✅ preview now works for /storage/... paths
   const currentHeaderLogo = useMemo(() => {
     return headerLogoPreview || toAbsUrl(settings.logo_url) || "";
   }, [headerLogoPreview, settings.logo_url]);
@@ -241,7 +214,6 @@ export default function AdminSettings() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setField = (name, value) => {
@@ -249,62 +221,55 @@ export default function AdminSettings() {
   };
 
   const onSave = async () => {
-  if (!canEdit) return;
+    if (!canEdit) return;
 
-  setErr("");
-  setSaving(true);
-  try {
-    const payload = {
-      app_name: safeStr(settings.app_name).trim(),
+    setErr("");
+    setSaving(true);
+    try {
+      const payload = {
+        app_name: safeStr(settings.app_name).trim(),
+        logo_url: safeStr(settings.logo_url).trim() || null,
+        user_logo_url: safeStr(settings.user_logo_url).trim() || null,
+        favicon_url: safeStr(settings.favicon_url).trim() || null,
+        contact_phone: safeStr(settings.contact_phone).trim() || null,
+        contact_email: safeStr(settings.contact_email).trim() || null,
+        support_email: safeStr(settings.support_email).trim() || null,
+        address: safeStr(settings.address).trim() || null,
+        facebook_url: safeStr(settings.facebook_url).trim() || null,
+        instagram_url: safeStr(settings.instagram_url).trim() || null,
+        tiktok_url: safeStr(settings.tiktok_url).trim() || null,
+        youtube_url: safeStr(settings.youtube_url).trim() || null,
+        twitter_url: safeStr(settings.twitter_url).trim() || null,
+        website_url: safeStr(settings.website_url).trim() || null,
+        maintenance_mode: !!settings.maintenance_mode,
+        signup_enabled: !!settings.signup_enabled,
+        owner_application_enabled: !!settings.owner_application_enabled,
+      };
 
-      logo_url: safeStr(settings.logo_url).trim() || null,
-      user_logo_url: safeStr(settings.user_logo_url).trim() || null,
-      favicon_url: safeStr(settings.favicon_url).trim() || null,
+      const updated = await updateAdminSettings(payload);
+      setSettings((prev) => ({ ...prev, ...updated }));
 
-      contact_phone: safeStr(settings.contact_phone).trim() || null,
-      contact_email: safeStr(settings.contact_email).trim() || null,
-      support_email: safeStr(settings.support_email).trim() || null,
-      address: safeStr(settings.address).trim() || null,
+      await alertSuccess({
+        title: "Saved",
+        text: "App settings updated successfully.",
+        theme,
+        mainColor: MAIN,
+      });
 
-      facebook_url: safeStr(settings.facebook_url).trim() || null,
-      instagram_url: safeStr(settings.instagram_url).trim() || null,
-      tiktok_url: safeStr(settings.tiktok_url).trim() || null,
-      website_url: safeStr(settings.website_url).trim() || null,
-
-      maintenance_mode: !!settings.maintenance_mode,
-      signup_enabled: !!settings.signup_enabled,
-      owner_application_enabled: !!settings.owner_application_enabled,
-    };
-
-    const updated = await updateAdminSettings(payload);
-    setSettings((prev) => ({ ...prev, ...updated }));
-
-    // ✅ Wait for user to close the alert, then refresh
-    await alertSuccess({
-      title: "Saved",
-      text: "App settings updated successfully.",
-      theme,
-      mainColor: MAIN,
-    });
-
-    window.location.reload();
-
- 
-  } catch (e) {
-    const msg = e?.response?.data?.message || e?.message || "Failed to save settings.";
-    setErr(msg);
-    await alertError({
-      title: "Save failed",
-      text: msg,
-      theme,
-      mainColor: MAIN,
-    });
-  } finally {
-    setSaving(false);
-  }
-};
-
-  /* ---------------- Header Logo Upload ---------------- */
+      window.location.reload();
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Failed to save settings.";
+      setErr(msg);
+      await alertError({
+        title: "Save failed",
+        text: msg,
+        theme,
+        mainColor: MAIN,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const onPickHeaderLogo = () => {
     if (!canEdit || headerLogoUploading) return;
@@ -373,8 +338,6 @@ export default function AdminSettings() {
       setHeaderLogoUploading(false);
     }
   };
-
-  /* ---------------- User Logo Upload ---------------- */
 
   const onPickUserLogo = () => {
     if (!canEdit || userLogoUploading) return;
@@ -532,11 +495,9 @@ export default function AdminSettings() {
         <div style={{ padding: 14, color: t.text }}>Loading settings…</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
-          {/* Branding */}
           <section style={cardStyle(t)}>
             <div style={sectionTitle(t)}>Branding</div>
 
-            {/* Header Logo */}
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
               <LogoBox t={t} url={currentHeaderLogo} emptyText="No Header Logo" />
               <div style={{ flex: 1 }}>
@@ -575,7 +536,6 @@ export default function AdminSettings() {
               </div>
             </div>
 
-            {/* User Logo */}
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
               <LogoBox t={t} url={currentUserLogo} emptyText="No User Logo" />
               <div style={{ flex: 1 }}>
@@ -657,7 +617,6 @@ export default function AdminSettings() {
             </div>
           </section>
 
-          {/* Contact */}
           <section style={cardStyle(t)}>
             <div style={sectionTitle(t)}>Contact Info</div>
 
@@ -704,7 +663,6 @@ export default function AdminSettings() {
             </div>
           </section>
 
-          {/* Toggles */}
           <section style={cardStyle(t)}>
             <div style={sectionTitle(t)}>System Toggles</div>
 
@@ -735,7 +693,6 @@ export default function AdminSettings() {
             </div>
           </section>
 
-          {/* Social */}
           <section style={cardStyle(t)}>
             <div style={sectionTitle(t)}>Social Links</div>
 
@@ -767,6 +724,24 @@ export default function AdminSettings() {
                 />
               </Field>
 
+              <Field label="YouTube URL">
+                <input
+                  value={settings.youtube_url || ""}
+                  onChange={(e) => setField("youtube_url", e.target.value)}
+                  disabled={!canEdit}
+                  style={inputStyle(t)}
+                />
+              </Field>
+
+              <Field label="Twitter / X URL">
+                <input
+                  value={settings.twitter_url || ""}
+                  onChange={(e) => setField("twitter_url", e.target.value)}
+                  disabled={!canEdit}
+                  style={inputStyle(t)}
+                />
+              </Field>
+
               <Field label="Website URL">
                 <input
                   value={settings.website_url || ""}
@@ -788,8 +763,6 @@ export default function AdminSettings() {
     </div>
   );
 }
-
-/* ---------- UI helpers ---------- */
 
 function LogoBox({ t, url, emptyText }) {
   return (
@@ -856,7 +829,7 @@ function Toggle({ t, label, value, onChange, disabled }) {
         style={{
           width: 16,
           height: 16,
-          accentColor: BRAND, // ✅ checkmark color
+          accentColor: BRAND,
         }}
       />
       <span style={{ fontSize: 12, fontWeight: 800 }}>{label}</span>
@@ -892,7 +865,6 @@ function sectionTitle(t) {
 }
 
 function btnStyle(t, { primary = false, subtle = false, brand = false, disabled = false } = {}) {
-  // brand: orange button
   if (primary || brand) {
     return {
       borderRadius: 10,

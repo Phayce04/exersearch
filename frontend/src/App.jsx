@@ -24,6 +24,7 @@ import MealPlanGenerator from "./pages/user/MealPlan";
 import GymInquiryHistory from "./pages/user/GymInquiryHistory";
 import UserFaq from "./pages/user/FAQs";
 import AboutUs from "./pages/user/AboutUs";
+import Philosophy from "./pages/user/OurPhilosophy";
 
 import Chatbot from "./pages/user/ChatBot";
 
@@ -95,6 +96,8 @@ function App() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/become-an-owner" element={<BecomeOwner />} />
         <Route path="/owner-application" element={<OwnerApplication />} />
+                <Route path="/philosophy" element={<Philosophy />} />
+
         <Route path="meal-plan" element={<MealPlanGenerator />} />
 
         <Route path="/chatbot" element={<Chatbot />} />
