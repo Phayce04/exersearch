@@ -209,7 +209,7 @@
 
 .auth-role-chip { display: flex; align-items: center; gap: 9px; background: var(--cream); border: 1.5px solid var(--cream3); border-radius: var(--r-md); padding: 9px 12px; margin-bottom: 12px; }
 .auth-role-chip__av { width: 28px; height: 28px; border-radius: 50%; background: var(--or-dim); color: var(--or); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.auth-role-chip__email { font-size: 12.5px; font-weight: 700; color: var(--black); }
+.auth-role-chip__email { font-size: 12.5px; font-weight: 700; color: var(--black) !important; }
 .auth-role-chip__hint  { font-size: 10.5px; color: var(--muted); }
 
 .auth-roles { display: flex; flex-direction: column; gap: 7px; }

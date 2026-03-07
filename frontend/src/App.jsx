@@ -25,6 +25,7 @@ import GymInquiryHistory from "./pages/user/GymInquiryHistory";
 import UserFaq from "./pages/user/FAQs";
 import AboutUs from "./pages/user/AboutUs";
 import Philosophy from "./pages/user/OurPhilosophy";
+import Reviews from "./pages/user/Reviews";
 
 import Chatbot from "./pages/user/ChatBot";
 
@@ -88,6 +89,7 @@ function App() {
       <Routes>
         <Route path="/about-us" element={<AboutUs />} />
           <Route path="faqs" element={<UserFaq />} />
+          <Route path="reviews" element={<Reviews />} />
 
         <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/" element={<RoleLanding />} />
