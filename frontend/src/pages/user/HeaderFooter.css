@@ -1,18 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap');
 
 :root {
-  --lnd-or: #e8521a;
-  --lnd-or-dk: #c4400e;
-  --lnd-or-dim: rgba(232, 82, 26, 0.12);
-  --lnd-or-glow: rgba(232, 82, 26, 0.3);
-  --lnd-dark: #1a1a1a;
-  --lnd-dark2: #111111;
+  /* Orange palette */
+  --lnd-or: #ff5a16;
+  --lnd-or-md: #fc4a00;
+  --lnd-or-dk: #ab3200;
+  --lnd-or-dim: rgba(255, 90, 22, 0.12);
+  --lnd-or-glow: rgba(255, 90, 22, 0.3);
+  
+  /* Dark palette */
+  --lnd-dark: #0d141b;
+  --lnd-dark2: #101820;
+  --lnd-dark3: #181718;
+  
+  /* Light palette */
   --lnd-white: #ffffff;
-  --lnd-cream: #faf7f4;
+  --lnd-cream: #ebf0f5;
+  --lnd-light: #f1f4f8;
+  --lnd-light2: #f6f8fa;
+  
+  /* Fonts */
   --lnd-fh: 'Montserrat', sans-serif;
   --lnd-fb: 'DM Sans', sans-serif;
 }
 
+/* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
 .lnd-bar,
 .lnd-foot,
 .lnd-foot * {
@@ -29,12 +43,12 @@
 }
 
 .lnd-bar--dark {
-  background: var(--lnd-dark);
+  background: var(--lnd-dark2);
   box-shadow: none;
 }
 
 .lnd-bar--light {
-  background: var(--lnd-cream);
+  background: var(--lnd-light2);
   box-shadow: 0 2px 24px rgba(0, 0, 0, 0.08);
 }
 
@@ -167,6 +181,20 @@
   color: var(--lnd-dark);
 }
 
+/* Active navigation item */
+.lnd-nav__item--active {
+  color: var(--lnd-white);
+}
+
+.lnd-bar--light .lnd-nav__item--active {
+  color: var(--lnd-dark);
+}
+
+.lnd-nav__item--active::before {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+}
+
 .lnd-pill {
   font-family: var(--lnd-fh);
   font-size: 11px;
@@ -247,12 +275,13 @@
 }
 
 .lnd-pill--solid:hover {
-  background: var(--lnd-or-dk);
+  background: var(--lnd-or-md);
   box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.35);
   transform: translate(1px, 1px);
 }
 
 .lnd-pill--solid:active {
+  background: var(--lnd-or-dk);
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.35);
 }
@@ -352,7 +381,7 @@
   left: 0;
   right: 0;
   z-index: 850;
-  background: var(--lnd-dark2);
+  background: var(--lnd-dark3);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   transform: translateY(-8px);
   opacity: 0;
@@ -415,11 +444,14 @@
   background: rgba(0, 0, 0, 0.55);
 }
 
+/* ════════════════════════════════════════
+   FOOTER - COMPACT 2-ROW LAYOUT
+════════════════════════════════════════ */
 .lnd-foot {
   width: 100%;
   max-width: 100%;
   overflow-x: clip;
-  background: var(--lnd-dark2);
+  background: var(--lnd-dark3);
   font-family: var(--lnd-fb);
   border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
@@ -636,6 +668,9 @@
   color: rgba(255, 255, 255, 0.15);
 }
 
+/* ════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════ */
 @media (max-width: 1600px) {
   .lnd-bar__inner {
     padding: 0 1.5rem 0 2rem;
@@ -1110,18 +1145,4 @@
   .lnd-foot__legal {
     font-size: 0.6875rem;
   }
-}
-/* active navigation item */
-.lnd-nav__item--active {
-  color: var(--lnd-white);
-}
-
-.lnd-bar--light .lnd-nav__item--active {
-  color: var(--lnd-dark);
-}
-
-/* keep the orange dot visible even when not hovered */
-.lnd-nav__item--active::before {
-  transform: translateX(-50%) scale(1);
-  opacity: 1;
 }
