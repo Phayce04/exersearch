@@ -1,4 +1,4 @@
-﻿// src/pages/user/Home.jsx
+﻿﻿// src/pages/user/Home.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import "./UserHome.css";
@@ -83,7 +83,7 @@ import {
 } from "../../utils/userHomeApi";
 
 import { api } from "../../utils/apiClient";
-import HomeHeader from "./HomeHeader";
+import HomeHeader from "./Header-user";
 
 const UI_MODE_KEY = "ui_mode";
 const ROLE_LEVEL = { user: 1, owner: 2, superadmin: 3 };
