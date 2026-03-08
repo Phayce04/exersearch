@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import HeaderUser from "./Header-user";
-import HeaderUserStatic from "./HomeHeader";
 import Footer from "./Footer";
 import UserLoading from "./UserLoading";
 import { api } from "../../utils/apiClient";
@@ -34,18 +33,19 @@ export default function UserLayout() {
     const run = async () => {
       try {
         const token = localStorage.getItem("token");
+
         if (!token) {
           navigate("/login", { replace: true });
           return;
         }
 
         const minDelay = showLoader
-          ? new Promise((r) => setTimeout(r, 800))
+          ? new Promise((resolve) => setTimeout(resolve, 800))
           : Promise.resolve();
 
         const meReq = api.get("/me");
-
         const [meRes] = await Promise.all([meReq, minDelay]);
+
         const fetchedUser = meRes.data?.user ?? meRes.data;
 
         if (!hasAtLeastRole(fetchedUser?.role, "user")) {
@@ -62,6 +62,7 @@ export default function UserLayout() {
           navigate("/maintenance", { replace: true });
           return;
         }
+
         localStorage.removeItem("token");
         sessionStorage.removeItem(USER_LAYOUT_LOADED_KEY);
         navigate("/login", { replace: true });
@@ -69,6 +70,7 @@ export default function UserLayout() {
     };
 
     run();
+
     return () => {
       alive = false;
     };
@@ -82,22 +84,12 @@ export default function UserLayout() {
   if (!ready) return null;
 
   const hideHeader = location.pathname === "/home";
-
-  const useHomeHeader =
-    location.pathname.includes("/inquiries") ||
-    location.pathname.includes("/find-gyms") ||
-    location.pathname.includes("/meal-plan") ||
-    location.pathname.includes("/workout");
-
   const showFooter = true;
 
   return (
     <>
-      {!hideHeader &&
-        (useHomeHeader ? <HeaderUserStatic /> : <HeaderUser />)}
-
+      {!hideHeader && <HeaderUser />}
       <Outlet />
-
       {showFooter && <Footer />}
     </>
   );

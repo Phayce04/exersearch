@@ -1,6 +1,7 @@
 // src/components/header/HeaderUser.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
+import "./HeaderUser.css";
 import fallbackLogo from "../../assets/exersearchlogo.png";
 import { useAuth } from "../../authcon";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -18,6 +19,8 @@ import {
   Trophy,
   MessageCircle,
   Settings,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import {
@@ -31,15 +34,18 @@ const API_BASE = "https://exersearch.test";
 const FALLBACK_AVATAR = "/defaulticon.png";
 const TOKEN_KEY = "token";
 const UI_MODE_KEY = "ui_mode";
+const THEME_KEY = "theme_mode";
 
 const ROLE_LEVEL = { user: 1, owner: 2, superadmin: 3 };
 
 function roleLevel(role) {
   return ROLE_LEVEL[role] ?? 0;
 }
+
 function hasAtLeastRole(role, required) {
   return roleLevel(role) >= roleLevel(required);
 }
+
 function toAbsUrl(u) {
   if (!u) return "";
   const s = String(u).trim();
@@ -80,13 +86,32 @@ function iconForNotifType(type) {
   return Bell;
 }
 
+function getStoredTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved === "light" || saved === "dark") return saved;
+
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  return "dark";
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  document.body.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+}
+
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [themeMode, setThemeMode] = useState(getStoredTheme);
+  const [isMobileView, setIsMobileView] = useState(false);
 
   const notifRef = useRef(null);
   const profileRef = useRef(null);
@@ -109,11 +134,21 @@ export default function HeaderUser() {
     return "user";
   }, [location.pathname]);
 
-  // Notifications (real)
   const [notifications, setNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifErr, setNotifErr] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    applyTheme(themeMode);
+  }, [themeMode]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth <= 700);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -136,7 +171,9 @@ export default function HeaderUser() {
     }
 
     if (!user && !me && token) loadMe();
-    return () => (mounted = false);
+    return () => {
+      mounted = false;
+    };
   }, [user, me, token]);
 
   useEffect(() => {
@@ -159,10 +196,11 @@ export default function HeaderUser() {
     }
 
     loadUserLogo();
-    return () => (mounted = false);
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // ✅ IMPORTANT FIX: in /home UI, ALWAYS prefer user_profile first
   const avatarSrc = useMemo(() => {
     const u = effectiveUser;
     if (!u) return FALLBACK_AVATAR;
@@ -217,7 +255,6 @@ export default function HeaderUser() {
 
   const displayName = effectiveUser?.name || (meLoading ? "Loading..." : "User");
   const displayEmail = effectiveUser?.email || "";
-
   const isOwnerPlus = hasAtLeastRole(effectiveUser?.role, "owner");
   const switchModes = isOwnerPlus ? allowedUiModesForRole(effectiveUser?.role) : [];
 
@@ -244,35 +281,39 @@ export default function HeaderUser() {
     [logout, navigate]
   );
 
-  // Close popovers on outside click
+  const toggleTheme = useCallback(() => {
+    setThemeMode((prev) => (prev === "dark" ? "light" : "dark"));
+  }, []);
+
+  const themeLabel = themeMode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode";
+  const ThemeIcon = themeMode === "dark" ? Sun : Moon;
+
   useEffect(() => {
     function onDocClick(e) {
       if (notifOpen && notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
       if (profileOpen && profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
     }
+
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [notifOpen, profileOpen]);
 
-  // Header scrolled state
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.pageYOffset > 50);
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Notifications: fetch unread count
   const refreshUnread = useCallback(async () => {
     if (!token) return;
     try {
       const c = await getUnreadNotificationsCount();
       setUnreadCount(c);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, [token]);
 
-  // Notifications: fetch list
   const loadNotifs = useCallback(async () => {
     if (!token) return;
     setNotifLoading(true);
@@ -280,7 +321,7 @@ export default function HeaderUser() {
     try {
       const paged = await listNotifications({ page: 1, per_page: 20 });
       setNotifications(paged.data || []);
-    } catch (e) {
+    } catch {
       setNotifErr("Failed to load notifications.");
     } finally {
       setNotifLoading(false);
@@ -299,7 +340,7 @@ export default function HeaderUser() {
   return (
     <>
       {isScrolled && (
-        <div className="top-logo scrolled">
+        <div className="uhd-top-logo uhd-top-logo--scrolled">
           <div
             style={{ cursor: "pointer" }}
             onClick={() => {
@@ -320,9 +361,9 @@ export default function HeaderUser() {
         </div>
       )}
 
-      <header className={`header ${isScrolled ? "header--scrolled" : ""}`}>
+      <header className={`uhd-header ${isScrolled ? "uhd-header--scrolled" : ""}`}>
         <div
-          className="logo"
+          className="uhd-logo"
           onClick={() => {
             setMobileMenuOpen(false);
             setNotifOpen(false);
@@ -340,39 +381,39 @@ export default function HeaderUser() {
           />
         </div>
 
-        <div className="uhv-header__search-wrap">
-          <Search size={14} className="uhv-header__search-icon" />
+        <div className="uhd-header__search-wrap">
+          <Search size={14} className="uhd-header__search-icon" />
           <input
-            className="uhv-header__search-input"
+            className="uhd-header__search-input"
             type="text"
             placeholder="Search gyms, areas, tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           {searchQuery && (
-            <button className="uhv-header__search-clear" type="button" onClick={() => setSearchQuery("")}>
+            <button className="uhd-header__search-clear" type="button" onClick={() => setSearchQuery("")}>
               <X size={12} />
             </button>
           )}
         </div>
 
-        <div className="uhv-header__actions">
-          <Link to="/home/workout" className="uhv-chip uhv-chip--fire" onClick={() => setMobileMenuOpen(false)}>
+        <div className="uhd-header__actions">
+          <Link to="/home/workout" className="uhd-chip uhd-chip--fire" onClick={() => setMobileMenuOpen(false)}>
             <Flame size={12} /> Workout Plan
           </Link>
 
-          <Link to="/home/find-gyms" className="uhv-chip uhv-chip--find" onClick={() => setMobileMenuOpen(false)}>
+          <Link to="/home/find-gyms" className="uhd-chip uhd-chip--find" onClick={() => setMobileMenuOpen(false)}>
             <Dumbbell size={12} /> Find Gyms
           </Link>
 
-          <Link to="/home/meal-plan" className="uhv-chip uhv-chip--meal" onClick={() => setMobileMenuOpen(false)}>
+          <Link to="/home/meal-plan" className="uhd-chip uhd-chip--meal" onClick={() => setMobileMenuOpen(false)}>
             <Utensils size={12} /> Meal Plan
           </Link>
 
-          <div className="uhv-notif-wrap" ref={notifRef}>
+          <div className="uhd-notif-wrap" ref={notifRef}>
             <button
               type="button"
-              className={"uhv-notif" + (unreadCount > 0 ? " has-unread" : "")}
+              className={`uhd-notif ${unreadCount > 0 ? "has-unread" : ""}`}
               onClick={() => {
                 setNotifOpen((o) => {
                   const next = !o;
@@ -383,41 +424,42 @@ export default function HeaderUser() {
               }}
             >
               <Bell size={16} />
-              {unreadCount > 0 && <span className="uhv-notif__dot" />}
+              {unreadCount > 0 && <span className="uhd-notif__dot" />}
             </button>
 
             {notifOpen && (
-              <div className="uhv-notif-pop">
-                <div className="uhv-notif-pop__hdr">
+              <div className="uhd-notif-pop">
+                <div className="uhd-notif-pop__hdr">
                   <span>Notifications</span>
-                  <div className="uhv-notif-actions">
+
+                  <div className="uhd-notif-actions">
                     <button
                       type="button"
-                      className="uhv-notif-clear"
+                      className="uhd-notif-clear"
                       onClick={async () => {
                         try {
                           await markAllNotificationsRead();
                           setNotifications((prev) => prev.map((x) => ({ ...x, unread: false })));
                           setUnreadCount(0);
-                        } catch (e) {
+                        } catch {
                           // ignore
                         }
                       }}
                     >
                       Mark all as read
                     </button>
-                    <button type="button" className="uhv-notif-close" onClick={() => setNotifOpen(false)}>
+
+                    <button type="button" className="uhd-notif-close" onClick={() => setNotifOpen(false)}>
                       <X size={14} />
                     </button>
                   </div>
                 </div>
 
-                <div className="uhv-notif-pop__list">
-                  {notifLoading && <div className="uhv-notif-empty">Loading...</div>}
-                  {!notifLoading && notifErr && <div className="uhv-notif-empty">{notifErr}</div>}
-
+                <div className="uhd-notif-pop__list">
+                  {notifLoading && <div className="uhd-notif-empty">Loading...</div>}
+                  {!notifLoading && notifErr && <div className="uhd-notif-empty">{notifErr}</div>}
                   {!notifLoading && !notifErr && notifications.length === 0 && (
-                    <div className="uhv-notif-empty">All caught up!</div>
+                    <div className="uhd-notif-empty">All caught up!</div>
                   )}
 
                   {!notifLoading &&
@@ -428,9 +470,8 @@ export default function HeaderUser() {
                         <button
                           key={n.id}
                           type="button"
-                          className={"uhv-notif-item" + (n.unread ? " unread" : "")}
+                          className={`uhd-notif-item ${n.unread ? "unread" : ""}`}
                           onClick={async () => {
-                            // optimistic
                             setNotifications((prev) =>
                               prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x))
                             );
@@ -438,17 +479,17 @@ export default function HeaderUser() {
 
                             try {
                               await markNotificationRead(n.id);
-                            } catch (e) {
-                              // easiest safe fallback
+                            } catch {
                               refreshUnread();
                               loadNotifs();
                             }
                           }}
                         >
-                          <div className="uhv-notif-icon">
+                          <div className="uhd-notif-icon">
                             <Icon size={14} />
                           </div>
-                          <div className="uhv-notif-body">
+
+                          <div className="uhd-notif-body">
                             <p>{n.title}</p>
                             <span>{n.message}</span>
                           </div>
@@ -460,36 +501,37 @@ export default function HeaderUser() {
             )}
           </div>
 
-          <div className="uhv-profile-wrap" ref={profileRef}>
+          <div className="uhd-profile-wrap" ref={profileRef}>
             <button
               type="button"
-              className="uhv-profile-btn"
+              className="uhd-profile-btn"
               onClick={() => {
                 setProfileOpen((o) => !o);
                 setNotifOpen(false);
               }}
             >
-              <div className="uhv-profile-avatar">
+              <div className="uhd-profile-avatar">
                 <img
                   src={avatarSrc}
                   alt="Profile"
-                  className="uhv-profile-avatar__img"
+                  className="uhd-profile-avatar__img"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                     if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = "flex";
                   }}
                 />
-                <span className="uhv-profile-avatar__fallback">
+                <span className="uhd-profile-avatar__fallback">
                   {String(displayName || "U").trim().charAt(0).toUpperCase()}
                 </span>
               </div>
-              <ChevronDown size={13} className={"uhv-profile-chevron" + (profileOpen ? " open" : "")} />
+
+              <ChevronDown size={13} className={`uhd-profile-chevron ${profileOpen ? "open" : ""}`} />
             </button>
 
             {profileOpen && (
-              <div className="uhv-profile-pop">
-                <div className="uhv-profile-pop__top">
-                  <div className="uhv-profile-pop__bigavatar">
+              <div className="uhd-profile-pop">
+                <div className="uhd-profile-pop__top">
+                  <div className="uhd-profile-pop__bigavatar">
                     <img
                       src={avatarSrc}
                       alt="Profile"
@@ -500,68 +542,105 @@ export default function HeaderUser() {
                     />
                     <span>{String(displayName || "U").trim().charAt(0).toUpperCase()}</span>
                   </div>
+
                   <div>
-                    <p className="uhv-profile-pop__name">{displayName}</p>
-                    <p className="uhv-profile-pop__email">{displayEmail || " "}</p>
+                    <p className="uhd-profile-pop__name">{displayName}</p>
+                    <p className="uhd-profile-pop__email">{displayEmail || " "}</p>
                   </div>
                 </div>
 
-                <div className="uhv-profile-pop__menu">
-                  <Link to="/home/profile" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#eff6ff", color: "#3b82f6" }}>
+                <div className="uhd-profile-pop__menu">
+                  <Link to="/home/profile" className="uhd-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhd-pmi-icon" style={{ background: "#eff6ff", color: "#3b82f6" }}>
                       <UserCircle size={15} />
                     </div>
                     My Profile
                   </Link>
 
-                  <Link to="/home/workout" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>
-                      <Flame size={15} />
-                    </div>
-                    Workout Plan
-                  </Link>
+                  {isMobileView && (
+                    <>
+                      <Link
+                        to="/home/workout"
+                        className="uhd-profile-menu-item"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <div className="uhd-pmi-icon" style={{ background: "#fff7ed", color: "#ea580c" }}>
+                          <Flame size={15} />
+                        </div>
+                        Workout Plan
+                      </Link>
 
-                  <Link to="/home/find-gyms" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#eff6ff", color: "#2563eb" }}>
-                      <Dumbbell size={15} />
-                    </div>
-                    Find Gyms
-                  </Link>
+                      <Link
+                        to="/home/find-gyms"
+                        className="uhd-profile-menu-item"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <div className="uhd-pmi-icon" style={{ background: "#eff6ff", color: "#2563eb" }}>
+                          <Dumbbell size={15} />
+                        </div>
+                        Find Gyms
+                      </Link>
 
-                  <Link to="/home/meal-plan" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#f0fdf4", color: "#16a34a" }}>
-                      <Utensils size={15} />
-                    </div>
-                    Meal Plan
-                  </Link>
+                      <Link
+                        to="/home/meal-plan"
+                        className="uhd-profile-menu-item"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <div className="uhd-pmi-icon" style={{ background: "#f0fdf4", color: "#16a34a" }}>
+                          <Utensils size={15} />
+                        </div>
+                        Meal Plan
+                      </Link>
+                    </>
+                  )}
 
-                  <Link to="/home/saved-gyms" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
+                  <Link to="/home/saved-gyms" className="uhd-profile-menu-item" onClick={() => setProfileOpen(false)}>
+                    <div className="uhd-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
                       <Heart size={15} />
                     </div>
                     Saved Gyms
                   </Link>
 
-                  <Link to="/home/memberships" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#fff7ed", color: "#f59e0b" }}>
+                  <Link
+                    to="/home/memberships"
+                    className="uhd-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div className="uhd-pmi-icon" style={{ background: "#fff7ed", color: "#f59e0b" }}>
                       <Trophy size={15} />
                     </div>
                     Memberships
                   </Link>
 
-                  <Link to="/home/inquiries" className="uhv-profile-menu-item" onClick={() => setProfileOpen(false)}>
-                    <div className="uhv-pmi-icon" style={{ background: "#f5f3ff", color: "#8b5cf6" }}>
+                  <Link
+                    to="/home/inquiries"
+                    className="uhd-profile-menu-item"
+                    onClick={() => setProfileOpen(false)}
+                  >
+                    <div className="uhd-pmi-icon" style={{ background: "#f5f3ff", color: "#8b5cf6" }}>
                       <MessageCircle size={15} />
                     </div>
                     Inquiries
                   </Link>
 
+                  <button type="button" className="uhd-profile-menu-item" onClick={toggleTheme}>
+                    <div className="uhd-pmi-icon" style={{ background: "#ecfeff", color: "#0891b2" }}>
+                      <ThemeIcon size={15} />
+                    </div>
+                    {themeLabel}
+                  </button>
+
                   {isOwnerPlus && switchModes.length > 0 && (
                     <>
-                      <div className="uhv-profile-pop__divider" />
+                      <div className="uhd-profile-pop__divider" />
                       {switchModes.map((m) => (
-                        <button key={m} type="button" className="uhv-profile-menu-item" onClick={() => handleSwitchUi(m)}>
-                          <div className="uhv-pmi-icon" style={{ background: "#f3f4f6", color: "#111827" }}>
+                        <button
+                          key={m}
+                          type="button"
+                          className="uhd-profile-menu-item"
+                          onClick={() => handleSwitchUi(m)}
+                        >
+                          <div className="uhd-pmi-icon" style={{ background: "#f3f4f6", color: "#111827" }}>
                             <Settings size={15} />
                           </div>
                           Switch to {labelForUiMode(m)}
@@ -570,13 +649,14 @@ export default function HeaderUser() {
                     </>
                   )}
 
-                  <div className="uhv-profile-pop__divider" />
+                  <div className="uhd-profile-pop__divider" />
+
                   <button
                     type="button"
-                    className="uhv-profile-menu-item uhv-profile-menu-item--logout"
+                    className="uhd-profile-menu-item uhd-profile-menu-item--logout"
                     onClick={handleLogout}
                   >
-                    <div className="uhv-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
+                    <div className="uhd-pmi-icon" style={{ background: "#fef2f2", color: "#ef4444" }}>
                       <LogOut size={15} />
                     </div>
                     Log Out
@@ -587,14 +667,14 @@ export default function HeaderUser() {
           </div>
         </div>
 
-        <div className="hamburger" onClick={() => setMobileMenuOpen((p) => !p)}>
+        <div className="uhd-hamburger" onClick={() => setMobileMenuOpen((p) => !p)}>
           <span />
           <span />
           <span />
         </div>
       </header>
 
-      <div className={`mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
+      <div className={`uhd-mobile-menu ${mobileMenuOpen ? "open" : ""}`}>
         <Link to="/home" onClick={() => setMobileMenuOpen(false)}>
           DASHBOARD
         </Link>
@@ -620,22 +700,26 @@ export default function HeaderUser() {
           MY PROFILE
         </Link>
 
+        <button
+          type="button"
+          className="uhd-mobile-menu__action"
+          onClick={() => {
+            toggleTheme();
+            setMobileMenuOpen(false);
+          }}
+        >
+          {themeMode === "dark" ? "SWITCH TO LIGHT MODE" : "SWITCH TO DARK MODE"}
+        </button>
+
         {isOwnerPlus &&
           switchModes.map((m) => (
             <button
               key={m}
               type="button"
+              className="uhd-mobile-menu__action"
               onClick={() => handleSwitchUi(m)}
-              style={{
-                background: "transparent",
-                border: "none",
-                textAlign: "left",
-                padding: "12px 16px",
-                cursor: "pointer",
-                width: "100%",
-              }}
             >
-              Switch to {labelForUiMode(m)}
+              SWITCH TO {labelForUiMode(m).toUpperCase()}
             </button>
           ))}
 
