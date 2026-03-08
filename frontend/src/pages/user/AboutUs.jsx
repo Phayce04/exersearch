@@ -13,7 +13,7 @@ const TEAM = [
     role: 'Lead Developer',
     quote: 'Great systems aren’t built overnight — they’re engineered one problem at a time.',
     image: 'philo1.png',
-    socials: { github: '#', linkedin: '#', email: '#' },
+    socials: { github: 'https://github.com/Phayce04', linkedin: 'https://www.linkedin.com/in/dheniel-pontiga-280024343/', email: 'dhenielpontiga@gmail.com' },
   },
   {
     id: 2,
@@ -167,7 +167,7 @@ export default function AboutUs() {
               <p className="ab-hero__sub">
                 Five people. One city. A platform built out of genuine frustration with how hard it was to find a gym, stay consistent, and actually make progress in Pasig.
               </p>
-              <Link to="/onboarding" className="ab-hero__cta">
+              <Link to="/login?mode=signup"className="ab-hero__cta">
                 Start for free <ArrowRight size={15} />
               </Link>
             </div>
@@ -279,7 +279,7 @@ export default function AboutUs() {
             <p className="ab-cta__sub">
               Join 1,000+ Filipinos who stopped settling and started training.
             </p>
-            <Link to="/onboarding" className="ab-cta__btn">
+            <Link to="/login?mode=signup" className="ab-cta__btn">
               Get started free <ArrowRight size={15} />
             </Link>
           </div>
