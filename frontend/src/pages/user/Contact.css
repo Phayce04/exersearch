@@ -4,17 +4,17 @@
    TOKENS
 ══════════════════════════════════════ */
 :root {
-  --ink:    #141210;
+  --ink:    #0d141b;
   --ink-2:  #2c2926;
-  --ink-3:  #6b6260;
+  --ink-3:  #4a6080;
   --ink-4:  #a09890;
-  --cream:  #f5f0e8;
-  --warm:   #ede7da;
-  --warm-2: #e3dace;
-  --or:     #e8521a;
-  --or-dk:  #c4400e;
+  --cream:  #f1f4f8;
+  --warm:   #ebf0f5;
+  --warm-2: #e2e8f0;
+  --or:     #fc4a00;
+  --or-dk:  #ab3200;
   --border: rgba(20,18,16,0.1);
-  --border-2: rgba(20,18,16,0.06);
+  --border-2: rgba(16, 24, 32, 0.06);
 
   --fd: 'Playfair Display', Georgia, serif;
   --fb: 'DM Sans', sans-serif;
