@@ -1,4 +1,5 @@
-/* src/pages/owner/StarIntro.scss */
+/* src/pages/owner/StarIntro.scss (or wherever your promo/intro scss lives) */
+/* promo version - Montserrat + bigger hero */
 
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
 
@@ -6,20 +7,31 @@ $screen-sm-min: 860px;
 $screen-md-min: 992px;
 $screen-lg-min: 1200px;
 
+/* theme colors */
+$orange: #ff7a18;
+$dark-orange: #ff5a00;
+$red-orange: #ff3c00;
+
 @mixin breakpoint($point) {
   @if $point == $screen-sm-min {
-    @media screen and (min-width: $screen-sm-min) { @content; }
+    @media screen and (min-width: $screen-sm-min) {
+      @content;
+    }
   } @else if $point == $screen-md-min {
-    @media screen and (min-width: $screen-md-min) { @content; }
+    @media screen and (min-width: $screen-md-min) {
+      @content;
+    }
   } @else if $point == $screen-lg-min {
-    @media screen and (min-width: $screen-lg-min) { @content; }
+    @media screen and (min-width: $screen-lg-min) {
+      @content;
+    }
   }
 }
 
-/* =========================================================
-   ROOT
-========================================================= */
-
+/* ---------------------------
+  EVERYTHING SCOPED
+  No global h1 / .button / .container / .text-left/.text-right
+---------------------------- */
 .star-intro-root {
   position: relative;
   margin: 0;
@@ -30,529 +42,347 @@ $screen-lg-min: 1200px;
   height: 100vh;
   font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 
-  /* CORE COLORS */
+  .three-mount {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 
-  --black-1:#181718;
-  --black-2:#101820;
-  --black-3:#0d141b;
+    canvas {
+      display: block;
+    }
+  }
 
-  --white-1:#f6f8fa;
-  --white-2:#f1f4f8;
-  --white-3:#ebf0f5;
+  .intro-container {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    text-align: center;
 
-  --orange-1:#ab3200;
-  --orange-2:#fc4a00;
-  --orange-3:#ff5a16;
+    margin: 0 auto;
+    right: 0;
+    left: 0;
 
-  /* DARK DEFAULT */
+    padding: 40px 60px;
 
-  --intro-text:#ffffff;
-  --intro-heading:#ffffff;
-  --intro-tagline:#ff5a16;
-
-  --intro-panel-bg:
-    linear-gradient(
+    background: linear-gradient(
       145deg,
-      rgba(255,120,0,0.12),
-      rgba(255,60,0,0.06)
+      rgba(255, 120, 0, 0.12),
+      rgba(255, 60, 0, 0.06)
     );
 
-  --intro-panel-border:rgba(255,255,255,0.08);
+    backdrop-filter: blur(40px); /* stronger blur */
+    -webkit-backdrop-filter: blur(40px); /* safari support */
 
-  --intro-panel-shadow:
-    0 20px 60px rgba(0,0,0,0.7),
-    0 0 40px rgba(255,120,0,0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 
-  --button-border:#ff5a16;
-  --button-text:#ff5a16;
-  --button-hover-text:#121212;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7),
+      0 0 40px rgba(255, 120, 0, 0.15);
 
-  --button-fill:
-    linear-gradient(
-      90deg,
-      #ff5a16,
-      #fc4a00,
-      #ab3200
-    );
+    /* was global h1, now scoped to intro only */
+    h1 {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 800;
+      margin-top: 0;
+      margin-bottom: 0;
 
-  --button-glow:0 0 20px rgba(255,90,0,0.95);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
 
-  --xmark:#ff5a16;
+      font-size: 30px;
+      line-height: 1.12;
 
-  --sky-text:#ffffff;
-  --sky-accent:#ff5a16;
+      @include breakpoint($screen-sm-min) {
+        font-size: 60px;
+        line-height: 1.05;
+      }
 
-  --social-bg:
-    linear-gradient(
-      135deg,
-      #ff5a16,
-      #fc4a00,
-      #ab3200
-    );
+      @include breakpoint($screen-md-min) {
+        font-size: 72px;
+      }
 
-  --social-shadow:-1px -1px 20px rgba(0,0,0,0.3);
-
-  --twitter-icon:#ff5a16;
-  --twitter-hover:#ff8a4c;
-
-  --youtube-icon:#fc4a00;
-  --youtube-hover:#ff7447;
-}
-
-/* =========================================================
-   LIGHT MODE
-========================================================= */
-
-.star-intro-root[data-theme="light"],
-.star-intro-root.light-mode,
-html[data-theme="light"] .star-intro-root,
-body[data-theme="light"] .star-intro-root {
-
-  /* warmer text instead of harsh black */
-  --intro-text:#ab3200;
---intro-heading:#7a2200;  --intro-tagline:#ab3200;
-
-  --intro-panel-bg:
-    linear-gradient(
-      145deg,
-      rgba(252,74,0,0.06),
-      rgba(171,50,0,0.025)
-    ),
-    linear-gradient(
-      180deg,
-      rgba(246,248,250,0.88),
-      rgba(241,244,248,0.82)
-    );
-
-  --intro-panel-border:rgba(171,50,0,0.12);
-
-  --intro-panel-shadow:
-    0 16px 40px rgba(24,23,24,0.08),
-    0 0 24px rgba(252,74,0,0.08);
-
-  --button-border:#fc4a00;
-  --button-text:#ab3200;
-  --button-hover-text:#f6f8fa;
-
-  --button-fill:
-    linear-gradient(
-      90deg,
-      #ab3200,
-      #fc4a00,
-      #ff5a16
-    );
-
-  --button-glow:0 10px 24px rgba(252,74,0,0.18);
-
-  --xmark:#ab3200;
-
-  --sky-text:#ab3200;
-  --sky-accent:#fc4a00;
-
-  --social-shadow:-1px -1px 18px rgba(24,23,24,0.10);
-
-  --twitter-icon:#ab3200;
-  --twitter-hover:#ff5a16;
-
-  --youtube-icon:#fc4a00;
-  --youtube-hover:#ab3200;
-}
-
-/* =========================================================
-   THREE JS CANVAS
-========================================================= */
-
-.star-intro-root .three-mount{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-
-  canvas{
-    display:block;
+      @include breakpoint($screen-lg-min) {
+        font-size: 80px;
+      }
+    }
   }
-}
 
-/* =========================================================
-   INTRO CONTAINER
-========================================================= */
+  .fancy-text {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
 
-.star-intro-root .intro-container{
+    /* keeps the “tagline” feeling but more modern */
+    font-style: italic;
+    letter-spacing: 2px;
 
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  text-align:center;
+    margin-bottom: 18px;
+    color: $orange;
 
-  margin:0 auto;
-  right:0;
-  left:0;
+    font-size: 14px;
 
-  padding:40px 60px;
-
-  color:var(--intro-text);
-
-  background:var(--intro-panel-bg);
-
-  backdrop-filter:blur(40px);
-  -webkit-backdrop-filter:blur(40px);
-
-  border:1px solid var(--intro-panel-border);
-
-  box-shadow:var(--intro-panel-shadow);
-
-  h1{
-
-    font-family:"Montserrat",sans-serif;
-    font-weight:800;
-
-    margin-top:0;
-    margin-bottom:0;
-
-    letter-spacing:.8px;
-    text-transform:uppercase;
-
-    color:var(--intro-heading);
-
-    font-size:30px;
-    line-height:1.12;
-
-    text-shadow:0 1px 0 rgba(255,255,255,.25);
-
-    @include breakpoint($screen-sm-min){
-      font-size:60px;
-      line-height:1.05;
+    @include breakpoint($screen-sm-min) {
+      font-size: 18px;
     }
 
-    @include breakpoint($screen-md-min){
-      font-size:72px;
+    @include breakpoint($screen-md-min) {
+      font-size: 20px;
+    }
+  }
+
+  .button {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+
+    font-family: "Montserrat", sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+
+    min-width: 260px;
+    margin-top: 44px;
+
+    &:hover {
+      .border {
+        box-shadow: 0px 0px 20px rgba(255, 90, 0, 0.95);
+
+        .left-plane,
+        .right-plane {
+          transform: translateX(0%);
+        }
+      }
+
+      .text {
+        color: #121212;
+      }
     }
 
-    @include breakpoint($screen-lg-min){
-      font-size:80px;
-    }
-
-  }
-
-}
-
-/* =========================================================
-   TAGLINE
-========================================================= */
-
-.star-intro-root .fancy-text{
-  font-family:"Montserrat",sans-serif;
-  font-weight:600;
-  font-style:italic;
-  letter-spacing:2px;
-  margin-bottom:18px;
-  color:var(--intro-tagline);
-  font-size:14px;
-
-  @include breakpoint($screen-sm-min){
-    font-size:18px;
-  }
-
-  @include breakpoint($screen-md-min){
-    font-size:20px;
-  }
-}
-
-/* =========================================================
-   BUTTON
-========================================================= */
-
-.star-intro-root .button{
-
-  position:relative;
-  cursor:pointer;
-  display:inline-block;
-
-  font-family:"Montserrat",sans-serif;
-  font-weight:800;
-  text-transform:uppercase;
-  letter-spacing:1.2px;
-
-  min-width:260px;
-  margin-top:44px;
-
-  &:hover{
-
-    .border{
-      box-shadow:var(--button-glow);
+    .border {
+      border: 2px solid $orange;
+      transform: skewX(-20deg);
+      height: 52px;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      transition: 0.15s ease-out;
 
       .left-plane,
-      .right-plane{
-        transform:translateX(0%);
+      .right-plane {
+        position: absolute;
+        background: linear-gradient(90deg, $orange, $red-orange);
+        height: 52px;
+        width: 150px;
+        transition: 0.2s ease-out;
+      }
+
+      .left-plane {
+        left: 0;
+        transform: translateX(-100%);
+      }
+
+      .right-plane {
+        right: 0;
+        transform: translateX(100%);
       }
     }
 
-    .text{
-      color:var(--button-hover-text);
-    }
+    .text {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: 0.15s ease-out;
+      color: $orange;
 
-  }
+      font-size: 15px;
 
-  .border{
-
-    border:2px solid var(--button-border);
-    transform:skewX(-20deg);
-    height:52px;
-    border-radius:6px;
-    overflow:hidden;
-    position:relative;
-    transition:.15s ease-out;
-
-    .left-plane,
-    .right-plane{
-      position:absolute;
-      background:var(--button-fill);
-      height:52px;
-      width:150px;
-      transition:.2s ease-out;
-    }
-
-    .left-plane{
-      left:0;
-      transform:translateX(-100%);
-    }
-
-    .right-plane{
-      right:0;
-      transform:translateX(100%);
-    }
-
-  }
-
-  .text{
-
-    position:absolute;
-    left:0;
-    right:0;
-    top:50%;
-    transform:translateY(-50%);
-    transition:.15s ease-out;
-
-    color:var(--button-text);
-
-    font-size:15px;
-
-    @include breakpoint($screen-sm-min){
-      font-size:16px;
-    }
-
-    @include breakpoint($screen-md-min){
-      font-size:17px;
-    }
-
-  }
-
-}
-
-/* =========================================================
-   CLOSE BUTTON
-========================================================= */
-
-.star-intro-root .x-mark{
-
-  right:12px;
-  top:120px;
-  position:absolute;
-  cursor:pointer;
-  opacity:0;
-  z-index:10;
-
-  &:hover{
-
-    .right{
-      transform:rotate(-45deg) scaleY(1.25);
-    }
-
-    .left{
-      transform:rotate(45deg) scaleY(1.25);
-    }
-
-  }
-
-  .container{
-    position:relative;
-    width:24px;
-    height:24px;
-  }
-
-  .left,
-  .right{
-
-    width:3px;
-    height:24px;
-    background:var(--xmark);
-    position:absolute;
-    border-radius:3px;
-    transition:.15s ease-out;
-
-    margin:0 auto;
-    left:0;
-    right:0;
-
-  }
-
-  .right{
-    transform:rotate(-45deg);
-  }
-
-  .left{
-    transform:rotate(45deg);
-  }
-
-}
-
-/* =========================================================
-   SKY TITLE
-========================================================= */
-
-.star-intro-root .sky-container{
-
-  position:absolute;
-  color:var(--sky-text);
-  text-transform:uppercase;
-
-  margin:0 auto;
-  right:0;
-  left:0;
-  top:2%;
-
-  text-align:center;
-  opacity:0;
-  z-index:5;
-
-  font-family:"Montserrat",sans-serif;
-
-  @include breakpoint($screen-sm-min){
-    top:18%;
-    right:12%;
-    left:auto;
-  }
-
-  &__left,
-  &__right{
-
-    display:inline-block;
-    vertical-align:top;
-    font-weight:800;
-
-    h2{
-
-      font-family:"Montserrat",sans-serif;
-      font-size:28px;
-      line-height:28px;
-      margin:0;
-
-      @include breakpoint($screen-sm-min){
-        font-size:78px;
-        line-height:74px;
+      @include breakpoint($screen-sm-min) {
+        font-size: 16px;
       }
 
+      @include breakpoint($screen-md-min) {
+        font-size: 17px;
+      }
+    }
+  }
+
+  .x-mark {
+    right: 12px;
+    top: 120px;
+    position: absolute;
+    cursor: pointer;
+    opacity: 0;
+    z-index: 10;
+
+    &:hover {
+      .right {
+        transform: rotate(-45deg) scaleY(1.25);
+      }
+
+      .left {
+        transform: rotate(45deg) scaleY(1.25);
+      }
     }
 
-  }
-
-  &__left{
-    margin-right:6px;
-  }
-
-  .thirty-one{
-    letter-spacing:4px;
-    color:var(--sky-accent);
-  }
-
-}
-
-/* =========================================================
-   SOCIAL ICONS
-========================================================= */
-
-.star-intro-root .social-icon{
-
-  a{
-
-    position:absolute;
-    background:var(--social-bg);
-    color:white;
-    box-shadow:var(--social-shadow);
-
-    display:inline-block;
-    width:170px;
-    height:92px;
-
-    transform-origin:50% 50%;
-    transition:.15s ease-out;
-
-  }
-
-  i{
-
-    position:absolute;
-    pointer-events:none;
-    z-index:1000;
-    transition:.15s ease-out;
-    font-size:22px;
-
-  }
-
-}
-
-.star-intro-root .twitter{
-
-  &:hover{
-
-    a{
-      transform:rotate(-45deg) scale(1.06);
+    /* was a global-ish .container name, now scoped here */
+    .container {
+      position: relative;
+      width: 24px;
+      height: 24px;
     }
 
-    i{
-      color:var(--twitter-hover);
+    .left,
+    .right {
+      width: 3px;
+      height: 24px;
+      background: $orange;
+      position: absolute;
+      border-radius: 3px;
+      transition: 0.15s ease-out;
+      margin: 0 auto;
+      left: 0;
+      right: 0;
     }
 
-  }
-
-  a{
-    bottom:-46px;
-    right:-86px;
-    transform:rotate(-45deg);
-  }
-
-  i{
-    bottom:9px;
-    right:9px;
-    color:var(--twitter-icon);
-  }
-
-}
-
-.star-intro-root .youtube{
-
-  &:hover{
-
-    a{
-      transform:rotate(45deg) scale(1.06);
+    .right {
+      transform: rotate(-45deg);
     }
 
-    i{
-      color:var(--youtube-hover);
+    .left {
+      transform: rotate(45deg);
+    }
+  }
+
+  .sky-container {
+    position: absolute;
+    color: white;
+    text-transform: uppercase;
+    margin: 0 auto;
+    right: 0;
+    left: 0;
+    top: 2%;
+    text-align: center;
+    opacity: 0;
+    z-index: 5;
+
+    font-family: "Montserrat", sans-serif;
+
+    @include breakpoint($screen-sm-min) {
+      top: 18%;
+      right: 12%;
+      left: auto;
     }
 
+    &__left,
+    &__right {
+      display: inline-block;
+      vertical-align: top;
+      font-weight: 800;
+
+      h2 {
+        font-family: "Montserrat", sans-serif;
+        font-size: 28px;
+        line-height: 28px;
+        margin: 0;
+
+        @include breakpoint($screen-sm-min) {
+          font-size: 78px;
+          line-height: 74px;
+        }
+      }
+    }
+
+    &__left {
+      margin-right: 6px;
+    }
+
+    .thirty-one {
+      letter-spacing: 4px;
+      color: $orange;
+    }
   }
 
-  a{
-    bottom:-46px;
-    left:-86px;
-    transform:rotate(45deg);
+  /* these were global utility names; now scoped */
+  .text-right {
+    text-align: right;
   }
 
-  i{
-    bottom:9px;
-    left:9px;
-    color:var(--youtube-icon);
+  .text-left {
+    text-align: left;
   }
 
+  /* Social icons */
+  .social-icon {
+    a {
+      position: absolute;
+      background: linear-gradient(135deg, $orange, $red-orange);
+      color: white;
+      box-shadow: -1px -1px 20px 0px rgba(0, 0, 0, 0.3);
+      display: inline-block;
+      width: 170px;
+      height: 92px;
+      transform-origin: 50% 50%;
+      transition: 0.15s ease-out;
+    }
+
+    i {
+      position: absolute;
+      pointer-events: none;
+      z-index: 1000;
+      transition: 0.15s ease-out;
+      font-size: 22px;
+    }
+  }
+
+  /* Twitter */
+  .twitter {
+    &:hover {
+      a {
+        transform: rotate(-45deg) scale(1.06);
+      }
+
+      i {
+        color: lighten($orange, 10%);
+      }
+    }
+
+    a {
+      bottom: -46px;
+      right: -86px;
+      transform: rotate(-45deg);
+    }
+
+    i {
+      bottom: 9px;
+      right: 9px;
+      color: $orange;
+    }
+  }
+
+  /* YouTube */
+  .youtube {
+    &:hover {
+      a {
+        transform: rotate(45deg) scale(1.06);
+      }
+
+      i {
+        color: lighten($red-orange, 10%);
+      }
+    }
+
+    a {
+      bottom: -46px;
+      left: -86px;
+      transform: rotate(45deg);
+    }
+
+    i {
+      bottom: 9px;
+      left: 9px;
+      color: $red-orange;
+    }
+  }
 }
