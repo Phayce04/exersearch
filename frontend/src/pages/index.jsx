@@ -1,530 +1,754 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import "./index.css";
 import Header from "./user/Header";
 import Footer from "./user/Footer";
 import {
-  FaDumbbell,
-  FaMapMarkerAlt,
-  FaHeart,
-  FaChartLine,
-  FaArrowRight,
-  FaStar,
-  FaCheckCircle,
-  FaQuoteLeft,
-  FaBolt,
-  FaUsers,
-  FaTrophy,
-  FaRocket,
-  FaShieldAlt,
-  FaClock,
-  FaMobileAlt,
-  FaLightbulb,
-  FaHandHoldingHeart,
-  FaAward,
-  FaFire,
-  FaCamera,
-  FaMoneyBillWave,
-  FaHeadset,
-  FaChevronRight,
-  FaPlay,
-} from "react-icons/fa";
-import { BiTargetLock } from "react-icons/bi";
-import { IoMdNutrition } from "react-icons/io";
-import { MdVerified, MdTrendingUp } from "react-icons/md";
-import "./index.css";
+  MapPinned, Inbox, TrendingUp, BadgeCheck,
+  Moon, Sun, Check, ArrowRight, ChevronDown,
+  Sparkles, Trophy, Dumbbell, Flame, Activity,
+  Target, Zap,
+} from "lucide-react";
 
-export default function Landing() {
-  const [activeFaq, setActiveFaq] = useState(null);
+/* ════════════════════════════════════════
+   DATA
+════════════════════════════════════════ */
 
-  const toggleFaq = (index) => {
-    setActiveFaq(activeFaq === index ? null : index);
-  };
+const GOALS = [
+  {
+    id: "lose", chip: "Lose weight", Icon: Flame,
+    tag: "Fat loss protocol",
+    h1: "Burn fat.", h2: "Keep your adobo.",
+    desc: "Calorie deficit dialed to your body. Filipino meals counted. No crash diets.",
+    color: "#ff5a16",
+    sessions: [
+      { day: "MON", name: "Fat-Burn Circuit",      detail: "45 min · ~340 kcal",    pct: 88 },
+      { day: "WED", name: "Low-impact Cardio",     detail: "30 min · Zone 2",       pct: 65 },
+      { day: "FRI", name: "Full-Body Strength",    detail: "50 min · compound lifts", pct: 75 },
+    ],
+    gym: { name: "CardioLab QC", loc: "Quezon City · ₱800/mo", match: 97 },
+    meal: { name: "Sinigang na Isda", kcal: 260, tag: "Low-cal · High protein" },
+    stat: { n: "−6kg", lbl: "avg. in 12 weeks" },
+  },
+  {
+    id: "muscle", chip: "Build muscle", Icon: Dumbbell,
+    tag: "Hypertrophy program",
+    h1: "Build muscle.", h2: "Track every rep.",
+    desc: "Progressive overload blocks, deload weeks, TDEE-synced nutrition.",
+    color: "#fc4a00",
+    sessions: [
+      { day: "MON", name: "Upper Push",            detail: "4 sets · 8–10 reps",    pct: 92 },
+      { day: "WED", name: "Lower Pull",            detail: "4 sets · 6–8 reps",     pct: 84 },
+      { day: "FRI", name: "Full-Body Power",       detail: "5 sets · 5 reps",       pct: 96 },
+    ],
+    gym: { name: "IronForge Manila", loc: "BGC · ₱1,200/mo", match: 98 },
+    meal: { name: "Chicken Adobo", kcal: 380, tag: "High protein · 38g/serving" },
+    stat: { n: "+18kg", lbl: "avg. squat gain, 10 wks" },
+  },
+  {
+    id: "fit", chip: "Stay consistent", Icon: Activity,
+    tag: "Habit-first training",
+    h1: "Show up 3×/week.", h2: "That's the whole plan.",
+    desc: "Flexible scheduling, short sessions, no guilt when life happens.",
+    color: "#ab3200",
+    sessions: [
+      { day: "TUE", name: "30-min Strength Express", detail: "3 sets · 12 reps",     pct: 72 },
+      { day: "THU", name: "Active Recovery + Core",  detail: "20 min · bodyweight",  pct: 55 },
+      { day: "SAT", name: "Cardio + Stretch",        detail: "35 min · Zone 2",      pct: 68 },
+    ],
+    gym: { name: "GrindHouse QC", loc: "Quezon City · ₱700/mo", match: 94 },
+    meal: { name: "Tinolang Manok", kcal: 265, tag: "Balanced · Light on carbs" },
+    stat: { n: "92%", lbl: "still active at 90 days" },
+  },
+  {
+    id: "begin", chip: "Total beginner", Icon: Target,
+    tag: "Day one friendly",
+    h1: "Never lifted before.", h2: "Perfect time to start.",
+    desc: "8 questions. 60 seconds. A 12-week plan that starts where you are.",
+    color: "#fc4a00",
+    sessions: [
+      { day: "MON", name: "Beginner Full-Body A",   detail: "3 sets · 10 reps · easy", pct: 50 },
+      { day: "WED", name: "Rest + 20-min Walk",     detail: "Active recovery",          pct: 30 },
+      { day: "FRI", name: "Beginner Full-Body B",   detail: "3 sets · 10 reps",         pct: 50 },
+    ],
+    gym: { name: "PeakForm Studio", loc: "Makati · ₱900/mo", match: 95 },
+    meal: { name: "Lugaw na Manok", kcal: 210, tag: "Easy digest · Recovery" },
+    stat: { n: "64%", lbl: "of members started here" },
+  },
+];
 
-  const faqs = [
-    {
-      question: "Is ExerSearch really free to use?",
-      answer:
-        "Yes, absolutely! Finding gyms, getting personalized workout plans, tracking your progress, and accessing nutrition guidance is completely free. We partner with gyms who pay us, so you never have to.",
-    },
-    {
-      question: "How do the personalized workout plans work?",
-      answer:
-        "Our AI analyzes your fitness goals, current fitness level, available equipment, and time constraints to create custom workout routines. The plans automatically adjust as you progress.",
-    },
-    {
-      question: "Can I visit multiple gyms before deciding?",
-      answer:
-        "Absolutely! Browse all 50+ partner gyms, compare their amenities, pricing, and reviews. Many gyms offer day passes or trial periods.",
-    },
-    {
-      question: "Do I need previous gym experience?",
-      answer:
-        "Not at all! We cater to all fitness levels from complete beginners to advanced athletes. Our beginner-friendly plans include detailed instructions and form videos.",
-    },
-    {
-      question: "How accurate are the gym reviews?",
-      answer:
-        "All reviews come from verified ExerSearch users who have actually visited the gyms. We verify membership receipts and employ anti-fraud measures.",
-    },
-    {
-      question: "What makes ExerSearch different?",
-      answer:
-        "Unlike simple directories, we provide end-to-end fitness solutions: gym discovery, personalized training plans, nutrition tracking, and progress analytics all in one platform.",
-    },
-  ];
+const BENTO = [
+  { id:"ai",    type:"ai-demo",   tag:"AI Planning",  },
+  { id:"gyms",  type:"gym-count", tag:"Gym Network",  },
+  { id:"meal",  type:"meal",      tag:"Nutrition",    },
+  { id:"free",  type:"big-stat",  tag:"Price",        },
+  { id:"retain",type:"progress",  tag:"Retention",    },
+  { id:"local", type:"local",     tag:"Built for PH", },
+];
+
+const QUOTES = [
+  { q:"I've tried four fitness apps. None gave me a plan that made sense for my actual schedule. ExerSearch did it on day one.", name:"Kyla R.", role:"College student · Quezon City", result:"−6kg", weeks:"12 weeks", bg:"or" },
+  { q:"The AI noticed I hit a plateau and updated my plan automatically. That level of attention is genuinely rare.",            name:"Nico T.", role:"Personal trainer · Cebu",     result:"100kg squat", weeks:"10 weeks", bg:"dark" },
+  { q:"The meal plan uses actual Filipino food. That alone made me stick to it longer than anything I've tried.",               name:"Sofia M.", role:"Designer · Pasig",            result:"Consistent",  weeks:"8 weeks",  bg:"light" },
+];
+
+const GYM_PINS = [
+  { x:52, y:38, name:"IronForge Manila",  city:"BGC",         price:"₱1,200", match:98 },
+  { x:34, y:28, name:"GrindHouse QC",    city:"Quezon City", price:"₱700",   match:91 },
+  { x:61, y:55, name:"PeakForm Studio",  city:"Makati",      price:"₱900",   match:94 },
+  { x:22, y:62, name:"LiftLab Pasig",    city:"Pasig",       price:"₱850",   match:88 },
+  { x:70, y:22, name:"Core & Co.",       city:"BGC",         price:"₱1,400", match:85 },
+  { x:44, y:68, name:"Apex Fitness",     city:"Parañaque",   price:"₱750",   match:87 },
+];
+
+const FAQS = [
+  { q:"Is ExerSearch really free?",       a:"Yes. Profile, AI workout plan, and gym browsing are free — no card required. A Pro upgrade exists for advanced features, but the core product is free forever." },
+  { q:"How does the AI build my plan?",   a:"Our AI analyzes your goal, experience, available days, and preferences to generate a week-by-week schedule — not a generic template. It recalibrates every week as you log." },
+  { q:"Are the gyms actually verified?",  a:"Yes. Every partner gym goes through our listing process. We verify location, equipment, pricing, and hours before appearing in results." },
+  { q:"What if I'm a complete beginner?", a:"ExerSearch is built with beginners in mind. 64% of members had zero gym experience before signing up. The AI starts gentle and builds with you." },
+  { q:"Can gym owners sign up for free?", a:"Yes. Listing your gym is completely free. You get a profile, appear in member searches, and receive inquiries directly — no upfront cost." },
+  { q:"Is my personal data safe?",        a:"Your data is encrypted and never sold. We are not ad-supported. You have full control over what's shared and what isn't." },
+];
+
+/* ════════════════════════════════════════
+   HOOKS
+════════════════════════════════════════ */
+
+function useInView(t = 0.1) {
+  const ref = useRef(null);
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVis(true); }, { threshold: t });
+    if (ref.current) o.observe(ref.current);
+    return () => o.disconnect();
+  }, [t]);
+  return [ref, vis];
+}
+
+function useCounter(target, visible, dec = 0, dur = 1600) {
+  const [val, setVal] = useState(0);
+  const done = useRef(false);
+  useEffect(() => {
+    if (!visible || done.current) return;
+    done.current = true;
+    const t0 = Date.now();
+    const tick = () => {
+      const p = Math.min((Date.now() - t0) / dur, 1);
+      setVal(+(target * (1 - Math.pow(1 - p, 3))).toFixed(dec));
+      if (p < 1) requestAnimationFrame(tick); else setVal(target);
+    };
+    requestAnimationFrame(tick);
+  }, [visible]);
+  return val;
+}
+
+/* ════════════════════════════════════════
+   CURSOR
+════════════════════════════════════════ */
+
+function Cursor() {
+  const dot = useRef(null), ring = useRef(null);
+  const pos = useRef({ x:0,y:0 }), rp = useRef({ x:0,y:0 }), raf = useRef(null);
+  useEffect(() => {
+    const root = document.querySelector(".es");
+    if (!root) return;
+    const mv = e => {
+      pos.current = { x:e.clientX, y:e.clientY };
+      if (dot.current) { dot.current.style.left=`${e.clientX}px`; dot.current.style.top=`${e.clientY}px`; }
+      root.style.setProperty("--cx",`${e.clientX}px`);
+      root.style.setProperty("--cy",`${e.clientY}px`);
+    };
+    const lerp = () => {
+      rp.current.x += (pos.current.x - rp.current.x) * 0.11;
+      rp.current.y += (pos.current.y - rp.current.y) * 0.11;
+      if (ring.current) { ring.current.style.left=`${rp.current.x}px`; ring.current.style.top=`${rp.current.y}px`; }
+      raf.current = requestAnimationFrame(lerp);
+    };
+    const ov = e => { const h=!!e.target.closest("button,a,[data-h]"); dot.current?.classList.toggle("h",h); ring.current?.classList.toggle("h",h); };
+    const dn = () => { dot.current?.classList.add("p"); ring.current?.classList.add("p"); };
+    const up = () => { dot.current?.classList.remove("p"); ring.current?.classList.remove("p"); };
+    window.addEventListener("mousemove",mv); window.addEventListener("mouseover",ov);
+    window.addEventListener("mousedown",dn); window.addEventListener("mouseup",up);
+    raf.current = requestAnimationFrame(lerp);
+    return () => {
+      window.removeEventListener("mousemove",mv); window.removeEventListener("mouseover",ov);
+      window.removeEventListener("mousedown",dn); window.removeEventListener("mouseup",up);
+      cancelAnimationFrame(raf.current);
+    };
+  }, []);
+  return (
+    <>
+      <div ref={dot} className="cd" style={{position:"fixed",pointerEvents:"none",zIndex:99999}}><div className="cd-i"/></div>
+      <div ref={ring} className="cr" style={{position:"fixed",pointerEvents:"none",zIndex:99998}}><div className="cr-i"/></div>
+    </>
+  );
+}
+
+function ThemeToggle({ theme, onToggle }) {
+  const isLight = theme === "light";
+  return (
+    <button className="tt" onClick={onToggle} aria-label="Toggle theme" data-h>
+      <div className={`tt-track${isLight?" tt-track--l":""}`}>
+        <div className="tt-knob">{isLight?<Sun size={10} strokeWidth={2.5}/>:<Moon size={10} strokeWidth={2.5}/>}</div>
+        <Moon size={9} className="tt-ic tt-ic--left"/>
+        <Sun size={9} className="tt-ic tt-ic--right"/>
+      </div>
+    </button>
+  );
+}
+
+/* ════════════════════════════════════════
+   S1 — HERO  (interactive goal selector)
+
+   Left: big serif headline that MORPHS when
+   you pick a goal chip. Desc changes too.
+
+   Right: live plan preview card —
+   sessions slide in one-by-one (staggered),
+   then gym match slides up,
+   then meal fades in last.
+   Auto-cycles every 4 s when idle.
+════════════════════════════════════════ */
+
+function PlanCard({ goal }) {
+  const [shown, setShown] = useState(0);
+  const [gymVis, setGymVis] = useState(false);
+  const [mealVis, setMealVis] = useState(false);
+
+  useEffect(() => {
+    setShown(0); setGymVis(false); setMealVis(false);
+    const ts = goal.sessions.map((_, i) =>
+      setTimeout(() => setShown(p => p < i + 1 ? i + 1 : p), i * 170 + 60)
+    );
+    ts.push(setTimeout(() => setGymVis(true),  goal.sessions.length * 170 + 100));
+    ts.push(setTimeout(() => setMealVis(true), goal.sessions.length * 170 + 340));
+    return () => ts.forEach(clearTimeout);
+  }, [goal.id]);
 
   return (
-    <div className="landing-page-v2">
-      <Header />
+    <div className="pc">
+      {/* chrome bar */}
+      <div className="pc-bar">
+        <span className="pc-dot pc-dot--r"/><span className="pc-dot pc-dot--y"/><span className="pc-dot pc-dot--g"/>
+        <span className="pc-title"><Sparkles size={10} style={{color:"#fc4a00"}}/> ExerSearch</span>
+        <span className="pc-tag-pill" style={{background: goal.color + "22", color: goal.color, border:`1px solid ${goal.color}44`}}>{goal.tag}</span>
+      </div>
 
-      <section className="split-hero">
-        <div className="split-hero-left">
-          <div className="hero-content-new">
-            <div className="hero-eyebrow">
-              <FaBolt className="bolt-icon" />
-              <span>START YOUR FITNESS JOURNEY</span>
+      {/* week rail */}
+      <div className="pc-week">
+        <span className="pc-week-lbl">Week 1 of 12</span>
+        <div className="pc-week-track"><div className="pc-week-fill" style={{width:"8%", background: goal.color}}/></div>
+        <span className="pc-week-pct">8%</span>
+      </div>
+
+      {/* sessions */}
+      <div className="pc-sessions">
+        {goal.sessions.map((s, i) => (
+          <div key={`${goal.id}-${i}`} className={`pc-sess${shown > i ? " pc-sess--in" : ""}`}>
+            <div className="pc-sess-day" style={{color: goal.color}}>{s.day}</div>
+            <div className="pc-sess-mid">
+              <div className="pc-sess-name">{s.name}</div>
+              <div className="pc-sess-detail">{s.detail}</div>
             </div>
-
-            <h1 className="hero-heading">
-              Find Your Gym.
-              <br />
-              Build Your Body.
-              <br />
-              <span className="highlight-text">Track Your Progress.</span>
-            </h1>
-
-            <p className="hero-lead">
-              Discover 50+ gyms in Pasig, get AI-powered workout plans, and
-              achieve real results with ExerSearch.
-            </p>
-
-            <div className="hero-cta-group">
-              <Link to="/login?mode=signup" className="cta-primary">
-                Get Started Free
-                <FaArrowRight />
-              </Link>
-
-              <Link to="/login?mode=login" className="cta-outline">
-                Sign In
-              </Link>
-            </div>
-
-            <div className="trust-indicators">
-              <div className="trust-item">
-                <FaUsers />
-                <span>1000+ Active Users</span>
-              </div>
-              <div className="trust-item">
-                <FaTrophy />
-                <span>5000+ Workouts</span>
-              </div>
-              <div className="trust-item">
-                <FaStar />
-                <span>4.9/5 Rating</span>
-              </div>
+            <div className="pc-sess-bar-wrap">
+              <div className="pc-sess-bar" style={{width: shown > i ? `${s.pct}%` : "0%", background: goal.color}}/>
             </div>
           </div>
+        ))}
+      </div>
+
+      {/* gym match */}
+      <div className={`pc-gym${gymVis?" pc-gym--in":""}`}>
+        <MapPinned size={13} style={{color:"#fc4a00",flexShrink:0}}/>
+        <div className="pc-gym-info">
+          <div className="pc-gym-name">{goal.gym.name}</div>
+          <div className="pc-gym-loc">{goal.gym.loc}</div>
         </div>
+        <div className="pc-gym-match">{goal.gym.match}<span>%</span></div>
+      </div>
 
-        <div className="split-hero-right">
-          <div className="hero-image-stack">
-            <img
-              src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&h=700&fit=crop"
-              alt="Gym"
-              className="stack-img img-1"
-            />
-            <img
-              src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&h=700&fit=crop"
-              alt="Equipment"
-              className="stack-img img-2"
-            />
-            <div className="floating-stat stat-1">
-              <h3>50+</h3>
-              <p>Partner Gyms</p>
-            </div>
-            <div className="floating-stat stat-2">
-              <h3>100%</h3>
-              <p>Free Forever</p>
-            </div>
-          </div>
+      {/* meal */}
+      <div className={`pc-meal${mealVis?" pc-meal--in":""}`}>
+        <div className="pc-meal-left">
+          <div className="pc-meal-eyebrow">Today's meal</div>
+          <div className="pc-meal-name">{goal.meal.name}</div>
+          <div className="pc-meal-tag">{goal.meal.tag}</div>
         </div>
-      </section>
+        <div className="pc-meal-kcal">{goal.meal.kcal}<span>kcal</span></div>
+      </div>
 
-      <section className="features-bento">
-        <div className="container-wide">
-          <div className="section-intro">
-            <h2 className="section-heading-new">Everything You Need</h2>
-            <p className="section-subheading-new">
-              All-in-one fitness platform
-            </p>
+      {/* stat badge */}
+      <div className={`pc-stat${mealVis?" pc-stat--in":""}`} style={{borderColor: goal.color + "44", background: goal.color + "11"}}>
+        <div className="pc-stat-n" style={{color: goal.color}}>{goal.stat.n}</div>
+        <div className="pc-stat-lbl">{goal.stat.lbl}</div>
+      </div>
+    </div>
+  );
+}
+
+function Hero() {
+  const [idx, setIdx] = useState(0);
+  const [count, setCount] = useState(12438);
+  const [userPicked, setUserPicked] = useState(false);
+  const timerRef = useRef(null);
+  const goal = GOALS[idx];
+
+  /* auto-cycle */
+  useEffect(() => {
+    if (userPicked) return;
+    timerRef.current = setInterval(() => setIdx(p => (p+1) % GOALS.length), 4200);
+    return () => clearInterval(timerRef.current);
+  }, [userPicked]);
+
+  /* member counter */
+  useEffect(() => {
+    const t = setInterval(() => setCount(p => p + Math.floor(Math.random() * 2 + 1)), 3200);
+    return () => clearInterval(t);
+  }, []);
+
+  const pick = i => {
+    setIdx(i); setUserPicked(true);
+    clearInterval(timerRef.current);
+    timerRef.current = setTimeout(() => setUserPicked(false), 14000);
+  };
+
+  return (
+    <section className="hero">
+      <div className="hero-noise"/>
+      <div className="hero-glow"/>
+
+      <div className="hero-inner wrap">
+        {/* LEFT */}
+        <div className="hero-copy">
+          <div className="hero-eyebrow">
+            <span className="hero-pip"/>
+            AI fitness · Metro Manila &amp; beyond
           </div>
 
-          <div className="bento-grid">
-            <div className="bento-item bento-large">
-              <FaMapMarkerAlt className="bento-icon" />
-              <h3>Find Your Perfect Gym</h3>
-              <p>
-                Browse 50+ verified gyms with detailed info, real photos,
-                pricing, and authentic member reviews
-              </p>
-              <div className="bento-badge">Most Popular</div>
-            </div>
+          {/* morphing headline */}
+          <h1 className="hero-h1" key={goal.id}>
+            <span className="hero-h1-a">{goal.h1}</span>
+            <span className="hero-h1-b">{goal.h2}</span>
+          </h1>
 
-            <div className="bento-item bento-tall">
-              <BiTargetLock className="bento-icon" />
-              <h3>Custom Workouts</h3>
-              <p>AI-generated routines tailored to your goals</p>
-            </div>
+          <p className="hero-desc">{goal.desc}</p>
 
-            <div className="bento-item">
-              <IoMdNutrition className="bento-icon" />
-              <h3>Nutrition</h3>
-              <p>Smart meal tracking</p>
-            </div>
-
-            <div className="bento-item">
-              <FaChartLine className="bento-icon" />
-              <h3>Analytics</h3>
-              <p>Track your progress</p>
-            </div>
-
-            <div className="bento-item bento-wide">
-              <div className="bento-stats">
-                <div className="bento-stat">
-                  <h4>50+</h4>
-                  <p>Verified Gyms</p>
-                </div>
-                <div className="bento-stat">
-                  <h4>1000+</h4>
-                  <p>Active Users</p>
-                </div>
-                <div className="bento-stat">
-                  <h4>5000+</h4>
-                  <p>Workouts Done</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="value-zigzag">
-        <div className="container-new">
-          <div className="section-intro">
-            <h2 className="section-heading-new">Why Choose ExerSearch</h2>
-            <p className="section-subheading-new">Built for real results</p>
-          </div>
-
-          <div className="zigzag-container">
-            <div className="zigzag-row">
-              <div className="zigzag-content">
-                <FaShieldAlt className="zigzag-icon" />
-                <h3>100% Verified Gyms</h3>
-                <p>
-                  Every gym partner is thoroughly vetted with real reviews from
-                  actual members. No fake ratings, no paid promotions.
-                </p>
-              </div>
-              <div className="zigzag-visual">
-                <div className="visual-box box-1"></div>
-              </div>
-            </div>
-
-            <div className="zigzag-row reverse">
-              <div className="zigzag-content">
-                <FaRocket className="zigzag-icon" />
-                <h3>AI-Powered Matching</h3>
-                <p>
-                  Smart algorithms analyze your location, budget, goals, and
-                  preferences to find your perfect gym in seconds.
-                </p>
-              </div>
-              <div className="zigzag-visual">
-                <div className="visual-box box-2"></div>
-              </div>
-            </div>
-
-            <div className="zigzag-row">
-              <div className="zigzag-content">
-                <FaMoneyBillWave className="zigzag-icon" />
-                <h3>All Price Ranges</h3>
-                <p>
-                  From budget-friendly 50 peso gyms to premium facilities - we
-                  help you find options that match your financial comfort.
-                </p>
-              </div>
-              <div className="zigzag-visual">
-                <div className="visual-box box-3"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="how-stepped" id="how-it-works">
-        <div className="container-new">
-          <div className="section-intro">
-            <h2 className="section-heading-new">How It Works</h2>
-            <p className="section-subheading-new">
-              Three simple steps to success
-            </p>
-          </div>
-
-          <div className="stepped-container">
-            <div className="step-card step-1">
-              <div className="step-number">01</div>
-              <div className="step-content">
-                <h3>Tell Us Your Goals</h3>
-                <p>
-                  Quick 2-minute questionnaire about your fitness objectives,
-                  budget, and preferences
-                </p>
-                <div className="step-arrow">
-                  <FaChevronRight />
-                </div>
-              </div>
-            </div>
-
-            <div className="step-card step-2">
-              <div className="step-number">02</div>
-              <div className="step-content">
-                <h3>Get Matched & Plan</h3>
-                <p>
-                  Receive personalized gym recommendations and custom workout
-                  routines
-                </p>
-                <div className="step-arrow">
-                  <FaChevronRight />
-                </div>
-              </div>
-            </div>
-
-            <div className="step-card step-3">
-              <div className="step-number">03</div>
-              <div className="step-content">
-                <h3>Train & Track</h3>
-                <p>
-                  Start training and monitor progress with our analytics
-                  dashboard
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="centered-cta">
-            <Link to="/login?mode=signup" className="cta-primary">
-              Start Your Journey
-              <FaArrowRight />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="testimonials-staggered" id="reviews">
-        <div className="container-new">
-          <div className="section-intro">
-            <h2 className="section-heading-new">Real People, Real Results</h2>
-            <p className="section-subheading-new">
-              Success stories from our community
-            </p>
-          </div>
-
-          <div className="staggered-container">
-            <div className="testimonial-stagger testimonial-left">
-              <FaQuoteLeft className="quote-icon" />
-              <p>
-                "Lost 15kg in 3 months! ExerSearch matched me with the perfect
-                gym near my office. The personalized plan kept me motivated
-                every single day."
-              </p>
-              <div className="testimonial-author-new">
-                <div className="author-img">JD</div>
-                <div>
-                  <h4>Juan Dela Cruz</h4>
-                  <div className="author-stars">
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="testimonial-stagger testimonial-center">
-              <FaQuoteLeft className="quote-icon" />
-              <p>
-                "As a busy professional, finding a gym that fits my schedule was
-                impossible. ExerSearch made it easy and the nutrition tracking
-                is amazing."
-              </p>
-              <div className="testimonial-author-new">
-                <div className="author-img">MS</div>
-                <div>
-                  <h4>Maria Santos</h4>
-                  <div className="author-stars">
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="testimonial-stagger testimonial-right">
-              <FaQuoteLeft className="quote-icon" />
-              <p>
-                "Started as a complete beginner. Now training 5 days a week! The
-                progress tracking keeps me motivated to push harder."
-              </p>
-              <div className="testimonial-author-new">
-                <div className="author-img">CR</div>
-                <div>
-                  <h4>Carlo Reyes</h4>
-                  <div className="author-stars">
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                    <FaStar />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="stats-diagonal">
-        <div className="diagonal-bg"></div>
-        <div className="container-new">
-          <div className="diagonal-content">
-            <div className="diagonal-stat">
-              <FaFire className="diagonal-icon" />
-              <h3>50+</h3>
-              <p>Partner Gyms</p>
-            </div>
-            <div className="diagonal-stat">
-              <FaUsers className="diagonal-icon" />
-              <h3>1,000+</h3>
-              <p>Active Members</p>
-            </div>
-            <div className="diagonal-stat">
-              <FaTrophy className="diagonal-icon" />
-              <h3>5,000+</h3>
-              <p>Workouts Done</p>
-            </div>
-            <div className="diagonal-stat">
-              <FaStar className="diagonal-icon" />
-              <h3>4.9/5</h3>
-              <p>User Rating</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="about-overlay" id="about-us">
-        <div className="about-bg-image"></div>
-        <div className="about-overlay-dark"></div>
-        <div className="container-new">
-          <div className="about-overlay-content">
-            <h2>Your Complete Fitness Partner</h2>
-            <p className="about-lead">
-              We're revolutionizing how people find gyms and achieve fitness
-              goals in Pasig City. No more guesswork. No more wasted
-              memberships.
-            </p>
-            <div className="about-features-list">
-              <div className="about-feature-item">
-                <FaCheckCircle />
-                <span>100% Free Forever</span>
-              </div>
-              <div className="about-feature-item">
-                <FaCheckCircle />
-                <span>AI-Powered Matching</span>
-              </div>
-              <div className="about-feature-item">
-                <FaCheckCircle />
-                <span>Verified Reviews</span>
-              </div>
-              <div className="about-feature-item">
-                <FaCheckCircle />
-                <span>Expert Plans</span>
-              </div>
-              <div className="about-feature-item">
-                <FaCheckCircle />
-                <span>Progress Tracking</span>
-              </div>
-              <div className="about-feature-item">
-                <FaCheckCircle />
-                <span>Community Support</span>
-              </div>
-            </div>
-            <Link to="/login?mode=signup" className="cta-white">
-              Join Now
-              <FaArrowRight />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="faqs-accordion" id="faqs">
-        <div className="container-new">
-          <div className="section-intro">
-            <h2 className="section-heading-new">
-              Frequently Asked Questions
-            </h2>
-            <p className="section-subheading-new">
-              Everything you need to know
-            </p>
-          </div>
-
-          <div className="faq-list">
-            {faqs.map((faq, index) => (
-              <div
-                key={index}
-                className={`faq-item-new ${
-                  activeFaq === index ? "active" : ""
-                }`}
-                onClick={() => toggleFaq(index)}
-              >
-                <div className="faq-question">
-                  <h3>{faq.question}</h3>
-                  <span className="faq-toggle">
-                    {activeFaq === index ? "−" : "+"}
-                  </span>
-                </div>
-                <div
-                  className={`faq-answer ${activeFaq === index ? "open" : ""}`}
+          {/* goal chips */}
+          <div className="hero-chips-wrap">
+            <p className="hero-chips-lbl">Pick your goal — watch it build your plan:</p>
+            <div className="hero-chips">
+              {GOALS.map((g, i) => (
+                <button
+                  key={g.id}
+                  className={`hchip${idx===i?" hchip--on":""}`}
+                  onClick={() => pick(i)}
+                  style={idx===i ? {borderColor: g.color, color: g.color, background: g.color+"18"} : {}}
+                  data-h
                 >
-                  <p>{faq.answer}</p>
-                </div>
+                  <g.Icon size={13} strokeWidth={2}/>
+                  {g.chip}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="hero-actions">
+            <a href="/register" className="btn-primary" data-h>
+              Start free — ₱0 <ArrowRight size={15} strokeWidth={2.5}/>
+            </a>
+            <a href="#what" className="btn-ghost" data-h>See what's inside</a>
+          </div>
+
+          <div className="hero-social">
+            <div className="hero-avs">
+              {["KR","MD","BL","NT","CM"].map((ini,i)=>(
+                <div key={i} className={`hero-av${i===2?" or":""}`}>{ini}</div>
+              ))}
+            </div>
+            <span className="hero-proof">
+              <strong>{count.toLocaleString()}</strong> Filipinos training now
+            </span>
+          </div>
+        </div>
+
+        {/* RIGHT — live plan card */}
+        <div className="hero-right" aria-hidden="true">
+          <div className="hero-ring hero-ring--1"/>
+          <div className="hero-ring hero-ring--2"/>
+          <PlanCard goal={goal}/>
+        </div>
+      </div>
+
+      <a href="#manifesto" className="hero-scroll" aria-label="Scroll down">
+        <ChevronDown size={18} strokeWidth={1.5}/>
+      </a>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════
+   S2 — MANIFESTO
+════════════════════════════════════════ */
+
+function Manifesto() {
+  const [ref, vis] = useInView(0.15);
+  return (
+    <section className="manifesto" id="manifesto" ref={ref}>
+      <div className="manifesto-noise"/>
+      <div className={`manifesto-inner wrap${vis?" in":""}`}>
+        <div className="manifesto-tag">Why this exists</div>
+        <p className="manifesto-txt">
+          We built ExerSearch for the <span className="manifesto-em">64%</span> who had zero gym experience —<br/>
+          and the <span className="manifesto-em">52%</span> who quit by week three because<br/>
+          <span className="manifesto-stroke">the plan wasn't built for their life.</span>
+        </p>
+        <div className="manifesto-rule"/>
+        <div className="manifesto-foot">
+          <a href="/register" className="btn-white" data-h>
+            This was built for you <ArrowRight size={14} strokeWidth={2.5}/>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════
+   S3 — BENTO
+════════════════════════════════════════ */
+
+function AIDemoCell() {
+  const [line, setLine] = useState(0);
+  const lines = ["Analyzing your schedule…","Setting progressive overload…","Calibrating recovery days…","Building Week 1–4 block…","Plan ready. 12 weeks."];
+  useEffect(() => { const t=setInterval(()=>setLine(p=>(p+1)%lines.length),1400); return ()=>clearInterval(t); },[]);
+  return (
+    <div className="bc-ai">
+      <div className="bc-ai-tag"><Sparkles size={11}/> AI · generating</div>
+      <div className="bc-ai-line" key={line}><span className="bc-ai-cursor"/>{lines[line]}</div>
+      <div className="bc-ai-bars">
+        {[70,45,82,60,93,55,78].map((h,i)=>(
+          <div key={i} className="bc-ai-bar" style={{height:`${h}%`,background:i===6?"#fc4a00":i===4?"#ff5a16":"rgba(252,74,0,.22)"}}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GymCountCell() {
+  const [ref,vis] = useInView(0.2);
+  const n = useCounter(847,vis,0,1400);
+  return (
+    <div className="bc-gyms" ref={ref}>
+      <div className="bc-gyms-n">{n}</div>
+      <div className="bc-gyms-lbl">Verified gyms</div>
+      <div className="bc-gyms-sub">across the Philippines</div>
+      <div className="bc-gyms-ring"/>
+    </div>
+  );
+}
+
+function MealCell() {
+  const dishes = ["Chicken Adobo","Sinigang","Tinola","Lugaw","Kare-kare"];
+  const [active,setActive] = useState(0);
+  useEffect(()=>{ const t=setInterval(()=>setActive(p=>(p+1)%dishes.length),1700); return ()=>clearInterval(t); },[]);
+  return (
+    <div className="bc-meal">
+      <div className="bc-meal-dish" key={active}>{dishes[active]}</div>
+      <div className="bc-meal-tag">Filipino food · Real macros</div>
+      <div className="bc-meal-compliance">
+        <span className="bc-meal-n">3.8×</span>
+        <span>better compliance than Western meal plans</span>
+      </div>
+    </div>
+  );
+}
+
+function FreeCell() {
+  return (
+    <div className="bc-free">
+      <div className="bc-free-n">₱0</div>
+      <div className="bc-free-lbl">to start</div>
+      <div className="bc-free-pts">
+        {["No credit card","No trial","Free forever"].map((t,i)=>(
+          <div key={i} className="bc-free-pt"><Check size={11} strokeWidth={3}/>{t}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RetainCell() {
+  const [ref,vis] = useInView(0.2);
+  const n = useCounter(92,vis,0,1400);
+  return (
+    <div className="bc-retain" ref={ref}>
+      <div className="bc-retain-n">{n}<span>%</span></div>
+      <div className="bc-retain-lbl">still active at 90 days</div>
+      <div className="bc-retain-track">
+        <div className="bc-retain-fill" style={{width:vis?"92%":"0%",transition:"width 1.6s cubic-bezier(.22,1,.36,1)"}}/>
+      </div>
+      <div className="bc-retain-note">Industry avg: 38%</div>
+    </div>
+  );
+}
+
+function LocalCell() {
+  return (
+    <div className="bc-local">
+      <div className="bc-local-flag">🇵🇭</div>
+      <div className="bc-local-h">Made in Manila.<br/>Not adapted for it.</div>
+      <div className="bc-local-tags">
+        {["Filipino meals","PHP pricing","Metro Manila gyms","Local schedules"].map((t,i)=>(
+          <span key={i} className="bc-local-tag">{t}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const CELL_MAP = {"ai-demo":AIDemoCell,"gym-count":GymCountCell,meal:MealCell,"big-stat":FreeCell,progress:RetainCell,local:LocalCell};
+
+function Bento() {
+  const [ref,vis] = useInView(0.06);
+  return (
+    <section className="bento" id="what" ref={ref}>
+      <div className="wrap bento-head">
+        <div className="bento-eyebrow">Everything included</div>
+        <h2 className="bento-h">One app.<br/><em>Everything you need.</em></h2>
+      </div>
+      <div className="bento-grid">
+        {BENTO.map((cell,i)=>{
+          const Comp = CELL_MAP[cell.type];
+          return (
+            <div key={cell.id} className={`bc bc--${cell.type}${vis?" bc--in":""}`} style={{transitionDelay:`${i*.07}s`}}>
+              <div className="bc-tag">{cell.tag}</div>
+              <Comp/>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════
+   S4 — REAL TALK
+════════════════════════════════════════ */
+
+function QuoteRow({ data, idx }) {
+  const [ref,vis] = useInView(0.1);
+  return (
+    <div className={`qr qr--${data.bg}${vis?" qr--in":""}`} ref={ref}>
+      <div className={`qr-inner wrap${idx%2!==0?" qr-inner--flip":""}`}>
+        <blockquote className="qr-q"><span className="qr-mark">"</span>{data.q}</blockquote>
+        <div className="qr-meta">
+          <div className="qr-result">{data.result}</div>
+          <div className="qr-name">{data.name}</div>
+          <div className="qr-role">{data.role}</div>
+          <div className="qr-weeks">{data.weeks}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RealTalk() {
+  return (
+    <section className="realtalk">
+      <div className="realtalk-head wrap">
+        <div className="realtalk-eyebrow">Member voices</div>
+        <h2 className="realtalk-h">Don't take<br/><em>our word for it.</em></h2>
+      </div>
+      {QUOTES.map((q,i)=><QuoteRow key={i} data={q} idx={i}/>)}
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════
+   S5 — GYM MAP
+════════════════════════════════════════ */
+
+function GymMap() {
+  const [hover,setHover] = useState(null);
+  const [ref,vis] = useInView(0.1);
+  return (
+    <section className="gmap" ref={ref}>
+      <div className="gmap-inner wrap">
+        <div className={`gmap-copy${vis?" in":""}`}>
+          <div className="gmap-eyebrow">Gym network</div>
+          <h2 className="gmap-h">847 verified gyms.<br/><em>One matches you.</em></h2>
+          <p className="gmap-sub">Filter by price, equipment, vibe, and distance. Every gym verified before it appears.</p>
+          <div className="gmap-stats">
+            {[["847","Partner gyms"],["15+","Cities covered"],["₱700","Starting price/mo"]].map(([n,l],i)=>(
+              <div key={i} className="gmap-stat">
+                <div className="gmap-stat-n">{n}</div>
+                <div className="gmap-stat-l">{l}</div>
               </div>
             ))}
           </div>
+          <a href="/gyms" className="btn-primary" data-h>Find my gym <ArrowRight size={14} strokeWidth={2.5}/></a>
         </div>
-      </section>
+        <div className={`gmap-map${vis?" in":""}`} aria-hidden="true">
+          <div className="gmap-grid">
+            {Array.from({length:5}).map((_,i)=><div key={i} className="gmap-grid-h" style={{top:`${20+i*15}%`}}/>)}
+            {Array.from({length:5}).map((_,i)=><div key={i} className="gmap-grid-v" style={{left:`${15+i*17}%`}}/>)}
+          </div>
+          {GYM_PINS.map((pin,i)=>(
+            <div key={i} className={`gmap-pin${hover===i?" gmap-pin--h":""}${pin.match>=94?" gmap-pin--hot":""}`}
+              style={{left:`${pin.x}%`,top:`${pin.y}%`,animationDelay:`${i*.12}s`}}
+              onMouseEnter={()=>setHover(i)} onMouseLeave={()=>setHover(null)} data-h>
+              <div className="gmap-pin-dot"/>
+              <div className="gmap-pin-pulse"/>
+              {hover===i&&(
+                <div className="gmap-pin-card">
+                  <div className="gmap-pin-name">{pin.name}</div>
+                  <div className="gmap-pin-meta">{pin.city} · {pin.price}/mo</div>
+                  <div className="gmap-pin-match">{pin.match}% match</div>
+                </div>
+              )}
+            </div>
+          ))}
+          <div className="gmap-badge"><span>+841</span> more gyms</div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-      <section className="final-cta-banner">
-        <div className="container-new">
-          <div className="cta-banner-content">
-            <h2>Ready to Transform Your Life?</h2>
-            <p>
-              Join 1000+ members who found their perfect gym and achieved their
-              goals
-            </p>
-            <Link to="/login?mode=signup" className="cta-large">
-              Get Started - It's Free
-              <FaArrowRight />
-            </Link>
+/* ════════════════════════════════════════
+   S6 — OWNER STRIP
+════════════════════════════════════════ */
+
+function OwnerStrip() {
+  const [ref,vis] = useInView(0.1);
+  return (
+    <section className="owners" ref={ref}>
+      <div className="owners-noise"/>
+      <div className="owners-inner wrap">
+        <div className={`owners-copy${vis?" in":""}`}>
+          <div className="owners-eyebrow">For gym owners</div>
+          <h2 className="owners-h">Grow your gym.<br/>Zero upfront cost.</h2>
+          <p className="owners-sub">List free. Get matched to members actively looking for exactly what you offer. Real inquiries from real people.</p>
+          <div className="owners-pts">
+            {[[MapPinned,"Get discovered by the right members"],[Inbox,"All inquiries in one dashboard"],[TrendingUp,"Track views, inquiries, conversions"],[BadgeCheck,"Free to list — no upfront cost"]].map(([Icon,t],i)=>(
+              <div key={i} className="owners-pt">
+                <Icon size={14} strokeWidth={2} style={{color:"rgba(255,255,255,.85)",flexShrink:0}}/><span>{t}</span>
+              </div>
+            ))}
+          </div>
+          <a href="/owners" className="btn-white" data-h>List my gym free <ArrowRight size={14} strokeWidth={2.5}/></a>
+        </div>
+        <div className={`owners-mock${vis?" in":""}`}>
+          <div className="mock">
+            <div className="mock-bar">
+              <span className="md r"/><span className="md y"/><span className="md g"/>
+              <span className="mock-url">exersearch.ph/owners/ironforge</span>
+            </div>
+            <div className="mock-body">
+              <div className="mock-head">IronForge Manila</div>
+              <div className="mock-kpis">
+                {[["847","Views"],["34","Inquiries"],["12","Members"]].map(([v,l],i)=>(
+                  <div key={i} className="mock-kpi"><div className="mock-kv">{v}</div><div className="mock-kl">{l}</div></div>
+                ))}
+              </div>
+              <div className="mock-line"/><div className="mock-sec">Recent inquiries</div>
+              {[{ini:"KR",n:"Kyla R.",m:"98%",c:"#fc4a00"},{ini:"MD",n:"Marco D.",m:"94%",c:"#ab3200"},{ini:"BL",n:"Bea L.",m:"89%",c:"#ff5a16"}].map((r,i)=>(
+                <div key={i} className="mock-row" data-h>
+                  <div className="mock-av" style={{background:r.c}}>{r.ini}</div>
+                  <span className="mock-nm">{r.n}</span><span className="mock-mt">{r.m} match</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      <Footer />
+/* ════════════════════════════════════════
+   S7 — FAQ
+════════════════════════════════════════ */
+
+function FAQ() {
+  const [open,setOpen] = useState(null);
+  const [ref,vis] = useInView(0.08);
+  return (
+    <section className="faq" ref={ref}>
+      <div className="wrap faq-inner">
+        <div className="faq-left">
+          <div className="faq-eyebrow">FAQ</div>
+          <h2 className="faq-h">Questions<br/><em>answered.</em></h2>
+          <p className="faq-sub">Still stuck? <a href="mailto:hello@exersearch.ph" className="faq-link" data-h>hello@exersearch.ph</a></p>
+          <div className="faq-orb"/>
+        </div>
+        <div className={`faq-list${vis?" in":""}`}>
+          {FAQS.map((faq,i)=>(
+            <div key={i} className={`faq-item${open===i?" open":""}`}>
+              <button className="faq-btn" onClick={()=>setOpen(open===i?null:i)} data-h>
+                <span className="faq-num">0{i+1}</span>
+                <span className="faq-q">{faq.q}</span>
+                <span className="faq-ico">{open===i?"−":"+"}</span>
+              </button>
+              <div className="faq-panel"><p className="faq-a">{faq.a}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════
+   S8 — CTA
+════════════════════════════════════════ */
+
+function CTA() {
+  const [ref,vis] = useInView(0.12);
+  return (
+    <section className="cta" ref={ref}>
+      <div className="cta-noise"/>
+      <div className="wrap cta-inner">
+        <div className={`cta-kicker${vis?" in":""}`}><span className="cta-pip"/>Free forever · No credit card · Setup in 60 seconds</div>
+        <h2 className={`cta-h${vis?" in":""}`}>Start<br/><span className="cta-em">right now.</span></h2>
+        <div className={`cta-actions${vis?" in":""}`}>
+          <a href="/register" className="btn-white" data-h>Create free account <ArrowRight size={16} strokeWidth={2.5}/></a>
+          <a href="/gyms" className="btn-outline-white" data-h>Browse gyms</a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════
+   ROOT
+════════════════════════════════════════ */
+
+export default function Index() {
+  const [theme,setTheme] = useState(()=>
+    typeof window!=="undefined"?localStorage.getItem("es-theme")||"dark":"dark"
+  );
+  const toggle = ()=>setTheme(prev=>{
+    const next=prev==="dark"?"light":"dark";
+    localStorage.setItem("es-theme",next);
+    return next;
+  });
+  return (
+    <div className="es" data-theme={theme}>
+      <Cursor/>
+      <div className="es-spot"/>
+      <ThemeToggle theme={theme} onToggle={toggle}/>
+      <Header/>
+      <main>
+        <Hero/>
+        <Manifesto/>
+        <Bento/>
+        <RealTalk/>
+        <GymMap/>
+        <OwnerStrip/>
+        <FAQ/>
+        <CTA/>
+      </main>
+      <Footer/>
     </div>
   );
 }
