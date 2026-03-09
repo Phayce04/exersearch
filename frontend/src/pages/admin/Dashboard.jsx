@@ -339,7 +339,7 @@ export default function AdminDashboard() {
                   <div className="ad-emptyBox">{loading ? "Loading…" : "No recent users"}</div>
                 ) : (
                   <div className="ad-userList">
-                    {recentUsers.slice(0, 5).map((u, idx) => {
+                    {recentUsers.slice(0, 4).map((u, idx) => {
                       const name = u?.name || u?.full_name || u?.username || "User";
                       const avatar = absoluteUrlMaybe(
                         u?.avatar_url || u?.avatar || u?.profile?.profile_photo_url || u?.profile_photo_url

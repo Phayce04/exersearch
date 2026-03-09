@@ -39,6 +39,7 @@ const EMPTY = {
   app_name: "",
   logo_url: "",
   user_logo_url: "",
+  letter_logo: "",
   favicon_url: "",
   contact_phone: "",
   contact_email: "",
@@ -180,6 +181,10 @@ export default function AdminSettings() {
   const [userLogoUploading, setUserLogoUploading] = useState(false);
   const [userLogoPreview, setUserLogoPreview] = useState("");
 
+  const letterFileRef = useRef(null);
+  const [letterLogoUploading, setLetterLogoUploading] = useState(false);
+  const [letterLogoPreview, setLetterLogoPreview] = useState("");
+
   const canEdit = isAdmin && me?.role === "superadmin";
 
   const currentHeaderLogo = useMemo(() => {
@@ -189,6 +194,10 @@ export default function AdminSettings() {
   const currentUserLogo = useMemo(() => {
     return userLogoPreview || toAbsUrl(settings.user_logo_url) || "";
   }, [userLogoPreview, settings.user_logo_url]);
+
+  const currentLetterLogo = useMemo(() => {
+    return letterLogoPreview || toAbsUrl(settings.letter_logo) || "";
+  }, [letterLogoPreview, settings.letter_logo]);
 
   const load = async () => {
     setErr("");
@@ -205,6 +214,7 @@ export default function AdminSettings() {
 
       setHeaderLogoPreview("");
       setUserLogoPreview("");
+      setLetterLogoPreview("");
     } catch (e) {
       setErr(e?.response?.data?.message || e?.message || "Failed to load settings.");
     } finally {
@@ -230,6 +240,7 @@ export default function AdminSettings() {
         app_name: safeStr(settings.app_name).trim(),
         logo_url: safeStr(settings.logo_url).trim() || null,
         user_logo_url: safeStr(settings.user_logo_url).trim() || null,
+        letter_logo: safeStr(settings.letter_logo).trim() || null,
         favicon_url: safeStr(settings.favicon_url).trim() || null,
         contact_phone: safeStr(settings.contact_phone).trim() || null,
         contact_email: safeStr(settings.contact_email).trim() || null,
@@ -407,6 +418,74 @@ export default function AdminSettings() {
     }
   };
 
+  const onPickLetterLogo = () => {
+    if (!canEdit || letterLogoUploading) return;
+    letterFileRef.current?.click();
+  };
+
+  const onLetterLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    const check = validateFileBeforeUpload(file);
+    if (!check.ok) {
+      await alertError({
+        title: "Upload blocked",
+        text: check.reason,
+        theme,
+        mainColor: MAIN,
+      });
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setLetterLogoPreview(previewUrl);
+
+    const confirm = await adminAlert({
+      title: "Upload new letter logo?",
+      text: `Allowed: JPG/PNG/WebP • Max: ${MAX_UPLOAD_MB}MB`,
+      icon: "question",
+      confirmText: "Upload",
+      theme,
+      mainColor: MAIN,
+    });
+
+    if (!confirm.isConfirmed) {
+      URL.revokeObjectURL(previewUrl);
+      setLetterLogoPreview("");
+      return;
+    }
+
+    setErr("");
+    setLetterLogoUploading(true);
+    try {
+      const uploadedUrl = await uploadSettingsImage(file, "letter-logos");
+      if (!uploadedUrl) throw new Error("Upload succeeded but no URL was returned.");
+
+      setField("letter_logo", uploadedUrl);
+
+      await alertSuccess({
+        title: "Uploaded",
+        text: "Letter logo uploaded. Click Save to persist the change.",
+        theme,
+        mainColor: MAIN,
+      });
+    } catch (ex) {
+      const msg = explainUploadError(ex);
+      setErr(msg);
+      setLetterLogoPreview("");
+      await alertError({
+        title: "Upload failed",
+        text: msg,
+        theme,
+        mainColor: MAIN,
+      });
+    } finally {
+      setLetterLogoUploading(false);
+    }
+  };
+
   const onToggleMaintenance = async (nextValue) => {
     if (!canEdit) return;
 
@@ -457,7 +536,13 @@ export default function AdminSettings() {
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={load}
-            disabled={loading || saving || headerLogoUploading || userLogoUploading}
+            disabled={
+              loading ||
+              saving ||
+              headerLogoUploading ||
+              userLogoUploading ||
+              letterLogoUploading
+            }
             style={btnStyle(t, { subtle: true })}
           >
             Refresh
@@ -465,7 +550,14 @@ export default function AdminSettings() {
 
           <button
             onClick={onSave}
-            disabled={!canEdit || loading || saving || headerLogoUploading || userLogoUploading}
+            disabled={
+              !canEdit ||
+              loading ||
+              saving ||
+              headerLogoUploading ||
+              userLogoUploading ||
+              letterLogoUploading
+            }
             style={btnStyle(t, { primary: true, disabled: !canEdit })}
             title={!canEdit ? "Superadmin only" : "Save"}
           >
@@ -574,6 +666,44 @@ export default function AdminSettings() {
               </div>
             </div>
 
+            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
+              <LogoBox t={t} url={currentLetterLogo} emptyText="No Letter Logo" />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: t.text }}>Letter Logo</div>
+                <div style={{ fontSize: 12, color: t.mutedText, marginTop: 2 }}>
+                  Upload an image. It will set <b>letter_logo</b>. Then click <b>Save</b>.
+                </div>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                  <button
+                    onClick={onPickLetterLogo}
+                    disabled={!canEdit || letterLogoUploading}
+                    style={btnStyle(t, { brand: true, disabled: !canEdit })}
+                  >
+                    {letterLogoUploading ? "Uploading…" : "Upload Letter Logo"}
+                  </button>
+
+                  {letterLogoPreview && (
+                    <button
+                      onClick={() => setLetterLogoPreview("")}
+                      disabled={letterLogoUploading}
+                      style={btnStyle(t, { subtle: true })}
+                    >
+                      Remove Preview
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  ref={letterFileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onLetterLogoChange}
+                  style={{ display: "none" }}
+                />
+              </div>
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <Field label="App Name">
                 <input
@@ -602,6 +732,16 @@ export default function AdminSettings() {
                   disabled={!canEdit}
                   style={inputStyle(t)}
                   placeholder="/storage/settings/user-logos/..."
+                />
+              </Field>
+
+              <Field label="Letter Logo URL">
+                <input
+                  value={settings.letter_logo || ""}
+                  onChange={(e) => setField("letter_logo", e.target.value)}
+                  disabled={!canEdit}
+                  style={inputStyle(t)}
+                  placeholder="/storage/settings/letter-logos/..."
                 />
               </Field>
 

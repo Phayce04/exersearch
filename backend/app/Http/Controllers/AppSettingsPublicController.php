@@ -22,6 +22,7 @@ class AppSettingsPublicController extends Controller
                 'app_name' => $settings->app_name,
                 'logo_url' => $settings->logo_url,
                 'user_logo_url' => $settings->user_logo_url,
+                'letter_logo' => $settings->letter_logo,
                 'favicon_url' => $settings->favicon_url,
                 'contact_phone' => $settings->contact_phone,
                 'contact_email' => $settings->contact_email,

@@ -27,6 +27,7 @@ import { getGym, updateGym, uploadMedia, getMyGyms } from "../../utils/ownerGymA
 import { ownerSetFreeVisitEnabled } from "../../utils/gymFreeVisitApi";
 
 const API_BASE = "https://exersearch.test";
+const FALLBACK_GYM_IMAGE = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -159,11 +160,13 @@ export default function EditGym() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const fileInputRef = useRef(null);
+  const mainFileInputRef = useRef(null);
+  const galleryFileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingMain, setUploadingMain] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
@@ -223,14 +226,13 @@ export default function EditGym() {
     return lat != null && lng != null;
   }, [form.latitude, form.longitude]);
 
-  const rawPhotos = useMemo(() => {
-    return [form.main_image_url || null, ...(Array.isArray(form.gallery_urls) ? form.gallery_urls : [])].filter(Boolean);
-  }, [form.main_image_url, form.gallery_urls]);
+  const mainPhoto = useMemo(() => {
+    return form.main_image_url ? absUrl(form.main_image_url) : "";
+  }, [form.main_image_url]);
 
-  const photos = useMemo(() => {
-    const display = rawPhotos.map(absUrl).filter(Boolean);
-    return display.length ? display : ["https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80"];
-  }, [rawPhotos]);
+  const galleryPhotos = useMemo(() => {
+    return (Array.isArray(form.gallery_urls) ? form.gallery_urls : []).map(absUrl).filter(Boolean);
+  }, [form.gallery_urls]);
 
   useEffect(() => {
     let alive = true;
@@ -242,7 +244,7 @@ export default function EditGym() {
         const rows = data?.data ?? data?.gyms ?? data ?? [];
         if (!alive) return;
         setMyGyms(Array.isArray(rows) ? rows : []);
-      } catch (e) {
+      } catch {
         if (!alive) return;
         setMyGyms([]);
       }
@@ -287,7 +289,13 @@ export default function EditGym() {
             const lng = Number(x.lon);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
-            const city = x.address?.city || x.address?.town || x.address?.village || x.address?.municipality || x.address?.state || "";
+            const city =
+              x.address?.city ||
+              x.address?.town ||
+              x.address?.village ||
+              x.address?.municipality ||
+              x.address?.state ||
+              "";
 
             return {
               key: `geo-${x.place_id}-${lat}-${lng}`,
@@ -488,9 +496,12 @@ export default function EditGym() {
         newErrors.website ||
         newErrors.facebook_page ||
         newErrors.instagram_page
-      )
+      ) {
         setActiveTab("basic");
-      else if (newErrors.address || newErrors.location) setActiveTab("location");
+      } else if (newErrors.address || newErrors.location) {
+        setActiveTab("location");
+      }
+
       Swal.fire({ icon: "warning", title: "Fix highlighted fields", text: "Some inputs are invalid." });
       return false;
     }
@@ -579,25 +590,44 @@ export default function EditGym() {
     }
   };
 
-  const removePhotoAt = (idx) => {
-    const list = [...rawPhotos];
-    list.splice(idx, 1);
-    const main = list[0] || "";
-    const gallery = list.slice(1);
-    setForm((prev) => ({ ...prev, main_image_url: main, gallery_urls: gallery }));
-    setHasChanges(true);
+  const onClickUploadMain = () => {
+    if (mainFileInputRef.current) mainFileInputRef.current.click();
   };
 
-  const onClickUpload = () => {
-    if (fileInputRef.current) fileInputRef.current.click();
+  const onClickUploadGallery = () => {
+    if (galleryFileInputRef.current) galleryFileInputRef.current.click();
   };
 
-  const onFileChange = async (e) => {
+  const onMainFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setUploadingMain(true);
+    try {
+      const data = await uploadMedia({ file, type: "gyms", kind: "main" });
+      const url = data?.url || data?.path || data?.data?.url || data?.data?.path;
+      if (!url) throw new Error("Upload succeeded but server returned no url.");
+
+      setForm((prev) => ({
+        ...prev,
+        main_image_url: String(url),
+      }));
+      setHasChanges(true);
+    } catch (err) {
+      console.error(err);
+      Swal.fire({ icon: "error", title: "Main image upload failed", text: extractCause(err) });
+    } finally {
+      setUploadingMain(false);
+    }
+  };
+
+  const onGalleryFileChange = async (e) => {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     if (!files.length) return;
 
-    setUploading(true);
+    setUploadingGallery(true);
     try {
       const uploadedUrls = [];
 
@@ -609,19 +639,38 @@ export default function EditGym() {
       }
 
       if (uploadedUrls.length) {
-        setForm((prev) => {
-          const currentRaw = [prev.main_image_url || null, ...(Array.isArray(prev.gallery_urls) ? prev.gallery_urls : [])].filter(Boolean);
-          const merged = [...currentRaw, ...uploadedUrls];
-          return { ...prev, main_image_url: merged[0] || "", gallery_urls: merged.slice(1) };
-        });
+        setForm((prev) => ({
+          ...prev,
+          gallery_urls: [...(Array.isArray(prev.gallery_urls) ? prev.gallery_urls : []), ...uploadedUrls],
+        }));
         setHasChanges(true);
       }
     } catch (err) {
       console.error(err);
-      Swal.fire({ icon: "error", title: "Upload failed", text: extractCause(err) });
+      Swal.fire({ icon: "error", title: "Gallery upload failed", text: extractCause(err) });
     } finally {
-      setUploading(false);
+      setUploadingGallery(false);
     }
+  };
+
+  const removeMainPhoto = () => {
+    setForm((prev) => ({
+      ...prev,
+      main_image_url: "",
+    }));
+    setHasChanges(true);
+  };
+
+  const removeGalleryPhotoAt = (idx) => {
+    setForm((prev) => {
+      const nextGallery = [...(Array.isArray(prev.gallery_urls) ? prev.gallery_urls : [])];
+      nextGallery.splice(idx, 1);
+      return {
+        ...prev,
+        gallery_urls: nextGallery,
+      };
+    });
+    setHasChanges(true);
   };
 
   const onMapDragEnd = (e) => {
@@ -696,27 +745,47 @@ export default function EditGym() {
         </div>
 
         <div className="eg-tabs">
-          <button className={`eg-tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => setActiveTab("basic")} type="button">
+          <button
+            className={`eg-tab ${activeTab === "basic" ? "active" : ""}`}
+            onClick={() => setActiveTab("basic")}
+            type="button"
+          >
             <Phone size={18} />
             Basic Info
           </button>
 
-          <button className={`eg-tab ${activeTab === "location" ? "active" : ""}`} onClick={() => setActiveTab("location")} type="button">
+          <button
+            className={`eg-tab ${activeTab === "location" ? "active" : ""}`}
+            onClick={() => setActiveTab("location")}
+            type="button"
+          >
             <MapPin size={18} />
             Location
           </button>
 
-          <button className={`eg-tab ${activeTab === "hours" ? "active" : ""}`} onClick={() => setActiveTab("hours")} type="button">
+          <button
+            className={`eg-tab ${activeTab === "hours" ? "active" : ""}`}
+            onClick={() => setActiveTab("hours")}
+            type="button"
+          >
             <Clock size={18} />
             Hours
           </button>
 
-          <button className={`eg-tab ${activeTab === "pricing" ? "active" : ""}`} onClick={() => setActiveTab("pricing")} type="button">
+          <button
+            className={`eg-tab ${activeTab === "pricing" ? "active" : ""}`}
+            onClick={() => setActiveTab("pricing")}
+            type="button"
+          >
             <DollarSign size={18} />
             Pricing
           </button>
 
-          <button className={`eg-tab ${activeTab === "media" ? "active" : ""}`} onClick={() => setActiveTab("media")} type="button">
+          <button
+            className={`eg-tab ${activeTab === "media" ? "active" : ""}`}
+            onClick={() => setActiveTab("media")}
+            type="button"
+          >
             <ImageIcon size={18} />
             Media
           </button>
@@ -742,13 +811,23 @@ export default function EditGym() {
 
                 <div className="eg-field">
                   <label>Description</label>
-                  <textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={5} placeholder="Describe your gym..." />
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setField("description", e.target.value)}
+                    rows={5}
+                    placeholder="Describe your gym..."
+                  />
                   <span className="eg-char-count">{String(form.description || "").length} / 500</span>
                 </div>
 
                 <div className="eg-field">
                   <label>Gym Type</label>
-                  <input type="text" value={form.gym_type} onChange={(e) => setField("gym_type", e.target.value)} placeholder="Boxing, Commercial, Crossfit..." />
+                  <input
+                    type="text"
+                    value={form.gym_type}
+                    onChange={(e) => setField("gym_type", e.target.value)}
+                    placeholder="Boxing, Commercial, Crossfit..."
+                  />
                 </div>
               </div>
 
@@ -802,7 +881,12 @@ export default function EditGym() {
                   {errors.website && <span className="eg-error">{errors.website}</span>}
                   {normalizeUrlNullable(form.website) && (
                     <div style={{ marginTop: 6, fontSize: 12 }}>
-                      <a href={normalizeUrlNullable(form.website)} target="_blank" rel="noreferrer" style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}>
+                      <a
+                        href={normalizeUrlNullable(form.website)}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}
+                      >
                         Open website
                       </a>
                     </div>
@@ -822,7 +906,12 @@ export default function EditGym() {
                     {errors.facebook_page && <span className="eg-error">{errors.facebook_page}</span>}
                     {normalizeUrlNullable(form.facebook_page) && (
                       <div style={{ marginTop: 6, fontSize: 12 }}>
-                        <a href={normalizeUrlNullable(form.facebook_page)} target="_blank" rel="noreferrer" style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}>
+                        <a
+                          href={normalizeUrlNullable(form.facebook_page)}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}
+                        >
                           Open Facebook
                         </a>
                       </div>
@@ -841,7 +930,12 @@ export default function EditGym() {
                     {errors.instagram_page && <span className="eg-error">{errors.instagram_page}</span>}
                     {normalizeUrlNullable(form.instagram_page) && (
                       <div style={{ marginTop: 6, fontSize: 12 }}>
-                        <a href={normalizeUrlNullable(form.instagram_page)} target="_blank" rel="noreferrer" style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}>
+                        <a
+                          href={normalizeUrlNullable(form.instagram_page)}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: "rgba(255,140,0,0.95)", fontWeight: 800 }}
+                        >
                           Open Instagram
                         </a>
                       </div>
@@ -851,7 +945,11 @@ export default function EditGym() {
 
                 <div className="eg-row-2" style={{ marginTop: 6 }}>
                   <label className="eg-check" style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <input type="checkbox" checked={!!form.has_personal_trainers} onChange={setBool("has_personal_trainers")} />
+                    <input
+                      type="checkbox"
+                      checked={!!form.has_personal_trainers}
+                      onChange={setBool("has_personal_trainers")}
+                    />
                     Has personal trainers
                   </label>
 
@@ -868,7 +966,11 @@ export default function EditGym() {
                   </label>
 
                   <label className="eg-check" style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <input type="checkbox" checked={!!form.is_airconditioned} onChange={setBool("is_airconditioned")} />
+                    <input
+                      type="checkbox"
+                      checked={!!form.is_airconditioned}
+                      onChange={setBool("is_airconditioned")}
+                    />
                     Airconditioned
                   </label>
                 </div>
@@ -902,7 +1004,8 @@ export default function EditGym() {
                     <div>
                       <div style={{ fontWeight: 900 }}>Pinpoint required</div>
                       <div style={{ opacity: 0.85, fontSize: 13 }}>
-                        Please drop the marker on the exact gym location (or pick an address suggestion) so users can find you correctly.
+                        Please drop the marker on the exact gym location (or pick an address suggestion) so users can
+                        find you correctly.
                       </div>
                     </div>
                   </div>
@@ -948,8 +1051,12 @@ export default function EditGym() {
                   {errors.address && <span className="eg-error">{errors.address}</span>}
                   {errors.location && <span className="eg-error">{errors.location}</span>}
 
-                  {addressOpen && geoLoading && <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Searching addresses...</div>}
-                  {addressOpen && geoErr && <div style={{ marginTop: 6, fontSize: 12, color: "#ff6b6b" }}>{geoErr}</div>}
+                  {addressOpen && geoLoading && (
+                    <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Searching addresses...</div>
+                  )}
+                  {addressOpen && geoErr && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: "#ff6b6b" }}>{geoErr}</div>
+                  )}
 
                   {addressOpen && addressSuggestions.length > 0 && (
                     <div
@@ -1008,7 +1115,12 @@ export default function EditGym() {
                 <div className="eg-row-2">
                   <div className="eg-field">
                     <label>City</label>
-                    <input type="text" value={form.city} onChange={(e) => setField("city", e.target.value)} placeholder="Quezon City" />
+                    <input
+                      type="text"
+                      value={form.city}
+                      onChange={(e) => setField("city", e.target.value)}
+                      placeholder="Quezon City"
+                    />
                   </div>
                 </div>
 
@@ -1024,10 +1136,18 @@ export default function EditGym() {
                 </div>
 
                 <div className="eg-media-helper" style={{ marginTop: 10 }}>
-                  Tip: Pick an address suggestion to auto-fill coordinates and move the map. You can also click on the map to set the marker.
+                  Tip: Pick an address suggestion to auto-fill coordinates and move the map. You can also click on the
+                  map to set the marker.
                 </div>
 
-                <div style={{ marginTop: 12, borderRadius: 14, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div
+                  style={{
+                    marginTop: 12,
+                    borderRadius: 14,
+                    overflow: "hidden",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
                   <MapContainer center={markerPos || mapCenter} zoom={mapZoom} style={{ height: 360, width: "100%" }}>
                     <Recenter center={markerPos || mapCenter} />
                     <MapClick onPick={onMapPick} />
@@ -1058,12 +1178,20 @@ export default function EditGym() {
                 <div className="eg-row-2" style={{ marginTop: 10 }}>
                   <div className="eg-field">
                     <label>Opening Time</label>
-                    <input type="time" value={hhmm(form.opening_time, "06:00")} onChange={(e) => setField("opening_time", e.target.value)} />
+                    <input
+                      type="time"
+                      value={hhmm(form.opening_time, "06:00")}
+                      onChange={(e) => setField("opening_time", e.target.value)}
+                    />
                   </div>
 
                   <div className="eg-field">
                     <label>Closing Time</label>
-                    <input type="time" value={hhmm(form.closing_time, "22:00")} onChange={(e) => setField("closing_time", e.target.value)} />
+                    <input
+                      type="time"
+                      value={hhmm(form.closing_time, "22:00")}
+                      onChange={(e) => setField("closing_time", e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
@@ -1112,9 +1240,13 @@ export default function EditGym() {
                         position: "absolute",
                         inset: 0,
                         borderRadius: 999,
-                        background: form.free_first_visit_enabled ? "linear-gradient(180deg,#ff6b35,#d23f0b)" : "rgba(0,0,0,0.18)",
+                        background: form.free_first_visit_enabled
+                          ? "linear-gradient(180deg,#ff6b35,#d23f0b)"
+                          : "rgba(0,0,0,0.18)",
                         transition: "all 180ms ease",
-                        boxShadow: form.free_first_visit_enabled ? "0 10px 18px rgba(210,63,11,0.22)" : "none",
+                        boxShadow: form.free_first_visit_enabled
+                          ? "0 10px 18px rgba(210,63,11,0.22)"
+                          : "none",
                       }}
                     />
                     <span
@@ -1138,7 +1270,12 @@ export default function EditGym() {
                     <label>Daily Price</label>
                     <div className="eg-price-input">
                       <span className="eg-currency">₱</span>
-                      <input type="number" value={form.daily_price} onChange={(e) => setField("daily_price", e.target.value)} placeholder="150" />
+                      <input
+                        type="number"
+                        value={form.daily_price}
+                        onChange={(e) => setField("daily_price", e.target.value)}
+                        placeholder="150"
+                      />
                     </div>
                     <div className="eg-media-helper" style={{ marginTop: 6 }}>
                       Disabled for now
@@ -1150,7 +1287,12 @@ export default function EditGym() {
                     <label>Monthly Price</label>
                     <div className="eg-price-input">
                       <span className="eg-currency">₱</span>
-                      <input type="number" value={form.monthly_price} onChange={(e) => setField("monthly_price", e.target.value)} placeholder="2500" />
+                      <input
+                        type="number"
+                        value={form.monthly_price}
+                        onChange={(e) => setField("monthly_price", e.target.value)}
+                        placeholder="2500"
+                      />
                     </div>
                   </div>
 
@@ -1158,7 +1300,12 @@ export default function EditGym() {
                     <label>Annual Price</label>
                     <div className="eg-price-input">
                       <span className="eg-currency">₱</span>
-                      <input type="number" value={form.annual_price} onChange={(e) => setField("annual_price", e.target.value)} placeholder="12000" />
+                      <input
+                        type="number"
+                        value={form.annual_price}
+                        onChange={(e) => setField("annual_price", e.target.value)}
+                        placeholder="12000"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1173,31 +1320,149 @@ export default function EditGym() {
                   <ImageIcon size={20} /> Gym Photos
                 </h2>
 
-                <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} style={{ display: "none" }} />
+                <input
+                  ref={mainFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onMainFileChange}
+                  style={{ display: "none" }}
+                />
 
-                <div className="eg-photos-modern">
-                  {photos.map((photo, i) => (
-                    <div key={i} className="eg-photo-card">
-                      <img
-                        src={photo}
-                        alt=""
-                        onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80";
-                        }}
-                      />
-                      <div className="eg-photo-overlay">
-                        <button className="eg-photo-delete" onClick={() => removePhotoAt(i)} type="button" title="Remove photo">
-                          <Trash2 size={18} />
-                        </button>
+                <input
+                  ref={galleryFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={onGalleryFileChange}
+                  style={{ display: "none" }}
+                />
+
+                <div className="eg-section" style={{ marginTop: 16 }}>
+                  <h2>Main Image</h2>
+
+                  <div className="eg-photos-modern">
+                    {mainPhoto ? (
+                      <div className="eg-photo-card">
+                        <img
+                          src={mainPhoto}
+                          alt="Main gym"
+                          onError={(e) => {
+                            e.currentTarget.src = FALLBACK_GYM_IMAGE;
+                          }}
+                        />
+                        <div className="eg-photo-overlay">
+                          <button
+                            className="eg-photo-delete"
+                            onClick={removeMainPhoto}
+                            type="button"
+                            title="Remove main image"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 10,
+                            left: 10,
+                            padding: "6px 10px",
+                            borderRadius: 999,
+                            background: "rgba(210,63,11,0.95)",
+                            color: "#fff",
+                            fontSize: 11,
+                            fontWeight: 900,
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          MAIN
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ) : (
+                      <div
+                        className="eg-photo-card"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minHeight: 220,
+                          border: "1px dashed rgba(255,255,255,0.18)",
+                        }}
+                      >
+                        <div style={{ textAlign: "center", padding: 20, opacity: 0.8 }}>
+                          <ImageIcon size={36} />
+                          <div style={{ marginTop: 8, fontWeight: 800 }}>No main image yet</div>
+                        </div>
+                      </div>
+                    )}
 
-                  <button className="eg-photo-upload-modern" type="button" onClick={onClickUpload} disabled={uploading}>
-                    <Upload size={32} />
-                    <span>{uploading ? "Uploading..." : "Upload Photos"}</span>
-                    <small>JPG, PNG up to 10MB</small>
-                  </button>
+                    <button
+                      className="eg-photo-upload-modern"
+                      type="button"
+                      onClick={onClickUploadMain}
+                      disabled={uploadingMain}
+                    >
+                      <Upload size={32} />
+                      <span>{uploadingMain ? "Uploading..." : "Upload Main Image"}</span>
+                      <small>Replaces current main image</small>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="eg-section" style={{ marginTop: 16 }}>
+                  <h2>Gallery Images</h2>
+
+                  <div className="eg-photos-modern">
+                    {galleryPhotos.length ? (
+                      galleryPhotos.map((photo, i) => (
+                        <div key={i} className="eg-photo-card">
+                          <img
+                            src={photo}
+                            alt={`Gallery ${i + 1}`}
+                            onError={(e) => {
+                              e.currentTarget.src = FALLBACK_GYM_IMAGE;
+                            }}
+                          />
+                          <div className="eg-photo-overlay">
+                            <button
+                              className="eg-photo-delete"
+                              onClick={() => removeGalleryPhotoAt(i)}
+                              type="button"
+                              title="Remove gallery photo"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div
+                        className="eg-photo-card"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minHeight: 220,
+                          border: "1px dashed rgba(255,255,255,0.18)",
+                        }}
+                      >
+                        <div style={{ textAlign: "center", padding: 20, opacity: 0.8 }}>
+                          <ImageIcon size={36} />
+                          <div style={{ marginTop: 8, fontWeight: 800 }}>No gallery photos yet</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      className="eg-photo-upload-modern"
+                      type="button"
+                      onClick={onClickUploadGallery}
+                      disabled={uploadingGallery}
+                    >
+                      <Upload size={32} />
+                      <span>{uploadingGallery ? "Uploading..." : "Upload Gallery Photos"}</span>
+                      <small>Adds to gallery only</small>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="eg-section" style={{ marginTop: 16 }}>
@@ -1205,17 +1470,27 @@ export default function EditGym() {
 
                   <div className="eg-field">
                     <label>Main Image URL</label>
-                    <input type="text" value={form.main_image_url || ""} readOnly placeholder="/storage/... or https://..." />
+                    <input
+                      type="text"
+                      value={form.main_image_url || ""}
+                      readOnly
+                      placeholder="/storage/... or https://..."
+                    />
                     <div className="eg-media-helper" style={{ marginTop: 6 }}>
-                      Read-only. Upload photos above to update.
+                      Read-only. Use the Main Image uploader above.
                     </div>
                   </div>
 
                   <div className="eg-field">
                     <label>Gallery URLs (one per line)</label>
-                    <textarea rows={5} value={(Array.isArray(form.gallery_urls) ? form.gallery_urls : []).join("\n")} readOnly placeholder={"/storage/...\nhttps://...\nhttps://..."} />
+                    <textarea
+                      rows={5}
+                      value={(Array.isArray(form.gallery_urls) ? form.gallery_urls : []).join("\n")}
+                      readOnly
+                      placeholder={"/storage/...\nhttps://...\nhttps://..."}
+                    />
                     <div className="eg-media-helper" style={{ marginTop: 6 }}>
-                      Read-only. Upload photos above to update.
+                      Read-only. Use the Gallery uploader above.
                     </div>
                   </div>
                 </div>
@@ -1225,6 +1500,7 @@ export default function EditGym() {
         </div>
       </div>
 
+      <Footer />
     </div>
   );
 }

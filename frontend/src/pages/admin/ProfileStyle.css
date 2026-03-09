@@ -1,9 +1,49 @@
 .profile-page {
+  --profile-bg: #ffffff;
+  --profile-text: #1f2937;
+  --profile-text-soft: #333333;
+  --profile-text-muted: #555555;
+  --profile-accent: #d23f0b;
+  --profile-accent-hover: #ff6b35;
+  --profile-soft-btn: #f5f5f5;
+  --profile-soft-btn-hover: #e5e5e5;
+  --profile-card-bg: #fff5f2;
+  --profile-card-border: #f5d0c5;
+  --profile-line: #f5d0c5;
+  --profile-input-bg: #ffffff;
+  --profile-input-border: #dddddd;
+  --profile-avatar-ring: #f5d0c5;
+
   min-height: 100vh;
-  background: #fff;
+  background: var(--profile-bg);
   font-family: 'Montserrat', sans-serif;
-  color: #1f2937;
+  color: var(--profile-text);
   padding: 3rem 1rem;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+/* DARK MODE
+   use either:
+   <div className={`profile-page ${theme}`}>   where theme is "dark" or "light"
+   OR
+   <div className="profile-page" data-theme={theme}>
+*/
+.profile-page.dark,
+.profile-page[data-theme="dark"] {
+  --profile-bg: linear-gradient(180deg, #060b14 0%, #09111c 100%);
+  --profile-text: #f3f4f6;
+  --profile-text-soft: #cbd5e1;
+  --profile-text-muted: #94a3b8;
+  --profile-accent: #fc4a00;
+  --profile-accent-hover: #ff7a45;
+  --profile-soft-btn: #172033;
+  --profile-soft-btn-hover: #22304a;
+  --profile-card-bg: #f3e7e2;
+  --profile-card-border: rgba(255, 255, 255, 0.08);
+  --profile-line: rgba(252, 74, 0, 0.35);
+  --profile-input-bg: #0f172a;
+  --profile-input-border: #334155;
+  --profile-avatar-ring: #f5d0c5;
 }
 
 .profile-container {
@@ -26,7 +66,7 @@
   margin: 0 auto 1rem;
   border-radius: 50%;
   overflow: hidden;
-  border: 4px solid #f5d0c5;
+  border: 4px solid var(--profile-avatar-ring);
 }
 
 .avatar-img {
@@ -39,49 +79,53 @@
   font-size: 1.8rem;
   font-weight: 700;
   margin-bottom: 0.25rem;
-  color: #d23f0b;
+  color: var(--profile-accent);
 }
 
 .profile-email {
   font-size: 0.95rem;
-  color: #333;
+  color: var(--profile-text-soft);
   margin-bottom: 0.5rem;
 }
 
 .profile-bio {
   font-size: 0.9rem;
   margin-bottom: 1rem;
-  color: #555;
+  color: var(--profile-text-muted);
 }
 
 /* Buttons */
 .primary-btn {
   padding: 0.5rem 1.5rem;
-  background: #d23f0b;
+  background: var(--profile-accent);
   color: #fff;
   border: none;
   border-radius: 0.5rem;
   font-weight: 700;
   cursor: pointer;
   margin: 0.25rem;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .primary-btn:hover {
-  background: #f18585;
+  background: var(--profile-accent-hover);
+  transform: translateY(-1px);
 }
 
 .secondary-btn {
   padding: 0.5rem 1.5rem;
-  background: #f5f5f5;
-  color: #333;
+  background: var(--profile-soft-btn);
+  color: var(--profile-text);
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   margin: 0.25rem;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .secondary-btn:hover {
-  background: #e5e5e5;
+  background: var(--profile-soft-btn-hover);
+  transform: translateY(-1px);
 }
 
 /* Right column */
@@ -93,9 +137,9 @@
 .section-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #d23f0b;
+  color: var(--profile-accent);
   margin-bottom: 1rem;
-  border-bottom: 2px solid #f5d0c5;
+  border-bottom: 2px solid var(--profile-line);
   display: inline-block;
   padding-bottom: 0.25rem;
 }
@@ -110,10 +154,10 @@
 
 /* Info Card */
 .info-card {
-  background: #fff5f2;
+  background: var(--profile-card-bg);
   padding: 1rem 1.25rem;
   border-radius: 0.75rem;
-  border: 1px solid #f5d0c5;
+  border: 1px solid var(--profile-card-border);
   text-align: center;
 }
 
@@ -121,7 +165,7 @@
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #d23f0b;
+  color: var(--profile-accent);
   margin-bottom: 0.25rem;
 }
 
@@ -131,6 +175,12 @@
   color: #1f2937;
 }
 
+/* keep values dark inside the light cards during dark mode */
+.profile-page.dark .info-card strong,
+.profile-page[data-theme="dark"] .info-card strong {
+  color: #0f172a;
+}
+ 
 /* Edit Form */
 .edit-form {
   display: flex;
@@ -142,9 +192,16 @@
 .edit-form textarea {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--profile-input-border);
   font-size: 1rem;
   width: 100%;
+  background: var(--profile-input-bg);
+  color: var(--profile-text);
+}
+
+.edit-form input::placeholder,
+.edit-form textarea::placeholder {
+  color: var(--profile-text-muted);
 }
 
 .edit-form textarea {
@@ -152,8 +209,57 @@
   min-height: 80px;
 }
 
+.edit-form input:focus,
+.edit-form textarea:focus {
+  outline: none;
+  border-color: var(--profile-accent);
+  box-shadow: 0 0 0 3px rgba(210, 63, 11, 0.12);
+}
+
+.profile-page.dark .edit-form input:focus,
+.profile-page[data-theme="dark"] .edit-form input:focus,
+.profile-page.dark .edit-form textarea:focus,
+.profile-page[data-theme="dark"] .edit-form textarea:focus {
+  box-shadow: 0 0 0 3px rgba(252, 74, 0, 0.16);
+}
+
 .edit-actions {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
+}/* DARK MODE TEXT FIX */
+
+.profile-page.dark,
+.profile-page[data-theme="dark"] {
+  color: #e5e7eb;
+}
+
+.profile-page.dark .profile-email,
+.profile-page[data-theme="dark"] .profile-email {
+  color: #cbd5e1;
+}
+
+.profile-page.dark .profile-bio,
+.profile-page[data-theme="dark"] .profile-bio {
+  color: #94a3b8;
+}
+
+.profile-page.dark .section-title,
+.profile-page[data-theme="dark"] .section-title {
+  color: #fc4a00;
+}
+
+.profile-page.dark .info-card strong,
+.profile-page[data-theme="dark"] .info-card strong {
+  color: #111827;
+}
+
+/* edit mode inputs */
+.profile-page.dark input,
+.profile-page.dark textarea,
+.profile-page.dark select,
+.profile-page[data-theme="dark"] input,
+.profile-page[data-theme="dark"] textarea,
+.profile-page[data-theme="dark"] select {
+  color: #f3f4f6;
 }

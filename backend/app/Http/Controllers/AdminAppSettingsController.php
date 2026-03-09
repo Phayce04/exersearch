@@ -37,6 +37,7 @@ class AdminAppSettingsController extends Controller
 
             'logo_url' => ['sometimes', 'nullable', 'string'],
             'user_logo_url' => ['sometimes', 'nullable', 'string'],
+            'letter_logo' => ['sometimes', 'nullable', 'string'],
             'favicon_url' => ['sometimes', 'nullable', 'string'],
 
             'contact_phone' => ['sometimes', 'nullable', 'string', 'max:50'],
