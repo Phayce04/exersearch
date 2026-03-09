@@ -24,11 +24,13 @@
   background: var(--gray-100);
   font-family: 'Montserrat', sans-serif;
   color: var(--gray-900);
-  padding: 3rem 3rem 10rem;
+  padding: 6rem 3rem 10rem;
   width: 100%;
   box-sizing: border-box;
 }
-
+.profile-page {
+  padding-top: 100px !important;
+}
 .profile-container {
   max-width: 1000px;
   width: 100%;

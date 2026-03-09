@@ -1759,4 +1759,22 @@ body[data-theme="light"] .um-app .um-sideCollapseBtn:hover {
     min-height: 40px;
     padding: 0.66rem 0.8rem;
   }
+}/* expanded + light mode = truly no background */
+.um-app[data-theme="light"] .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn,
+.um-app.light-mode .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn,
+html[data-theme="light"] .um-app .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn,
+body[data-theme="light"] .um-app .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* optional: keep only the arrow visible on hover too */
+.um-app[data-theme="light"] .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn:hover,
+.um-app.light-mode .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn:hover,
+html[data-theme="light"] .um-app .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn:hover,
+body[data-theme="light"] .um-app .um-panel--sidebar:not(.is-collapsed) .um-sideCollapseBtn:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
 }
