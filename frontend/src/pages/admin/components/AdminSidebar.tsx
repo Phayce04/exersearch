@@ -134,8 +134,10 @@ const AdminSidebar: React.FC<Props> = ({
             <SidebarHeader rtl={rtl} style={{ marginBottom: 12, marginTop: 0 }} />
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
-            <div style={{ padding: "0 24px", marginBottom: 8 }}>
+<div
+  className="admin-sidebar-scroll"
+  style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
+>            <div style={{ padding: "0 24px", marginBottom: 8 }}>
               <Typography
                 variant="body2"
                 fontWeight={700}
@@ -395,7 +397,7 @@ const AdminSidebar: React.FC<Props> = ({
                     isPathActive(location.pathname, ["/admin/settings"])
                       ? activeButtonStyle
                       : undefined
-                  }
+                  } 
                 >
                   App Settings
                 </MenuItem>

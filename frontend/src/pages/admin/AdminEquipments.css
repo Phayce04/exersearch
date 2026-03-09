@@ -957,3 +957,55 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* =========================================
+   FORCE NATIVE SELECT DROPDOWN COLORS
+========================================= */
+
+.ae-select,
+.ae-fieldInput[type="select"],
+select.ae-select {
+  color-scheme: dark;
+}
+
+.ae-select option,
+select.ae-select option {
+  background: #1b1d22;
+  color: #f6f8fa;
+}
+
+.ae-select optgroup,
+select.ae-select optgroup {
+  background: #1b1d22;
+  color: #f6f8fa;
+}
+
+/* light mode override */
+[data-theme="light"] .ae-select,
+[data-theme="light"] select.ae-select {
+  color-scheme: light;
+}
+
+[data-theme="light"] .ae-select option,
+[data-theme="light"] select.ae-select option,
+[data-theme="light"] .ae-select optgroup,
+[data-theme="light"] select.ae-select optgroup {
+  background: #ffffff;
+  color: #101820;
+}
+
+/* dark mode explicit override */
+[data-theme="dark"] .ae-select,
+[data-theme="dark"] select.ae-select {
+  background: var(--soft2);
+  color: #f6f8fa;
+  border-color: var(--border);
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .ae-select option,
+[data-theme="dark"] select.ae-select option,
+[data-theme="dark"] .ae-select optgroup,
+[data-theme="dark"] select.ae-select optgroup {
+  background: #1b1d22;
+  color: #f6f8fa;
+} 

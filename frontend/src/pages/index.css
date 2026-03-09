@@ -588,4 +588,56 @@
   .manifesto-txt { font-size:clamp(1.6rem,6vw,2.4rem); }
   .cd,.cr        { display:none; }
   .es *          { cursor:auto; }
+}html,
+body {
+  font-family: 'Montserrat', sans-serif;
+  overflow-x: hidden;
+
+  --scroll-track: #1a1f27;
+  --scroll-thumb: linear-gradient(180deg, #ff5a16 0%, #fc4a00 52%, #ab3200 100%);
+  --scroll-thumb-hover: linear-gradient(180deg, #ab3200 0%, #fc4a00 50%, #ff5a16 100%);
+}
+
+/* light mode */
+html[data-theme="light"],
+body[data-theme="light"] {
+  color-scheme: light;
+  --scroll-track: #f1f4f8;
+}
+
+/* dark mode */
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  color-scheme: dark;
+  --scroll-track: #1a1f27;
+}
+
+/* Firefox */
+html,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: #fc4a00 var(--scroll-track);
+}
+
+/* Chrome / Edge / Safari */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
 }

@@ -6,6 +6,7 @@ import AdminSidebar from "./components/AdminSidebar";
 import AdminHeader from "./components/AdminHeader";
 
 export const MAIN = "#d23f0b";
+const THEME_KEY = "admin_theme";
 
 export const adminThemes = {
   light: {
@@ -34,7 +35,11 @@ export const adminThemes = {
 
 export default function AdminLayout() {
   const [ready, setReady] = useState(false);
-  const [theme, setTheme] = useState("light");
+
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem(THEME_KEY);
+    return saved === "dark" || saved === "light" ? saved : "dark";
+  });
 
   const [me, setMe] = useState(null);
 
@@ -44,6 +49,10 @@ export default function AdminLayout() {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     let alive = true;
@@ -62,8 +71,8 @@ export default function AdminLayout() {
         });
 
         const user = meRes.data?.user || meRes.data;
-
         const role = user?.role;
+
         if (role !== "admin" && role !== "superadmin") {
           navigate("/login");
           return;
@@ -79,6 +88,7 @@ export default function AdminLayout() {
     }
 
     run();
+
     return () => {
       alive = false;
     };
