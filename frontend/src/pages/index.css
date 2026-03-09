@@ -591,7 +591,6 @@
 }html,
 body {
   font-family: 'Montserrat', sans-serif;
-  overflow-x: hidden;
 
   --scroll-track: #1a1f27;
   --scroll-thumb: linear-gradient(180deg, #ff5a16 0%, #fc4a00 52%, #ab3200 100%);

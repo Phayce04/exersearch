@@ -31,7 +31,17 @@ export default function Profile() {
     updated_at: "",
   });
 
-  const [formData, setFormData] = useState({ ...userData });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "",
+    permission_level: "full",
+    notes: "",
+    avatar_url: "",
+    created_at: "",
+    updated_at: "",
+  });
+
   const [localPreview, setLocalPreview] = useState("");
 
   const token = localStorage.getItem("token");
@@ -105,6 +115,7 @@ export default function Profile() {
 
     async function load() {
       setLoading(true);
+
       try {
         const res = await axios.get(`${API_BASE}/api/v1/admin/profile`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -126,11 +137,17 @@ export default function Profile() {
         };
 
         if (!mounted) return;
+
         setUserData(next);
         setFormData(next);
         setLocalPreview("");
       } catch (err) {
-        console.log("[ADMIN PROFILE] load error:", err?.response?.status, err?.response?.data);
+        console.log(
+          "[ADMIN PROFILE] load error:",
+          err?.response?.status,
+          err?.response?.data
+        );
+
         alertError({
           title: "Failed to load profile",
           text: err?.response?.data?.message || "Something went wrong.",
@@ -142,8 +159,9 @@ export default function Profile() {
       }
     }
 
-    if (token) load();
-    else {
+    if (token) {
+      load();
+    } else {
       setLoading(false);
       alertInfo({
         title: "Session missing",
@@ -193,8 +211,6 @@ export default function Profile() {
     setLocalPreview(url);
   };
 
-  // ✅ uploads ONLY to admin profile via /me/avatar/admin
-  // ✅ does NOT call /me/avatar (user) and does NOT call /admin/profile after upload
   const uploadAvatar = async () => {
     const file = fileRef.current?.files?.[0];
     if (!file) {
@@ -208,6 +224,7 @@ export default function Profile() {
     }
 
     setUploading(true);
+
     try {
       const fd = new FormData();
       fd.append("photo", file);
@@ -221,8 +238,10 @@ export default function Profile() {
       });
 
       const newUrl = res.data?.avatar_url;
+
       if (!newUrl) {
         console.log("[ADMIN AVATAR UPLOAD] response:", res.data);
+
         alertError({
           title: "Upload incomplete",
           text: "Upload succeeded but server did not return an avatar_url.",
@@ -232,23 +251,28 @@ export default function Profile() {
         return;
       }
 
-      // Update view + form immediately
-      setUserData((p) => ({ ...p, avatar_url: newUrl }));
-      setFormData((p) => ({ ...p, avatar_url: newUrl }));
+      setUserData((prev) => ({ ...prev, avatar_url: newUrl }));
+      setFormData((prev) => ({ ...prev, avatar_url: newUrl }));
 
-      // clear preview and file input
       if (localPreview) URL.revokeObjectURL(localPreview);
       setLocalPreview("");
+
       if (fileRef.current) fileRef.current.value = "";
 
       alertSuccess({
         title: "Profile photo updated",
-        text: res.data?.message || "Your admin avatar has been successfully updated.",
+        text:
+          res.data?.message ||
+          "Your admin avatar has been successfully updated.",
         theme,
         mainColor: MAIN,
       });
     } catch (err) {
-      console.log("[ADMIN AVATAR UPLOAD] error:", err?.response?.status, err?.response?.data);
+      console.log(
+        "[ADMIN AVATAR UPLOAD] error:",
+        err?.response?.status,
+        err?.response?.data
+      );
 
       if (err.response?.data?.errors) {
         alertError({
@@ -272,8 +296,8 @@ export default function Profile() {
 
   const handleSave = async () => {
     setSaving(true);
+
     try {
-      // ✅ Do NOT send avatar_url here (prevents any controller logic that syncs elsewhere)
       const payload = {
         name: formData.name,
         permission_level: formData.permission_level,
@@ -285,13 +309,13 @@ export default function Profile() {
         withCredentials: true,
       });
 
-      // keep local state consistent (avatar_url stays whatever we have locally)
       setUserData((prev) => ({
         ...prev,
         name: formData.name,
         permission_level: formData.permission_level,
         notes: formData.notes,
       }));
+
       setIsEditing(false);
 
       alertSuccess({
@@ -301,7 +325,11 @@ export default function Profile() {
         mainColor: MAIN,
       });
     } catch (err) {
-      console.log("[ADMIN PROFILE] save error:", err?.response?.status, err?.response?.data);
+      console.log(
+        "[ADMIN PROFILE] save error:",
+        err?.response?.status,
+        err?.response?.data
+      );
 
       if (err.response?.data?.errors) {
         alertError({
@@ -358,7 +386,9 @@ export default function Profile() {
       >
         <div>
           <div style={{ fontWeight: 950, fontSize: 22 }}>Profile</div>
-          <div style={subtleText}>{isDark ? "Dark mode" : "Light mode"} • Admin Panel</div>
+          <div style={subtleText}>
+            {isDark ? "Dark mode" : "Light mode"} • Admin Panel
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -375,7 +405,7 @@ export default function Profile() {
             {userData.role?.toUpperCase() || "ADMIN"}
           </span>
 
-          {!isEditing ? (
+          {!isEditing && (
             <button
               className="primary-btn"
               onClick={() => setIsEditing(true)}
@@ -383,18 +413,21 @@ export default function Profile() {
             >
               Edit Profile
             </button>
-          ) : null}
+          )}
         </div>
       </div>
 
-      <div className="profile-page" style={{ background: "transparent", padding: 0 }}>
-        <div className="profile-container" style={{ margin: 0 }}>
+      <div className={`profile-page ${theme}`} data-theme={theme}>
+        <div className="profile-container">
           <div className="profile-left">
             <div className="avatar-wrapper">
               <img src={avatarSrc} alt="Profile" className="avatar-img" />
             </div>
 
-            <h2 className="profile-name">{isEditing ? formData.name : userData.name}</h2>
+            <h2 className="profile-name">
+              {isEditing ? formData.name : userData.name}
+            </h2>
+
             <p className="profile-email">{userData.email}</p>
 
             <p className="profile-bio">
@@ -403,7 +436,9 @@ export default function Profile() {
 
             {isEditing && (
               <div style={{ marginTop: 14, width: "100%" }}>
-                <div style={{ ...subtleText, marginBottom: 8 }}>Update avatar</div>
+                <div style={{ ...subtleText, marginBottom: 8 }}>
+                  Update avatar
+                </div>
 
                 <input
                   ref={fileRef}
@@ -430,6 +465,7 @@ export default function Profile() {
                   >
                     {uploading ? "Uploading..." : "Upload"}
                   </button>
+
                   <button
                     className="secondary-btn"
                     onClick={() => {
@@ -469,7 +505,6 @@ export default function Profile() {
                   <option value="readonly">readonly</option>
                 </select>
 
-                {/* keep this field if you want to VIEW it, but it is no longer sent to /admin/profile */}
                 <label>Avatar URL (read-only)</label>
                 <input
                   type="text"
@@ -482,7 +517,11 @@ export default function Profile() {
                 />
 
                 <label>Notes</label>
-                <textarea name="notes" value={formData.notes} onChange={handleInputChange} />
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                />
 
                 <div className="edit-actions">
                   <button
@@ -492,6 +531,7 @@ export default function Profile() {
                   >
                     {saving ? "Saving..." : "Save"}
                   </button>
+
                   <button
                     className="secondary-btn"
                     onClick={handleCancel}
@@ -504,19 +544,23 @@ export default function Profile() {
             ) : (
               <>
                 <h3 className="section-title">Admin Info</h3>
+
                 <div className="info-grid">
                   <div className="info-card">
                     <label>Role</label>
                     <strong>{userData.role || "admin"}</strong>
                   </div>
+
                   <div className="info-card">
                     <label>Permission</label>
                     <strong>{userData.permission_level}</strong>
                   </div>
+
                   <div className="info-card">
                     <label>Member Since</label>
                     <strong>{userData.created_at || "-"}</strong>
                   </div>
+
                   <div className="info-card">
                     <label>Last Updated</label>
                     <strong>{userData.updated_at || "-"}</strong>
@@ -524,8 +568,12 @@ export default function Profile() {
                 </div>
 
                 <h3 className="section-title">Notes</h3>
+
                 <div className="info-grid">
-                  <div className="info-card" style={{ gridColumn: "1 / -1" }}>
+                  <div
+                    className="info-card"
+                    style={{ gridColumn: "1 / -1" }}
+                  >
                     <label>Admin Notes</label>
                     <strong>{userData.notes || "No notes yet."}</strong>
                   </div>

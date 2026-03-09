@@ -555,288 +555,290 @@ export default function GymResults() {
   }, [filteredGyms, shownIds]);
 
   return (
-    <div className="gym-results-page">
-      <section className="gr-header-full">
-        <div className="gr-header-inner">
-          <h1>All Gyms</h1>
-          <p>
-            {loading ? "Loading gyms…" : `Showing ${filteredGyms.length} gyms`}
-            {selectedGymId ? " • Focus mode" : ""}
-          </p>
-        </div>
-      </section>
-
-      <div className="gr-split">
-        <aside className="gr-left">
-          <div className="gr-map-card">
-            <div className="gr-map-top">
-              <div className="gr-map-top__left">
-                <strong>{selectedGymId ? selectedGym?.name || "Selected gym" : `Pins: ${markersToShow.length}`}</strong>
-                <span className="gr-map-top__sub">
-                  {selectedGymId ? "Showing only the selected gym marker" : "Markers update based on your filters"}
-                </span>
-              </div>
-
-              {selectedGymId ? (
-                <button className="gr-map-btn" onClick={() => setSelectedGymId(null)} type="button">
-                  Show all
-                </button>
-              ) : (
-                <button className="gr-map-btn" onClick={() => setSelectedGymId(null)} type="button">
-                  Reset
-                </button>
-              )}
-            </div>
-
-            <div className="gr-map">
-              <MapContainer center={mapCenter} zoom={mapZoom} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
-                <TileLayer
-                  attribution="&copy; OpenStreetMap contributors"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <MapAutoFocus center={mapCenter} zoom={mapZoom} selectedGym={selectedGym} />
-
-                {markersToShow.map((g) => (
-                  <Marker
-                    key={g.id}
-                    position={[g.latitude, g.longitude]}
-                    icon={pinIcon({ selected: g.id === String(selectedGymId) })}
-                    eventHandlers={{
-                      click: async () => {
-                        setSelectedGymId(String(g.id));
-                        await logInteraction("click", g, { action: "map_marker_click" });
-                      },
-                    }}
-                  >
-                    <Popup>
-                      <div>
-                        <div className="gr-popup__title">{g.name}</div>
-                        <div className="gr-popup__sub">📍 {g.address || "No address"}</div>
-                        <div className="gr-popup__meta">
-                          {g.monthly_price != null ? `₱${g.monthly_price}/mo` : "Monthly price not set"}
-                          {g.rating != null ? ` • ⭐ ${g.rating}` : ""}
-                          {g.free_first_visit_enabled ? " • 🎟️ Free first visit" : ""}
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            </div>
+    <div className="ags">
+      <div className="gym-results-page">
+        <section className="gr-header-full">
+          <div className="gr-header-inner">
+            <h1>All Gyms</h1>
+            <p>
+              {loading ? "Loading gyms…" : `Showing ${filteredGyms.length} gyms`}
+              {selectedGymId ? " • Focus mode" : ""}
+            </p>
           </div>
-        </aside>
+        </section>
 
-        <main className="gr-right">
-          <section className="filter-bar">
-            <div className="container">
-              <div className="filter-controls">
-                <div className="filter-group">
-                  <label>Sort by:</label>
-                  <select value={filters.sortBy} onChange={handleSortChange}>
-                    <option value="recommended">Recommended</option>
-                    <option value="price-low">Monthly Price: Low to High</option>
-                    <option value="price-high">Monthly Price: High to Low</option>
-                    <option value="rating">Highest Rated</option>
-                    <option value="reviews">Most Reviewed</option>
-                  </select>
+        <div className="gr-split">
+          <aside className="gr-left">
+            <div className="gr-map-card">
+              <div className="gr-map-top">
+                <div className="gr-map-top__left">
+                  <strong>{selectedGymId ? selectedGym?.name || "Selected gym" : `Pins: ${markersToShow.length}`}</strong>
+                  <span className="gr-map-top__sub">
+                    {selectedGymId ? "Showing only the selected gym marker" : "Markers update based on your filters"}
+                  </span>
                 </div>
 
-                <div className="filter-group">
-                  <label>Monthly Price:</label>
-                  <select
-                    value={filters.priceRange}
-                    onChange={(e) => {
-                      setSelectedGymId(null);
-                      setFilters((p) => ({ ...p, priceRange: e.target.value }));
-                    }}
-                  >
-                    <option value="all">All Prices</option>
-                    <option value="budget">Under ₱1,000 / month</option>
-                    <option value="mid">₱1,000 - ₱1,500 / month</option>
-                    <option value="premium">₱1,500+ / month</option>
-                  </select>
-                </div>
-
-                <div className="filter-group">
-                  <label>Minimum Rating:</label>
-                  <select
-                    value={filters.rating}
-                    onChange={(e) => {
-                      setSelectedGymId(null);
-                      setFilters((p) => ({ ...p, rating: e.target.value }));
-                    }}
-                  >
-                    <option value="all">All Ratings</option>
-                    <option value="4.5">4.5+ Stars</option>
-                    <option value="4.0">4.0+ Stars</option>
-                    <option value="3.5">3.5+ Stars</option>
-                  </select>
-                </div>
-
-                <div className="filter-group">
-                  <label>Free first visit:</label>
-                  <select
-                    value={filters.freeFirstVisit}
-                    onChange={(e) => {
-                      setSelectedGymId(null);
-                      setFilters((p) => ({ ...p, freeFirstVisit: e.target.value }));
-                    }}
-                  >
-                    <option value="all">All Gyms</option>
-                    <option value="only">Only gyms with free first visit</option>
-                  </select>
-                </div>
-
-                <button className="clear-filters-btn" onClick={clearFilters} type="button">
-                  Clear Filters
-                </button>
+                {selectedGymId ? (
+                  <button className="gr-map-btn" onClick={() => setSelectedGymId(null)} type="button">
+                    Show all
+                  </button>
+                ) : (
+                  <button className="gr-map-btn" onClick={() => setSelectedGymId(null)} type="button">
+                    Reset
+                  </button>
+                )}
               </div>
-            </div>
-          </section>
 
-          <section className="results-section">
-            <div className="container">
-              {err ? <div className="gr-error">{err}</div> : null}
+              <div className="gr-map">
+                <MapContainer center={mapCenter} zoom={mapZoom} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
+                  <TileLayer
+                    attribution="&copy; OpenStreetMap contributors"
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapAutoFocus center={mapCenter} zoom={mapZoom} selectedGym={selectedGym} />
 
-              <div className="results-grid">
-                {filteredGyms.map((gym) => {
-                  const gymIdNum = Number(gym.id);
-                  const isSaved = savedIds.includes(gymIdNum);
-                  const isSaving = !!savingMap[gymIdNum];
-
-                  return (
-                    <div
-                      key={gym.id}
-                      data-gymid={gym.id}
-                      className={[
-                        "result-card",
-                        shownIds.has(gym.id) ? "show" : "",
-                        gym.id === String(selectedGymId) ? "is-selected" : "",
-                      ].join(" ")}
-                      ref={(el) => {
-                        if (el) cardRefs.current[gym.id] = el;
-                      }}
-                      onClick={() => onPickGym(gym.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") onPickGym(gym.id);
+                  {markersToShow.map((g) => (
+                    <Marker
+                      key={g.id}
+                      position={[g.latitude, g.longitude]}
+                      icon={pinIcon({ selected: g.id === String(selectedGymId) })}
+                      eventHandlers={{
+                        click: async () => {
+                          setSelectedGymId(String(g.id));
+                          await logInteraction("click", g, { action: "map_marker_click" });
+                        },
                       }}
                     >
-                      <div className="card-image">
-                        <img
-                          src={gym.image}
-                          alt={gym.name}
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = DEFAULT_GYM_IMG;
-                          }}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await logInteraction("click", gym, { action: "image_click" });
-                            onPickGym(gym.id);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        />
-
-                        <div className="card-badge">
-                          {gym.monthly_price != null ? `₱${gym.monthly_price}/mo` : "See monthly pricing"}
+                      <Popup>
+                        <div>
+                          <div className="gr-popup__title">{g.name}</div>
+                          <div className="gr-popup__sub">📍 {g.address || "No address"}</div>
+                          <div className="gr-popup__meta">
+                            {g.monthly_price != null ? `₱${g.monthly_price}/mo` : "Monthly price not set"}
+                            {g.rating != null ? ` • ⭐ ${g.rating}` : ""}
+                            {g.free_first_visit_enabled ? " • 🎟️ Free first visit" : ""}
+                          </div>
                         </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              </div>
+            </div>
+          </aside>
 
-                        {gym.free_first_visit_enabled ? (
-                          <div className="card-badge gr-freevisit-badge">🎟️ Free first visit</div>
-                        ) : null}
-                      </div>
+          <main className="gr-right">
+            <section className="filter-bar">
+              <div className="container">
+                <div className="filter-controls">
+                  <div className="filter-group">
+                    <label>Sort by:</label>
+                    <select value={filters.sortBy} onChange={handleSortChange}>
+                      <option value="recommended">Recommended</option>
+                      <option value="price-low">Monthly Price: Low to High</option>
+                      <option value="price-high">Monthly Price: High to Low</option>
+                      <option value="rating">Highest Rated</option>
+                      <option value="reviews">Most Reviewed</option>
+                    </select>
+                  </div>
 
-                      <div className="card-content">
-                        <h3
-                          style={{ cursor: "pointer" }}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await logInteraction("click", gym, { action: "name_click" });
-                            onPickGym(gym.id);
-                          }}
-                        >
-                          {gym.name}
-                        </h3>
-                        <p className="gym-location">📍 {gym.address || "No address"}</p>
+                  <div className="filter-group">
+                    <label>Monthly Price:</label>
+                    <select
+                      value={filters.priceRange}
+                      onChange={(e) => {
+                        setSelectedGymId(null);
+                        setFilters((p) => ({ ...p, priceRange: e.target.value }));
+                      }}
+                    >
+                      <option value="all">All Prices</option>
+                      <option value="budget">Under ₱1,000 / month</option>
+                      <option value="mid">₱1,000 - ₱1,500 / month</option>
+                      <option value="premium">₱1,500+ / month</option>
+                    </select>
+                  </div>
 
-                        <div className="gym-rating-row">
-                          <span className="rating">⭐ {gym.rating != null ? gym.rating : "—"}</span>
-                          <span className="reviews">({gym.reviews != null ? gym.reviews : 0} reviews)</span>
-                        </div>
+                  <div className="filter-group">
+                    <label>Minimum Rating:</label>
+                    <select
+                      value={filters.rating}
+                      onChange={(e) => {
+                        setSelectedGymId(null);
+                        setFilters((p) => ({ ...p, rating: e.target.value }));
+                      }}
+                    >
+                      <option value="all">All Ratings</option>
+                      <option value="4.5">4.5+ Stars</option>
+                      <option value="4.0">4.0+ Stars</option>
+                      <option value="3.5">3.5+ Stars</option>
+                    </select>
+                  </div>
 
-                        <p className="gym-description">{gym.description || "No description yet."}</p>
+                  <div className="filter-group">
+                    <label>Free first visit:</label>
+                    <select
+                      value={filters.freeFirstVisit}
+                      onChange={(e) => {
+                        setSelectedGymId(null);
+                        setFilters((p) => ({ ...p, freeFirstVisit: e.target.value }));
+                      }}
+                    >
+                      <option value="all">All Gyms</option>
+                      <option value="only">Only gyms with free first visit</option>
+                    </select>
+                  </div>
 
-                        <div className="gym-amenities">
-                          {gym.amenities.slice(0, 3).map((amenity, idx) => (
-                            <span key={`${gym.id}-am-${idx}`} className="amenity-tag">
-                              {amenity}
-                            </span>
-                          ))}
-                          {gym.amenities.length > 3 ? (
-                            <span className="amenity-tag">+{gym.amenities.length - 3}</span>
+                  <button className="clear-filters-btn" onClick={clearFilters} type="button">
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="results-section">
+              <div className="container">
+                {err ? <div className="gr-error">{err}</div> : null}
+
+                <div className="results-grid">
+                  {filteredGyms.map((gym) => {
+                    const gymIdNum = Number(gym.id);
+                    const isSaved = savedIds.includes(gymIdNum);
+                    const isSaving = !!savingMap[gymIdNum];
+
+                    return (
+                      <div
+                        key={gym.id}
+                        data-gymid={gym.id}
+                        className={[
+                          "result-card",
+                          shownIds.has(gym.id) ? "show" : "",
+                          gym.id === String(selectedGymId) ? "is-selected" : "",
+                        ].join(" ")}
+                        ref={(el) => {
+                          if (el) cardRefs.current[gym.id] = el;
+                        }}
+                        onClick={() => onPickGym(gym.id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") onPickGym(gym.id);
+                        }}
+                      >
+                        <div className="card-image">
+                          <img
+                            src={gym.image}
+                            alt={gym.name}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = DEFAULT_GYM_IMG;
+                            }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await logInteraction("click", gym, { action: "image_click" });
+                              onPickGym(gym.id);
+                            }}
+                            style={{ cursor: "pointer" }}
+                          />
+
+                          <div className="card-badge">
+                            {gym.monthly_price != null ? `₱${gym.monthly_price}/mo` : "See monthly pricing"}
+                          </div>
+
+                          {gym.free_first_visit_enabled ? (
+                            <div className="card-badge gr-freevisit-badge">🎟️ Free first visit</div>
                           ) : null}
                         </div>
 
-                        <div className="card-actions" onClick={(e) => e.stopPropagation()}>
-                          <Link
-                            to={`/home/gym/${gym.id}`}
-                            className="see-more-btn"
-                            onClick={async () => {
-                              await logInteraction("view", gym, {
-                                action: "view_details",
-                                to: `/home/gym/${gym.id}`,
-                              });
+                        <div className="card-content">
+                          <h3
+                            style={{ cursor: "pointer" }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await logInteraction("click", gym, { action: "name_click" });
+                              onPickGym(gym.id);
                             }}
                           >
-                            View Details
-                          </Link>
+                            {gym.name}
+                          </h3>
+                          <p className="gym-location">📍 {gym.address || "No address"}</p>
 
-                          <button
-                            className={`favorite-btn ${isSaved ? "liked" : ""}`}
-                            disabled={isSaving}
-                            onClick={() => toggleSaveGym(gym, "results_heart")}
-                            aria-label={isSaved ? "Unsave gym" : "Save gym"}
-                            type="button"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill={isSaved ? "currentColor" : "none"}
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className="heart-icon"
+                          <div className="gym-rating-row">
+                            <span className="rating">⭐ {gym.rating != null ? gym.rating : "—"}</span>
+                            <span className="reviews">({gym.reviews != null ? gym.reviews : 0} reviews)</span>
+                          </div>
+
+                          <p className="gym-description">{gym.description || "No description yet."}</p>
+
+                          <div className="gym-amenities">
+                            {gym.amenities.slice(0, 3).map((amenity, idx) => (
+                              <span key={`${gym.id}-am-${idx}`} className="amenity-tag">
+                                {amenity}
+                              </span>
+                            ))}
+                            {gym.amenities.length > 3 ? (
+                              <span className="amenity-tag">+{gym.amenities.length - 3}</span>
+                            ) : null}
+                          </div>
+
+                          <div className="card-actions" onClick={(e) => e.stopPropagation()}>
+                            <Link
+                              to={`/home/gym/${gym.id}`}
+                              className="see-more-btn"
+                              onClick={async () => {
+                                await logInteraction("view", gym, {
+                                  action: "view_details",
+                                  to: `/home/gym/${gym.id}`,
+                                });
+                              }}
                             >
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                            </svg>
-                          </button>
+                              View Details
+                            </Link>
+
+                            <button
+                              className={`favorite-btn ${isSaved ? "liked" : ""}`}
+                              disabled={isSaving}
+                              onClick={() => toggleSaveGym(gym, "results_heart")}
+                              aria-label={isSaved ? "Unsave gym" : "Save gym"}
+                              type="button"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill={isSaved ? "currentColor" : "none"}
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                className="heart-icon"
+                              >
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                              </svg>
+                            </button>
+                          </div>
+
+                          {gym.latitude == null || gym.longitude == null ? (
+                            <div className="gr-muted-note">No map coordinates for this gym yet.</div>
+                          ) : null}
                         </div>
-
-                        {gym.latitude == null || gym.longitude == null ? (
-                          <div className="gr-muted-note">No map coordinates for this gym yet.</div>
-                        ) : null}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {!loading && filteredGyms.length === 0 ? <div className="gr-empty">No gyms match your filters.</div> : null}
               </div>
+            </section>
 
-              {!loading && filteredGyms.length === 0 ? <div className="gr-empty">No gyms match your filters.</div> : null}
-            </div>
-          </section>
-
-          <section className="cta-section">
-            <div className="container">
-              <h2>Not finding what you're looking for?</h2>
-              <p>Refine your search preferences to get better matches</p>
-              <Link to="/home/find-gyms" className="cta-btn">
-                Find the Best Fit Gym For You
-              </Link>
-            </div>
-          </section>
-        </main>
+            <section className="cta-section">
+              <div className="container">
+                <h2>Not finding what you're looking for?</h2>
+                <p>Refine your search preferences to get better matches</p>
+                <Link to="/home/find-gyms" className="cta-btn">
+                  Find the Best Fit Gym For You
+                </Link>
+              </div>
+            </section>
+          </main>
+        </div>
       </div>
     </div>
   );

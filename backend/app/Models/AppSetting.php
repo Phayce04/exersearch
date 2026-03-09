@@ -17,6 +17,7 @@ class AppSetting extends Model
         'app_name',
         'logo_url',
         'user_logo_url',
+        'letter_logo',
         'favicon_url',
         'contact_phone',
         'contact_email',
