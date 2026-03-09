@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import "./../user/ProfileStyle.css";
+import "./OwnerProfile.css";
 import { alertSuccess, alertError, alertInfo } from "../../utils/adminAlert";
 import { api } from "../../utils/apiClient";
 import {

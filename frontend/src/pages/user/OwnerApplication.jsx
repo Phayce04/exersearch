@@ -1,7 +1,6 @@
 // ✅ src/pages/user/OwnerApplication.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import HomeHeader from "./HomeHeader";
 import Footer from "./Footer";
 import "./OwnerApplication.css";
 import {
@@ -503,7 +502,6 @@ function LeafletMap({ lat, lng, onPinAccepted }) {
 function PendingScreen({ form, serverStatus }) {
   return (
     <div className="oa-app">
-      <HomeHeader />
 
       <div className="oa-success">
         <div className="oa-success-card">
@@ -555,7 +553,6 @@ function PendingScreen({ form, serverStatus }) {
 function ApprovedScreen({ form }) {
   return (
     <div className="oa-app">
-      <HomeHeader />
 
       <div className="oa-success">
         <div className="oa-success-card">
@@ -588,7 +585,7 @@ function ApprovedScreen({ form }) {
             </div>
           </div>
 
-          <Link to="/owner/dashboard" className="oa-btn-primary">
+          <Link to="/owner/home" className="oa-btn-primary">
             Go to Owner Dashboard <FaArrowRight />
           </Link>
 
@@ -1054,7 +1051,6 @@ export default function OwnerApplication() {
 
   return (
     <div className="oa-app">
-      <HomeHeader />
 
       <div className="oa-stepper-bar">
         <div className="oa-stepper">

@@ -5,6 +5,7 @@ import OwnerLoading from "./OwnerLoading";
 import HeaderOwner from "./Header-owner";
 import HeaderOwnerStatic from "./Header2";
 import Footer from "../user/Footer";
+import "./OwnerLayout.css";
 
 export default function OwnerLayout() {
   const [ready, setReady] = useState(false);
@@ -57,21 +58,23 @@ export default function OwnerLayout() {
       pathname.startsWith("/owner/home") ||
       pathname.startsWith("/owner/inbox") ||
       pathname.startsWith("/owner/view-stats") ||
-      pathname.startsWith("/owner/view-gyms") // ✅ add this
+      pathname.startsWith("/owner/view-gyms")
     );
   }, [pathname]);
 
   const hideFooter = useMemo(() => {
-    return pathname.startsWith("/owner/view-gyms"); 
+    return pathname.startsWith("/owner/view-gyms");
   }, [pathname]);
 
   if (!ready) return <OwnerLoading />;
 
   return (
-    <>
+    <div className="owner-layout" data-theme="light">
       {useHeader2 ? <HeaderOwnerStatic /> : <HeaderOwner />}
-      <Outlet />
+      <main className="owner-layout__content">
+        <Outlet />
+      </main>
       {!hideFooter && <Footer />}
-    </>
+    </div>
   );
 }

@@ -63,7 +63,6 @@ export default function AdminLayout() {
 
         const user = meRes.data?.user || meRes.data;
 
-        // Admin page access (admin OR superadmin)
         const role = user?.role;
         if (role !== "admin" && role !== "superadmin") {
           navigate("/login");
@@ -111,31 +110,56 @@ export default function AdminLayout() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: t.bg, color: t.text }}>
-      <AdminSidebar
-        theme={theme}
-        setTheme={setTheme}
-        collapsed={sidebarCollapsed}
-        setCollapsed={setSidebarCollapsed}
-        toggled={sidebarToggled}
-        setToggled={setSidebarToggled}
-        broken={sidebarBroken}
-        setBroken={setSidebarBroken}
-      />
-
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <AdminHeader
-          title={headerTitle}
+    <div className={`admin-app admin-theme-${theme}`}>
+      <div
+        className="admin-layout"
+        style={{
+          display: "flex",
+          height: "100vh",
+          background: t.bg,
+          color: t.text,
+        }}
+      >
+        <AdminSidebar
           theme={theme}
           setTheme={setTheme}
           collapsed={sidebarCollapsed}
-          onBurgerClick={handleBurgerClick}
-          me={me}
+          setCollapsed={setSidebarCollapsed}
+          toggled={sidebarToggled}
+          setToggled={setSidebarToggled}
+          broken={sidebarBroken}
+          setBroken={setSidebarBroken}
         />
 
-        <main style={{ flex: 1, padding: 24, overflow: "auto" }}>
-          <Outlet context={{ theme, setTheme, me }} />
-        </main>
+        <div
+          className="admin-main-shell"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <AdminHeader
+            title={headerTitle}
+            theme={theme}
+            setTheme={setTheme}
+            collapsed={sidebarCollapsed}
+            onBurgerClick={handleBurgerClick}
+            me={me}
+          />
+
+          <main
+            className="admin-main-content"
+            style={{
+              flex: 1,
+              padding: 24,
+              overflow: "auto",
+            }}
+          >
+            <Outlet context={{ theme, setTheme, me }} />
+          </main>
+        </div>
       </div>
     </div>
   );

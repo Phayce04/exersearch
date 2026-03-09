@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Memberships.css";
+import exersearchLogo from "../../assets/exersearchlogo.png";
+
 import {
   CheckCircle2,
   Clock,
@@ -518,111 +520,115 @@ export default function Memberships() {
 
   const renderSidebarPanel = () => {
     return (
-      <div className={`um-panel um-panel--sidebar ${sidebarCollapsed ? "is-collapsed" : ""}`}>
-        <div className="um-sideShell">
-          <div className="um-sideTopbar">
-            <button
-              type="button"
-              className="um-sideCollapseBtn"
-              onClick={() => setSidebarCollapsed((v) => !v)}
-              title={sidebarCollapsed ? "Expand panel" : "Collapse panel"}
-            >
-              <ChevronRight
-                size={18}
-                style={{
-                  transform: sidebarCollapsed ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.2s ease",
-                }}
-              />
-            </button>
-          </div>
+<div className={`um-panel um-panel--sidebar ${sidebarCollapsed ? "is-collapsed" : ""}`}>
+  <button
+    type="button"
+    className="um-sideCollapseBtn"
+    onClick={() => setSidebarCollapsed((v) => !v)}
+    title={sidebarCollapsed ? "Expand panel" : "Collapse panel"}
+    aria-label={sidebarCollapsed ? "Expand panel" : "Collapse panel"}
+    aria-expanded={!sidebarCollapsed}
+  >
+    <ChevronRight
+      size={18}
+      style={{
+        transform: sidebarCollapsed ? "rotate(0deg)" : "rotate(180deg)",
+        transition: "transform 0.2s ease",
+      }}
+    />
+  </button>
 
-          <div className="um-sideTabs">
-            <button
-              type="button"
-              className={`um-sideTab ${sideTab === "memberships" ? "is-active" : ""}`}
-              onClick={() => setSideTab("memberships")}
-            >
-              Memberships
-            </button>
+  <div className="um-sideShell">
+    {!sidebarCollapsed && (
+      <>
+        <div className="um-sideTabs">
+          <button
+            type="button"
+            className={`um-sideTab ${sideTab === "memberships" ? "is-active" : ""}`}
+            onClick={() => setSideTab("memberships")}
+          >
+            Memberships
+          </button>
 
-            <button
-              type="button"
-              className={`um-sideTab ${sideTab === "history" ? "is-active" : ""}`}
-              onClick={() => setSideTab("history")}
-            >
-              History
-            </button>
-          </div>
+          <button
+            type="button"
+            className={`um-sideTab ${sideTab === "history" ? "is-active" : ""}`}
+            onClick={() => setSideTab("history")}
+          >
+            History
+          </button>
+        </div>
 
-          <div className="um-sideHeader">
-            <div>
-              <div className="um-sideHeader__title">
-                {sideTab === "memberships" ? "Membership Panel" : "History Panel"}
-              </div>
-              <div className="um-sideHeader__sub">
-                {sideTab === "memberships"
-                  ? "Select an active membership to control the main display."
-                  : "Inspect your previous records and past memberships."}
-              </div>
+        <div className="um-sideHeader">
+          <div>
+            <div className="um-sideHeader__title">
+              {sideTab === "memberships" ? "Membership Panel" : "History Panel"}
             </div>
+            <div className="um-sideHeader__sub">
+              {sideTab === "memberships"
+                ? "Select an active membership to control the main display."
+                : "Inspect your previous records and past memberships."}
+            </div>
+          </div>
+
+          <button
+            className="um-btn um-btn--mini"
+            onClick={() => fetchMemberships(pageMeta.cur)}
+            disabled={loading}
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+        </div>
+
+        <div className="um-sideContent">
+          {loading ? (
+            <div className="um-skel um-skel--side">
+              <div className="um-skel__bar" />
+              <div className="um-skel__bar" />
+              <div className="um-skel__bar" />
+            </div>
+          ) : sideItems.length ? (
+            sideItems.map(renderSidebarItem)
+          ) : (
+            renderSidebarPlaceholder(sideTab)
+          )}
+        </div>
+
+        <div className="um-sideFooter">
+          <div className="um-pageInfo">
+            Page <strong>{pageMeta.cur}</strong> of <strong>{pageMeta.last}</strong>
+          </div>
+
+          <div className="um-sidePager">
+            <button
+              className="um-btn um-btn--mini"
+              disabled={pageMeta.cur <= 1 || loading}
+              onClick={() => {
+                const np = pageMeta.cur - 1;
+                setPage(np);
+                fetchMemberships(np);
+              }}
+            >
+              Prev
+            </button>
 
             <button
               className="um-btn um-btn--mini"
-              onClick={() => fetchMemberships(pageMeta.cur)}
-              disabled={loading}
+              disabled={pageMeta.cur >= pageMeta.last || loading}
+              onClick={() => {
+                const np = pageMeta.cur + 1;
+                setPage(np);
+                fetchMemberships(np);
+              }}
             >
-              <RefreshCw size={14} /> Refresh
+              Next
             </button>
           </div>
-
-          <div className="um-sideContent">
-            {loading ? (
-              <div className="um-skel um-skel--side">
-                <div className="um-skel__bar" />
-                <div className="um-skel__bar" />
-                <div className="um-skel__bar" />
-              </div>
-            ) : sideItems.length ? (
-              sideItems.map(renderSidebarItem)
-            ) : (
-              renderSidebarPlaceholder(sideTab)
-            )}
-          </div>
-
-          <div className="um-sideFooter">
-            <div className="um-pageInfo">
-              Page <strong>{pageMeta.cur}</strong> of <strong>{pageMeta.last}</strong>
-            </div>
-
-            <div className="um-sidePager">
-              <button
-                className="um-btn um-btn--mini"
-                disabled={pageMeta.cur <= 1 || loading}
-                onClick={() => {
-                  const np = pageMeta.cur - 1;
-                  setPage(np);
-                  fetchMemberships(np);
-                }}
-              >
-                Prev
-              </button>
-
-              <button
-                className="um-btn um-btn--mini"
-                disabled={pageMeta.cur >= pageMeta.last || loading}
-                onClick={() => {
-                  const np = pageMeta.cur + 1;
-                  setPage(np);
-                  fetchMemberships(np);
-                }}
-              >
-                Next
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
+      </>
+    )}
+  </div>
+</div>
     );
   };
 

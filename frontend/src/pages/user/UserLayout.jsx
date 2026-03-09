@@ -87,10 +87,10 @@ export default function UserLayout() {
   const showFooter = true;
 
   return (
-    <>
+    <div className="user-app">
       {!hideHeader && <HeaderUser />}
       <Outlet />
       {showFooter && <Footer />}
-    </>
+    </div>
   );
 }

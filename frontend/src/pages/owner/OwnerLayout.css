@@ -1,0 +1,93 @@
+/* =========================================================
+   OWNER LAYOUT — FORCE LIGHT MODE
+========================================================= */
+.owner-layout{
+  font-family:"Montserrat",sans-serif !important;
+  min-height:100vh !important;
+  color-scheme:light !important;
+
+  background:#f6f8fa !important;
+  color:#101820 !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+.owner-layout__content{
+  flex:1 !important;
+  background:transparent !important;
+}
+
+/* =========================================================
+   ORANGE SCROLLBAR
+========================================================= */
+
+/* Firefox */
+.owner-layout{
+  scrollbar-width:thin;
+  scrollbar-color:#fc4a00 #f1f4f8;
+}
+
+/* Chrome / Edge / Safari */
+.owner-layout::-webkit-scrollbar,
+.owner-layout *::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+
+.owner-layout::-webkit-scrollbar-track,
+.owner-layout *::-webkit-scrollbar-track{
+  background:#f1f4f8;
+}
+
+.owner-layout::-webkit-scrollbar-thumb,
+.owner-layout *::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#ff5a16 0%,#fc4a00 52%,#ab3200 100%);
+  border-radius:999px;
+}
+
+.owner-layout::-webkit-scrollbar-thumb:hover,
+.owner-layout *::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#ab3200 0%,#fc4a00 50%,#ff5a16 100%);
+}.owner-layout{
+  font-family:"Montserrat",sans-serif !important;
+  height:100vh !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  color-scheme:light !important;
+
+  background:#f6f8fa !important;
+  color:#101820 !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+.owner-layout__content{
+  flex:1 0 auto !important;
+  background:transparent !important;
+}
+
+/* Firefox */
+.owner-layout{
+  scrollbar-width:thin;
+  scrollbar-color:#fc4a00 #f1f4f8;
+}
+
+/* Chrome / Edge / Safari */
+.owner-layout::-webkit-scrollbar{
+  width:10px;
+}
+
+.owner-layout::-webkit-scrollbar-track{
+  background:#f1f4f8;
+}
+
+.owner-layout::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#ff5a16 0%,#fc4a00 52%,#ab3200 100%);
+  border-radius:999px;
+}
+
+.owner-layout::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#ab3200 0%,#fc4a00 50%,#ff5a16 100%);
+}
