@@ -59,11 +59,11 @@ function StarRow({ value = 0, compact = false }) {
   const full = Math.round(v);
 
   return (
-    <div className={`starrow ${compact ? "starrow-compact" : ""}`}>
+    <div className={`ugd-starrow ${compact ? "ugd-starrow-compact" : ""}`}>
       {[1, 2, 3, 4, 5].map((i) => (
         <span
           key={i}
-          className={`star ${i <= full ? "filled" : ""}`}
+          className={`ugd-star ${i <= full ? "filled" : ""}`}
           aria-hidden="true"
         >
           ★
@@ -75,11 +75,11 @@ function StarRow({ value = 0, compact = false }) {
 
 function StatCard({ icon, value, label, color }) {
   return (
-    <div className={`stat-card stat-${color}`}>
-      <div className="stat-icon">{icon}</div>
-      <div className="stat-content">
-        <div className="stat-value">{value}+</div>
-        <div className="stat-label">{label}</div>
+    <div className={`ugd-stat-card ugd-stat-${color}`}>
+      <div className="ugd-stat-icon">{icon}</div>
+      <div className="ugd-stat-content">
+        <div className="ugd-stat-value">{value}+</div>
+        <div className="ugd-stat-label">{label}</div>
       </div>
     </div>
   );
@@ -89,14 +89,14 @@ function RatingStatCard({ rating, label, color, verifiedCount }) {
   const val = typeof rating === "number" ? rating : null;
 
   return (
-    <div className={`stat-card stat-${color}`}>
-      <div className="stat-icon">⭐</div>
-      <div className="stat-content">
-        <div className="stat-value">{val == null ? "—" : val.toFixed(1)}</div>
-        <div className="stat-label">{label}</div>
-        <div className="stat-sub">
+    <div className={`ugd-stat-card ugd-stat-${color}`}>
+      <div className="ugd-stat-icon">⭐</div>
+      <div className="ugd-stat-content">
+        <div className="ugd-stat-value">{val == null ? "—" : val.toFixed(1)}</div>
+        <div className="ugd-stat-label">{label}</div>
+        <div className="ugd-stat-sub">
           <StarRow value={val || 0} compact />
-          <span className="stat-subtxt">{verifiedCount} verified</span>
+          <span className="ugd-stat-subtxt">{verifiedCount} verified</span>
         </div>
       </div>
     </div>
@@ -544,7 +544,7 @@ export default function GymDetails() {
 
   if (loading) {
     return (
-      <div className="gym-details-page">
+      <div className="ugd-gym-details-page">
         <div style={{ padding: 24, fontWeight: 900 }}>Loading gym…</div>
       </div>
     );
@@ -552,13 +552,13 @@ export default function GymDetails() {
 
   if (error || !gym) {
     return (
-      <div className="gym-details-page">
+      <div className="ugd-gym-details-page">
         <div style={{ padding: 24 }}>
           <div style={{ fontWeight: 950, color: "#dc2626" }}>
             {error || "Gym not found"}
           </div>
           <div style={{ marginTop: 12 }}>
-            <button className="favorite-btn-small" onClick={() => navigate(-1)}>
+            <button className="ugd-favorite-btn-small" onClick={() => navigate(-1)}>
               Go Back
             </button>
           </div>
@@ -571,14 +571,14 @@ export default function GymDetails() {
   const gLng = gym?.longitude;
 
   return (
-    <div className="gym-details-page">
-      <section className="gym-hero">
-        <div className="hero-overlay" />
-        <div className="hero-content">
+    <div className="ugd-gym-details-page">
+      <section className="ugd-gym-hero">
+        <div className="ugd-hero-overlay" />
+        <div className="ugd-hero-content">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="back-link-btn"
+            className="ugd-back-link-btn"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -592,32 +592,32 @@ export default function GymDetails() {
             Back to Results
           </button>
 
-          <div className="hero-info">
-            <div className="hero-text">
-              <h1 className="gym-name">{gym?.name}</h1>
-              <p className="gym-tagline">
+          <div className="ugd-hero-info">
+            <div className="ugd-hero-text">
+              <h1 className="ugd-gym-name">{gym?.name}</h1>
+              <p className="ugd-gym-tagline">
                 {gym?.gym_type ? `${gym.gym_type} Gym` : "Gym Details"}
               </p>
 
-              <div className="hero-meta">
-                <span className="location-badge">📍 {gym?.address || "—"}</span>
+              <div className="ugd-hero-meta">
+                <span className="ugd-location-badge">📍 {gym?.address || "—"}</span>
                 {gym?.has_personal_trainers ? (
-                  <span className="rating-badge">🎯 Personal Trainers</span>
+                  <span className="ugd-rating-badge">🎯 Personal Trainers</span>
                 ) : null}
                 {gym?.has_classes ? (
-                  <span className="rating-badge">📅 Classes</span>
+                  <span className="ugd-rating-badge">📅 Classes</span>
                 ) : null}
                 {gym?.is_24_hours ? (
-                  <span className="rating-badge">🕐 24 Hours</span>
+                  <span className="ugd-rating-badge">🕐 24 Hours</span>
                 ) : null}
               </div>
             </div>
 
-            <div className="hero-actions">
-              <span className="price-tag">{displayPrice}</span>
+            <div className="ugd-hero-actions">
+              <span className="ugd-price-tag">{displayPrice}</span>
 
               <button
-                className={`favorite-btn-hero ${isLiked ? "liked" : ""}`}
+                className={`ugd-favorite-btn-hero ${isLiked ? "liked" : ""}`}
                 onClick={toggleLike}
                 title={isLiked ? "Saved" : "Save"}
               >
@@ -635,9 +635,9 @@ export default function GymDetails() {
           </div>
         </div>
 
-        <div className="image-gallery">
+        <div className="ugd-image-gallery">
           <button
-            className="gallery-nav prev"
+            className="ugd-gallery-nav ugd-prev"
             onClick={prevImage}
             disabled={!images.length}
             title="Previous"
@@ -651,11 +651,11 @@ export default function GymDetails() {
               "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&h=700&fit=crop"
             }
             alt={`${gym?.name} - Image ${currentImageIndex + 1}`}
-            className="gallery-image"
+            className="ugd-gallery-image"
           />
 
           <button
-            className="gallery-nav next"
+            className="ugd-gallery-nav ugd-next"
             onClick={nextImage}
             disabled={!images.length}
             title="Next"
@@ -663,11 +663,11 @@ export default function GymDetails() {
             ›
           </button>
 
-          <div className="gallery-dots">
+          <div className="ugd-gallery-dots">
             {images.map((_, index) => (
               <span
                 key={index}
-                className={`dot ${
+                className={`ugd-dot ${
                   index === currentImageIndex ? "active" : ""
                 }`}
                 onClick={() => setCurrentImageIndex(index)}
@@ -677,52 +677,52 @@ export default function GymDetails() {
         </div>
       </section>
 
-      <div className="gym-details-container">
-        <div className="details-grid">
-          <div className="main-column">
-            <div className="detail-card about-section">
-              <h2 className="section-title">About This Gym</h2>
-              <p className="gym-description">
+      <div className="ugd-gym-details-container">
+        <div className="ugd-details-grid">
+          <div className="ugd-main-column">
+            <div className="ugd-detail-card ugd-about-section">
+              <h2 className="ugd-section-title">About This Gym</h2>
+              <p className="ugd-gym-description">
                 {gym?.description || "No description provided."}
               </p>
             </div>
 
-            <div className="detail-card hours-section">
-              <h2 className="section-title">Operating Hours</h2>
-              <div className="hours-info">
-                <div className="hours-icon">🕐</div>
-                <div className="hours-text">
-                  <p className="hours-time">{hoursText}</p>
-                  <span className="hours-status open">
+            <div className="ugd-detail-card ugd-hours-section">
+              <h2 className="ugd-section-title">Operating Hours</h2>
+              <div className="ugd-hours-info">
+                <div className="ugd-hours-icon">🕐</div>
+                <div className="ugd-hours-text">
+                  <p className="ugd-hours-time">{hoursText}</p>
+                  <span className="ugd-hours-status open">
                     {gym?.is_24_hours ? "Open 24 Hours" : "Hours Available"}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="detail-card hours-section">
-              <h2 className="section-title">Pricing</h2>
+            <div className="ugd-detail-card ugd-hours-section">
+              <h2 className="ugd-section-title">Pricing</h2>
               <div style={{ display: "grid", gap: 10 }}>
-                <div className="equipment-item" style={{ fontWeight: 800 }}>
+                <div className="ugd-equipment-item" style={{ fontWeight: 800 }}>
                   💰 Daily:{" "}
                   {safeNum(gym?.daily_price) ? fmtPeso(gym.daily_price) : "—"}
                 </div>
-                <div className="equipment-item" style={{ fontWeight: 800 }}>
+                <div className="ugd-equipment-item" style={{ fontWeight: 800 }}>
                   💳 Monthly:{" "}
                   {safeNum(gym?.monthly_price)
                     ? fmtPeso(gym.monthly_price)
                     : "—"}
                 </div>
-                <div className="equipment-item" style={{ fontWeight: 800 }}>
+                <div className="ugd-equipment-item" style={{ fontWeight: 800 }}>
                   🏆 Annual:{" "}
                   {safeNum(gym?.annual_price) ? fmtPeso(gym.annual_price) : "—"}
                 </div>
               </div>
             </div>
 
-            <div className="detail-card stats-section" ref={statsRef}>
-              <h2 className="section-title">Gym Statistics</h2>
-              <div className="stats-grid">
+            <div className="ugd-detail-card ugd-stats-section" ref={statsRef}>
+              <h2 className="ugd-section-title">Gym Statistics</h2>
+              <div className="ugd-stats-grid">
                 <StatCard
                   icon="🏋️"
                   value={count.machines}
@@ -744,12 +744,12 @@ export default function GymDetails() {
               </div>
             </div>
 
-            <div className="detail-card amenities-section">
-              <h2 className="section-title">Amenities & Features</h2>
+            <div className="ugd-detail-card ugd-amenities-section">
+              <h2 className="ugd-section-title">Amenities & Features</h2>
 
-              <div className="amenities-grid">
+              <div className="ugd-amenities-grid">
                 {amenities.length === 0 ? (
-                  <div className="muted-empty">No amenities listed.</div>
+                  <div className="ugd-muted-empty">No amenities listed.</div>
                 ) : (
                   amenities.map((a) => {
                     const available = a?.pivot?.availability_status ?? true;
@@ -759,28 +759,28 @@ export default function GymDetails() {
                     return (
                       <div
                         key={a?.amenity_id ?? a?.id ?? a?.name}
-                        className={`amenity-item ${
-                          available ? "" : "amenity-unavailable"
+                        className={`ugd-amenity-item ${
+                          available ? "" : "ugd-amenity-unavailable"
                         }`}
                         title={note || a?.name}
                       >
                         {img ? (
                           <img
-                            className="amenity-img"
+                            className="ugd-amenity-img"
                             src={absoluteUrl(img)}
                             alt={a?.name || "Amenity"}
                             loading="lazy"
                           />
                         ) : (
-                          <span className="amenity-icon">✨</span>
+                          <span className="ugd-amenity-icon">✨</span>
                         )}
 
-                        <div className="amenity-text">
-                          <div className="amenity-name">
+                        <div className="ugd-amenity-text">
+                          <div className="ugd-amenity-name">
                             {a?.name || "Amenity"}
                           </div>
                           {available ? null : (
-                            <div className="amenity-sub">(Unavailable)</div>
+                            <div className="ugd-amenity-sub">(Unavailable)</div>
                           )}
                         </div>
                       </div>
@@ -790,17 +790,17 @@ export default function GymDetails() {
               </div>
             </div>
 
-            <div className="detail-card equipment-section">
-              <h2 className="section-title">Available Equipment</h2>
+            <div className="ugd-detail-card ugd-equipment-section">
+              <h2 className="ugd-section-title">Available Equipment</h2>
 
-              <div className="equipment-list">
+              <div className="ugd-equipment-list">
                 {equipments.length === 0 ? (
-                  <div className="muted-empty">No equipments listed.</div>
+                  <div className="ugd-muted-empty">No equipments listed.</div>
                 ) : (
                   equipments.map((e) => (
                     <div
                       key={e?.equipment_id ?? e?.id ?? e?.name}
-                      className="equipment-item"
+                      className="ugd-equipment-item"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -810,7 +810,7 @@ export default function GymDetails() {
                       >
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                       </svg>
-                      <span className="equipment-name">
+                      <span className="ugd-equipment-name">
                         {String(e?.name || "").replaceAll("_", " ")}
                       </span>
                     </div>
@@ -820,19 +820,19 @@ export default function GymDetails() {
             </div>
           </div>
 
-          <div className="sidebar-column">
-            <div className="detail-card map-card">
-              <h2 className="section-title">Location</h2>
-              <div className="map-container">
+          <div className="ugd-sidebar-column">
+            <div className="ugd-detail-card ugd-map-card">
+              <h2 className="ugd-section-title">Location</h2>
+              <div className="ugd-map-container">
                 <iframe
                   title="Gym Location Map"
-                  className="gym-map"
+                  className="ugd-gym-map"
                   src={`https://maps.google.com/maps?q=${gLat},${gLng}&z=15&output=embed`}
                   loading="lazy"
                 />
               </div>
-              <p className="map-address">📍 {gym?.address || "—"}</p>
-              <button className="direction-btn" onClick={openDirection}>
+              <p className="ugd-map-address">📍 {gym?.address || "—"}</p>
+              <button className="ugd-direction-btn" onClick={openDirection}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -846,10 +846,10 @@ export default function GymDetails() {
               </button>
             </div>
 
-            <div className="detail-card contact-card">
-              <h2 className="section-title">Get in Touch</h2>
+            <div className="ugd-detail-card ugd-contact-card">
+              <h2 className="ugd-section-title">Get in Touch</h2>
 
-              <div className="contact-info" style={{ display: "grid", gap: 8 }}>
+              <div className="ugd-contact-info" style={{ display: "grid", gap: 8 }}>
                 <p>
                   <strong>Phone:</strong> {gym?.contact_number || "—"}
                 </p>
@@ -868,11 +868,11 @@ export default function GymDetails() {
                 </p>
               </div>
 
-              <div className="social-links" style={{ marginTop: 12 }}>
+              <div className="ugd-social-links" style={{ marginTop: 12 }}>
                 {gym?.facebook_page ? (
                   <a
                     href={gym.facebook_page}
-                    className="social-link facebook"
+                    className="ugd-social-link ugd-facebook"
                     target="_blank"
                     rel="noopener noreferrer"
                     title="Facebook"
@@ -884,7 +884,7 @@ export default function GymDetails() {
                 {gym?.instagram_page ? (
                   <a
                     href={gym.instagram_page}
-                    className="social-link instagram"
+                    className="ugd-social-link ugd-instagram"
                     target="_blank"
                     rel="noopener noreferrer"
                     title="Instagram"
@@ -926,7 +926,7 @@ export default function GymDetails() {
               <div style={{ marginTop: 16 }}>
                 <button
                   type="button"
-                  className="action-btn primary"
+                  className="ugd-action-btn ugd-primary"
                   onClick={() => setGymInquiryOpen(true)}
                   disabled={!gym?.id && !gym?.gym_id}
                 >
@@ -944,31 +944,31 @@ export default function GymDetails() {
               )}
             </div>
 
-            <div className="detail-card actions-card">
-              <h2 className="section-title">Quick Actions</h2>
+            <div className="ugd-detail-card ugd-actions-card">
+              <h2 className="ugd-section-title">Quick Actions</h2>
 
-              <div className="action-buttons">
+              <div className="ugd-action-buttons">
                 {hasActiveMembershipHere ? (
                   <button
-                    className="action-btn primary"
+                    className="ugd-action-btn ugd-primary"
                     type="button"
                     onClick={() => navigate("/home/memberships")}
                   >
-                    <span className="action-icon">🎫</span>
+                    <span className="ugd-action-icon">🎫</span>
                     View Membership
                   </button>
                 ) : isPendingMembershipHere ? (
                   <button
-                    className="action-btn secondary"
+                    className="ugd-action-btn ugd-secondary"
                     type="button"
                     onClick={() => navigate("/home/memberships")}
                   >
-                    <span className="action-icon">⏳</span>
+                    <span className="ugd-action-icon">⏳</span>
                     Membership Pending
                   </button>
                 ) : (
                   <button
-                    className="action-btn primary"
+                    className="ugd-action-btn ugd-primary"
                     type="button"
                     onClick={() => setShowMembershipModal(true)}
                     disabled={membershipLoading}
@@ -978,19 +978,19 @@ export default function GymDetails() {
                         : "Get Membership"
                     }
                   >
-                    <span className="action-icon">🎫</span>
+                    <span className="ugd-action-icon">🎫</span>
                     {membershipLoading ? "Checking…" : "Get Membership"}
                   </button>
                 )}
 
                 <button
-                  className="action-btn secondary"
+                  className="ugd-action-btn ugd-secondary"
                   type="button"
                   onClick={() => setShowRateModal(true)}
                   disabled={myRatingsLoading}
                   title={myGymRating ? "Edit your rating" : "Rate this gym"}
                 >
-                  <span className="action-icon">⭐</span>
+                  <span className="ugd-action-icon">⭐</span>
                   {myRatingsLoading
                     ? "Checking…"
                     : myGymRating
@@ -1000,13 +1000,13 @@ export default function GymDetails() {
 
                 {gym?.free_first_visit_enabled ? (
                   <button
-                    className="action-btn secondary"
+                    className="ugd-action-btn ugd-secondary"
                     type="button"
                     onClick={onFreePassClick}
                     disabled={freeVisitBusy}
                     title="Free First Visit"
                   >
-                    <span className="action-icon">🎁</span>
+                    <span className="ugd-action-icon">🎁</span>
                     {freeVisitBusy
                       ? "Claiming…"
                       : freeVisitUsed
@@ -1019,14 +1019,14 @@ export default function GymDetails() {
               </div>
             </div>
 
-            <div className="detail-card reviews-card">
-              <div className="reviews-head">
-                <h2 className="section-title" style={{ marginBottom: 0 }}>
+            <div className="ugd-detail-card ugd-reviews-card">
+              <div className="ugd-reviews-head">
+                <h2 className="ugd-section-title" style={{ marginBottom: 0 }}>
                   Reviews
                 </h2>
 
                 <button
-                  className="reviews-showall"
+                  className="ugd-reviews-showall"
                   type="button"
                   onClick={() => setShowReviewsModal(true)}
                 >
@@ -1034,11 +1034,11 @@ export default function GymDetails() {
                 </button>
               </div>
 
-              <div className="reviews-list">
+              <div className="ugd-reviews-list">
                 {ratingsLoading ? (
-                  <div className="reviews-empty">Loading…</div>
+                  <div className="ugd-reviews-empty">Loading…</div>
                 ) : (ratingsState?.ratings || []).length === 0 ? (
-                  <div className="reviews-empty">No reviews yet.</div>
+                  <div className="ugd-reviews-empty">No reviews yet.</div>
                 ) : (
                   (ratingsState.ratings || []).slice(0, 3).map((r) => {
                     const name = r?.user?.name || "User";
@@ -1055,35 +1055,35 @@ export default function GymDetails() {
                     return (
                       <div
                         key={r.rating_id}
-                        className={`review-item ${isMine ? "mine" : ""}`}
+                        className={`ugd-review-item ${isMine ? "mine" : ""}`}
                       >
-                        <div className="review-top">
-                          <div className="review-user">
-                            <div className="review-name-row">
-                              <div className="review-name">
+                        <div className="ugd-review-top">
+                          <div className="ugd-review-user">
+                            <div className="ugd-review-name-row">
+                              <div className="ugd-review-name">
                                 {isMine ? "You" : name}
                               </div>
                               {isMine ? (
-                                <span className="review-you">You</span>
+                                <span className="ugd-review-you">You</span>
                               ) : null}
                             </div>
-                            <div className={`review-tag ${tag.cls}`}>
+                            <div className={`ugd-review-tag ${tag.cls}`}>
                               {tag.label}
                             </div>
                           </div>
 
-                          <div className="review-stars">
+                          <div className="ugd-review-stars">
                             <StarRow value={Number(r?.stars || 0)} compact />
                           </div>
                         </div>
 
                         {r?.review ? (
-                          <div className="review-text">
+                          <div className="ugd-review-text">
                             {String(r.review).slice(0, 140)}
                             {String(r.review).length > 140 ? "…" : ""}
                           </div>
                         ) : (
-                          <div className="review-text empty">No comment.</div>
+                          <div className="ugd-review-text empty">No comment.</div>
                         )}
                       </div>
                     );
@@ -1157,13 +1157,13 @@ function reviewTag(r) {
 
   if (verifiedBool) {
     const via = String(r?.verified_via || "").toLowerCase();
-    if (via === "membership") return { label: "Member", cls: "tag-member" };
-    if (via === "free_visit_used") return { label: "Visited", cls: "tag-visited" };
-    return { label: "Verified", cls: "tag-member" };
+    if (via === "membership") return { label: "Member", cls: "ugd-tag-member" };
+    if (via === "free_visit_used") return { label: "Visited", cls: "ugd-tag-visited" };
+    return { label: "Verified", cls: "ugd-tag-member" };
   }
 
   const via = String(r?.verified_via || "").toLowerCase();
-  if (via === "membership") return { label: "Member", cls: "tag-member" };
-  if (via === "free_visit_used") return { label: "Visited", cls: "tag-visited" };
-  return { label: "Unverified", cls: "tag-unverified" };
+  if (via === "membership") return { label: "Member", cls: "ugd-tag-member" };
+  if (via === "free_visit_used") return { label: "Visited", cls: "ugd-tag-visited" };
+  return { label: "Unverified", cls: "ugd-tag-unverified" };
 }

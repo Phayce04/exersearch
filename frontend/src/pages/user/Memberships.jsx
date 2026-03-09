@@ -11,7 +11,6 @@ import {
   CalendarDays,
   ChevronRight,
   RotateCw,
-  Shield,
   Sparkles,
   History,
 } from "lucide-react";
@@ -33,12 +32,52 @@ function fmtDate(d) {
 
 function statusMeta(status) {
   const s = String(status || "").toLowerCase();
-  if (s === "active") return { label: "Active", cls: "um-status um-status--active", Icon: CheckCircle2 };
-  if (s === "intent") return { label: "Intent", cls: "um-status um-status--intent", Icon: Clock };
-  if (s === "expired") return { label: "Expired", cls: "um-status um-status--expired", Icon: AlertTriangle };
-  if (s === "cancelled") return { label: "Cancelled", cls: "um-status um-status--cancelled", Icon: XCircle };
-  if (s === "rejected") return { label: "Rejected", cls: "um-status um-status--rejected", Icon: XCircle };
-  return { label: status || "Unknown", cls: "um-status", Icon: AlertTriangle };
+
+  if (s === "active") {
+    return {
+      label: "Active",
+      cls: "um-status um-status--active",
+      Icon: CheckCircle2,
+    };
+  }
+
+  if (s === "intent") {
+    return {
+      label: "Intent",
+      cls: "um-status um-status--intent",
+      Icon: Clock,
+    };
+  }
+
+  if (s === "expired") {
+    return {
+      label: "Expired",
+      cls: "um-status um-status--expired",
+      Icon: AlertTriangle,
+    };
+  }
+
+  if (s === "cancelled") {
+    return {
+      label: "Cancelled",
+      cls: "um-status um-status--cancelled",
+      Icon: XCircle,
+    };
+  }
+
+  if (s === "rejected") {
+    return {
+      label: "Rejected",
+      cls: "um-status um-status--rejected",
+      Icon: XCircle,
+    };
+  }
+
+  return {
+    label: status || "Unknown",
+    cls: "um-status",
+    Icon: AlertTriangle,
+  };
 }
 
 function toMs(d) {
@@ -59,6 +98,7 @@ function calcCountdown(endDate) {
 
   const totalSeconds = Math.floor(diff / 1000);
   const days = Math.floor(totalSeconds / (24 * 3600));
+
   return { days, totalSeconds };
 }
 
@@ -77,25 +117,23 @@ export default function Memberships() {
   const [selectedId, setSelectedId] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [sideTab, setSideTab] = useState("memberships");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const tickRef = useRef(null);
 
   const memberships = useMemo(() => safeArr(rows), [rows]);
 
-  const activeList = useMemo(
-    () => memberships.filter((m) => String(m.status || "").toLowerCase() === "active"),
-    [memberships]
-  );
+  const activeList = useMemo(() => {
+    return memberships.filter((m) => String(m.status || "").toLowerCase() === "active");
+  }, [memberships]);
 
-  const historyList = useMemo(
-    () => memberships.filter((m) => String(m.status || "").toLowerCase() !== "active"),
-    [memberships]
-  );
+  const historyList = useMemo(() => {
+    return memberships.filter((m) => String(m.status || "").toLowerCase() !== "active");
+  }, [memberships]);
 
-  const sideItems = useMemo(
-    () => (sideTab === "memberships" ? activeList : historyList),
-    [sideTab, activeList, historyList]
-  );
+  const sideItems = useMemo(() => {
+    return sideTab === "memberships" ? activeList : historyList;
+  }, [sideTab, activeList, historyList]);
 
   const pageMeta = useMemo(() => {
     const cur = rows?.current_page || page;
@@ -123,20 +161,32 @@ export default function Memberships() {
 
   const fetchMemberships = async (p = 1) => {
     setLoading(true);
+
     try {
       const data = await getMyMemberships({ page: p, per_page: 20 });
       setRows(data);
 
       const list = safeArr(data);
+
       if (list.length) {
-        const firstActive = list.find((m) => String(m.status || "").toLowerCase() === "active");
-        const pick = firstActive || list[0];
-        setSelectedId(membershipKey(pick));
+        setSelectedId((prev) => {
+          if (prev && list.some((m) => membershipKey(m) === String(prev))) {
+            return prev;
+          }
+
+          const firstActive = list.find((m) => String(m.status || "").toLowerCase() === "active");
+          const pick = firstActive || list[0];
+          return membershipKey(pick);
+        });
       } else {
         setSelectedId(null);
       }
     } catch (e) {
-      Swal.fire("Error", e?.response?.data?.message || e.message || "Failed to load memberships", "error");
+      Swal.fire(
+        "Error",
+        e?.response?.data?.message || e.message || "Failed to load memberships",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -194,16 +244,26 @@ export default function Memberships() {
           <div className="um-panelHeading">
             <span className="um-kicker">Membership Core</span>
             <h2 className="um-panelTitle">Gym Status</h2>
-            <p className="um-panelSub">Your active plans, history count, and current membership summary.</p>
+            <p className="um-panelSub">
+              Your active plans, history count, and current membership summary.
+            </p>
           </div>
 
           <div className="um-statMatrix">
-            <button type="button" className="um-statCard um-statCard--accent" onClick={() => setSideTab("memberships")}>
+            <button
+              type="button"
+              className="um-statCard um-statCard--accent"
+              onClick={() => setSideTab("memberships")}
+            >
               <span className="um-statCard__label">Active</span>
               <span className="um-statCard__value">{activeCount}</span>
             </button>
 
-            <button type="button" className="um-statCard" onClick={() => setSideTab("history")}>
+            <button
+              type="button"
+              className="um-statCard"
+              onClick={() => setSideTab("history")}
+            >
               <span className="um-statCard__label">History</span>
               <span className="um-statCard__value">{historyCount}</span>
             </button>
@@ -219,10 +279,13 @@ export default function Memberships() {
               <div className="um-coreIcon">
                 <Dumbbell size={18} />
               </div>
+
               <div>
                 <div className="um-coreTitle">Selected Membership</div>
                 <div className="um-coreSub">
-                  {selected ? selectedGym.name || "Gym membership" : "Pick a membership from the right panel"}
+                  {selected
+                    ? selectedGym.name || "Gym membership"
+                    : "Pick a membership from the right panel"}
                 </div>
               </div>
             </div>
@@ -232,10 +295,12 @@ export default function Memberships() {
                 <span className="um-coreLabel">Plan</span>
                 <span className="um-coreValue">{planType}</span>
               </div>
+
               <div className="um-coreRow">
                 <span className="um-coreLabel">Started</span>
                 <span className="um-coreValue">{since}</span>
               </div>
+
               <div className="um-coreRow">
                 <span className="um-coreLabel">Status</span>
                 <span className="um-coreValue">
@@ -252,17 +317,15 @@ export default function Memberships() {
             </div>
           </div>
 
-          <div className="um-leftFoot">
-            <Link to="/home/find-gyms" className="um-linkMini">
-              Find gyms <ChevronRight size={14} />
-            </Link>
-          </div>
+
         </div>
       </div>
     );
   };
 
   const renderCenterPanel = () => {
+    const noMemberships = !loading && memberships.length === 0;
+
     return (
       <div className="um-panel um-panel--center">
         <div className="um-centerShell">
@@ -279,12 +342,25 @@ export default function Memberships() {
           </div>
 
           <div className="um-centerBottom">
-            <div className="um-centerGymName">{selected ? selectedGym.name || "Membership Selected" : "No Membership Selected"}</div>
-            <div className="um-centerGymSub">
-              {selected
-                ? selectedGym.address || "Gym details available in the right-side panel."
-                : "Choose an item from Memberships or History to inspect it here."}
-            </div>
+            {noMemberships ? (
+              <>
+                <div className="um-centerGymName">No Membership Yet</div>
+                <div className="um-centerGymSub">
+                  Join a gym and your selected membership details will appear here.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="um-centerGymName">
+                  {selected ? selectedGym.name || "Membership Selected" : "No Membership Selected"}
+                </div>
+                <div className="um-centerGymSub">
+                  {selected
+                    ? selectedGym.address || "Gym details available in the right-side panel."
+                    : "Choose an item from Memberships or History to inspect it here."}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -336,10 +412,12 @@ export default function Memberships() {
             icon: <CalendarDays size={16} />,
           })}
 
-
-
           <div className="um-meterAction">
-            <button type="button" className="um-actionBtn um-actionBtn--renew" onClick={handleRenew}>
+            <button
+              type="button"
+              className="um-actionBtn um-actionBtn--renew"
+              onClick={handleRenew}
+            >
               <RotateCw size={16} />
               Renew
             </button>
@@ -367,7 +445,12 @@ export default function Memberships() {
     const days = isActive(m) ? calcCountdown(m.end_date)?.days ?? 0 : null;
 
     return (
-      <button key={id} type="button" className={`um-sideItem${selectedCls}`} onClick={() => setSelectedId(id)}>
+      <button
+        key={id}
+        type="button"
+        className={`um-sideItem${selectedCls}`}
+        onClick={() => setSelectedId(id)}
+      >
         <div className="um-sideItem__top">
           <div className="um-sideItem__titleWrap">
             <div className="um-sideItem__title">{gym.name || "Gym"}</div>
@@ -435,8 +518,25 @@ export default function Memberships() {
 
   const renderSidebarPanel = () => {
     return (
-      <div className="um-panel um-panel--sidebar">
+      <div className={`um-panel um-panel--sidebar ${sidebarCollapsed ? "is-collapsed" : ""}`}>
         <div className="um-sideShell">
+          <div className="um-sideTopbar">
+            <button
+              type="button"
+              className="um-sideCollapseBtn"
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              title={sidebarCollapsed ? "Expand panel" : "Collapse panel"}
+            >
+              <ChevronRight
+                size={18}
+                style={{
+                  transform: sidebarCollapsed ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s ease",
+                }}
+              />
+            </button>
+          </div>
+
           <div className="um-sideTabs">
             <button
               type="button"
@@ -445,6 +545,7 @@ export default function Memberships() {
             >
               Memberships
             </button>
+
             <button
               type="button"
               className={`um-sideTab ${sideTab === "history" ? "is-active" : ""}`}
@@ -466,7 +567,11 @@ export default function Memberships() {
               </div>
             </div>
 
-            <button className="um-btn um-btn--mini" onClick={() => fetchMemberships(pageMeta.cur)} disabled={loading}>
+            <button
+              className="um-btn um-btn--mini"
+              onClick={() => fetchMemberships(pageMeta.cur)}
+              disabled={loading}
+            >
               <RefreshCw size={14} /> Refresh
             </button>
           </div>
@@ -521,34 +626,15 @@ export default function Memberships() {
     );
   };
 
-  const renderEmptyWholePage = () => {
-    return (
-      <div className="um-dashboardEmpty">
-        <div className="um-dashboardEmpty__icon">
-          <Dumbbell size={24} />
-        </div>
-        <h3>No memberships yet</h3>
-        <p>Once you join a gym, this dashboard will show your timer, status, plan, and history.</p>
-        <Link to="/home/find-gyms" className="um-btn um-btn--primary">
-          Find gyms
-        </Link>
-      </div>
-    );
-  };
-
   return (
     <div className="um-app">
       <div className="um-container">
-        {!loading && memberships.length === 0 ? (
-          <div className="um-dashboard um-dashboard--empty">{renderEmptyWholePage()}</div>
-        ) : (
-          <div className="um-dashboard">
-            {renderLeftSummaryPanel()}
-            {renderCenterPanel()}
-            {renderRightMainPanel()}
-            {renderSidebarPanel()}
-          </div>
-        )}
+        <div className={`um-dashboard ${sidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
+          {renderLeftSummaryPanel()}
+          {renderCenterPanel()}
+          {renderRightMainPanel()}
+          {renderSidebarPanel()}
+        </div>
       </div>
     </div>
   );
