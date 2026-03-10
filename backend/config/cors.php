@@ -15,7 +15,7 @@ return [
     ],
 
     'allowed_origins_patterns' => [
-        '#^https?://.*\.railway\.app$#',
+        '#^https://.*\.up\.railway\.app$#',
         '#^https?://(www\.)?exersearch\.(test|online)$#',
         '#^http://localhost:\d+$#',
         '#^http://127\.0\.0\.1:\d+$#',
