@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import "./ProfileStyle.css";
+import "./Profilestyle.css";
 import { alertSuccess, alertError, alertInfo } from "../../utils/adminAlert";
 import {
   User,

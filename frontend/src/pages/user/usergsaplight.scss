@@ -1,0 +1,414 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
+
+$screen-sm-min: 860px;
+$screen-md-min: 992px;
+$screen-lg-min: 1200px;
+
+@mixin breakpoint($point) {
+  @if $point == $screen-sm-min {
+    @media screen and (min-width: $screen-sm-min) {
+      @content;
+    }
+  } @else if $point == $screen-md-min {
+    @media screen and (min-width: $screen-md-min) {
+      @content;
+    }
+  } @else if $point == $screen-lg-min {
+    @media screen and (min-width: $screen-lg-min) {
+      @content;
+    }
+  }
+}
+
+.user-app-find-gyms-page {
+  font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  &.user-app-dark-mode {
+    --orange-1: #ab3200;
+    --orange-2: #fc4a00;
+    --orange-3: #ff5a16;
+
+    --intro-text: #f6f8fa;
+    --intro-accent: #ff7a18;
+    --intro-accent-2: #ff5a00;
+    --intro-accent-3: #ff3c00;
+
+    --glass-bg: linear-gradient(
+      145deg,
+      rgba(255, 120, 0, 0.12),
+      rgba(255, 60, 0, 0.06)
+    );
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.7),
+      0 0 40px rgba(255, 120, 0, 0.15);
+
+    --button-border: #ff7a18;
+    --button-text: #ff7a18;
+    --button-fill: linear-gradient(90deg, #ff7a18, #ff3c00);
+    --button-hover-text: #121212;
+    --button-hover-shadow: 0 0 20px rgba(255, 90, 0, 0.95);
+
+    --xmark-color: #ff7a18;
+    --sky-text: #f6f8fa;
+    --sky-accent: #ff7a18;
+  }
+
+  &.user-app-light-mode {
+    --intro-text: #101820;
+    --intro-accent: #ab3200;
+    --intro-accent-2: #fc4a00;
+    --intro-accent-3: #ff5a16;
+
+    --glass-bg: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.48)
+    );
+    --glass-border: rgba(16, 24, 32, 0.08);
+    --glass-shadow:
+      0 16px 40px rgba(16, 24, 32, 0.12),
+      0 0 24px rgba(252, 74, 0, 0.08);
+
+    --button-border: #fc4a00;
+    --button-text: #ab3200;
+    --button-fill: linear-gradient(90deg, #fc4a00, #ab3200);
+    --button-hover-text: #ffffff;
+    --button-hover-shadow: 0 0 20px rgba(252, 74, 0, 0.24);
+
+    --xmark-color: #ab3200;
+    --sky-text: #101820;
+    --sky-accent: #ab3200;
+  }
+
+  .user-app-star-intro-root {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    height: 100vh;
+  }
+
+  .user-app-three-mount {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+
+    canvas {
+      display: block;
+    }
+  }
+
+  .user-app-intro-container {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--intro-text);
+    text-align: center;
+    margin: 0 auto;
+    right: 0;
+    left: 0;
+    padding: 40px 60px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+
+    h1 {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 800;
+      margin-top: 0;
+      margin-bottom: 0;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-size: 30px;
+      line-height: 1.12;
+
+      @include breakpoint($screen-sm-min) {
+        font-size: 60px;
+        line-height: 1.05;
+      }
+
+      @include breakpoint($screen-md-min) {
+        font-size: 72px;
+      }
+
+      @include breakpoint($screen-lg-min) {
+        font-size: 80px;
+      }
+    }
+  }
+
+  .user-app-fancy-text {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+    color: var(--intro-accent);
+    font-size: 14px;
+
+    @include breakpoint($screen-sm-min) {
+      font-size: 18px;
+    }
+
+    @include breakpoint($screen-md-min) {
+      font-size: 20px;
+    }
+  }
+
+  .user-app-button {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    min-width: 260px;
+    margin-top: 44px;
+
+    &:hover {
+      .user-app-border {
+        box-shadow: var(--button-hover-shadow);
+
+        .user-app-left-plane,
+        .user-app-right-plane {
+          transform: translateX(0%);
+        }
+      }
+
+      .user-app-text {
+        color: var(--button-hover-text);
+      }
+    }
+  }
+
+  .user-app-border {
+    border: 2px solid var(--button-border);
+    transform: skewX(-20deg);
+    height: 52px;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    transition: 0.15s ease-out;
+  }
+
+  .user-app-left-plane,
+  .user-app-right-plane {
+    position: absolute;
+    background: var(--button-fill);
+    height: 52px;
+    width: 150px;
+    transition: 0.2s ease-out;
+  }
+
+  .user-app-left-plane {
+    left: 0;
+    transform: translateX(-100%);
+  }
+
+  .user-app-right-plane {
+    right: 0;
+    transform: translateX(100%);
+  }
+
+  .user-app-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: 0.15s ease-out;
+    color: var(--button-text);
+    font-size: 15px;
+
+    @include breakpoint($screen-sm-min) {
+      font-size: 16px;
+    }
+
+    @include breakpoint($screen-md-min) {
+      font-size: 17px;
+    }
+  }
+
+  .user-app-x-mark {
+    right: 12px;
+    top: 120px;
+    position: absolute;
+    cursor: pointer;
+    opacity: 0;
+    z-index: 10;
+
+    &:hover {
+      .user-app-right {
+        transform: rotate(-45deg) scaleY(1.25);
+      }
+
+      .user-app-left {
+        transform: rotate(45deg) scaleY(1.25);
+      }
+    }
+  }
+
+  .user-app-container {
+    position: relative;
+    width: 24px;
+    height: 24px;
+  }
+
+  .user-app-left,
+  .user-app-right {
+    width: 3px;
+    height: 24px;
+    background: var(--xmark-color);
+    position: absolute;
+    border-radius: 3px;
+    transition: 0.15s ease-out;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+  }
+
+  .user-app-right {
+    transform: rotate(-45deg);
+  }
+
+  .user-app-left {
+    transform: rotate(45deg);
+  }
+
+  .user-app-sky-container {
+    position: absolute;
+    color: var(--sky-text);
+    text-transform: uppercase;
+    margin: 0 auto;
+    right: 0;
+    left: 0;
+    top: 2%;
+    text-align: center;
+    opacity: 0;
+    z-index: 5;
+    font-family: "Montserrat", sans-serif;
+
+    @include breakpoint($screen-sm-min) {
+      top: 18%;
+      right: 12%;
+      left: auto;
+    }
+  }
+
+  .user-app-sky-container__left,
+  .user-app-sky-container__right {
+    display: inline-block;
+    vertical-align: top;
+    font-weight: 800;
+
+    h2 {
+      font-family: "Montserrat", sans-serif;
+      font-size: 28px;
+      line-height: 28px;
+      margin: 0;
+
+      @include breakpoint($screen-sm-min) {
+        font-size: 78px;
+        line-height: 74px;
+      }
+    }
+  }
+
+  .user-app-sky-container__left {
+    margin-right: 6px;
+  }
+
+  .user-app-thirty-one {
+    letter-spacing: 4px;
+    color: var(--sky-accent);
+  }
+
+  .user-app-text-right {
+    text-align: right;
+  }
+
+  .user-app-text-left {
+    text-align: left;
+  }
+
+  .user-app-social-icon {
+    a {
+      position: absolute;
+      background: linear-gradient(
+        135deg,
+        var(--intro-accent),
+        var(--intro-accent-3)
+      );
+      color: white;
+      box-shadow: -1px -1px 20px 0px rgba(0, 0, 0, 0.3);
+      display: inline-block;
+      width: 170px;
+      height: 92px;
+      transform-origin: 50% 50%;
+      transition: 0.15s ease-out;
+    }
+
+    i {
+      position: absolute;
+      pointer-events: none;
+      z-index: 1000;
+      transition: 0.15s ease-out;
+      font-size: 22px;
+    }
+  }
+
+  .user-app-twitter {
+    &:hover {
+      a {
+        transform: rotate(-45deg) scale(1.06);
+      }
+
+      i {
+        color: #ff9a45;
+      }
+    }
+
+    a {
+      bottom: -46px;
+      right: -86px;
+      transform: rotate(-45deg);
+    }
+
+    i {
+      bottom: 9px;
+      right: 9px;
+      color: var(--intro-accent);
+    }
+  }
+
+  .user-app-youtube {
+    &:hover {
+      a {
+        transform: rotate(45deg) scale(1.06);
+      }
+
+      i {
+        color: #ff5a2d;
+      }
+    }
+
+    a {
+      bottom: -46px;
+      left: -86px;
+      transform: rotate(45deg);
+    }
+
+    i {
+      bottom: 9px;
+      left: 9px;
+      color: var(--intro-accent-3);
+    }
+  }
+}

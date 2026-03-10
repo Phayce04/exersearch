@@ -1,770 +1,352 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Strict Palette Exersearch Mockup</title>
-  <style>
-    :root {
-      --black-1: #181718;
-      --black-2: #101820;
-      --black-3: #0d141b;
-
-      --white-1: #f6f8fa;
-      --white-2: #f1f4f8;
-      --white-3: #ebf0f5;
-
-      --orange-1: #ab3200;
-      --orange-2: #fc4a00;
-      --orange-3: #ff5a16;
-    }
-
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: Inter, Arial, Helvetica, sans-serif;
-      background: var(--black-1);
-    }
-
-    body {
-      padding: 24px;
-    }
-
-    .board {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(320px, 1fr));
-      gap: 24px;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-
-    .app {
-      min-height: 980px;
-      border: 8px solid;
-      display: grid;
-      grid-template-rows: 84px 1fr;
-      overflow: hidden;
-    }
-
-    .dark.app {
-      background: var(--black-1);
-      border-color: var(--orange-2);
-      color: var(--white-1);
-    }
-
-    .light.app {
-      background: var(--white-1);
-      border-color: var(--orange-1);
-      color: var(--black-3);
-    }
-
-    .topbar {
-      display: grid;
-      grid-template-columns: 220px 1fr auto auto;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      border-bottom: 4px solid;
-    }
-
-    .dark .topbar {
-      background: var(--black-2);
-      border-color: var(--orange-3);
-    }
-
-    .light .topbar {
-      background: var(--white-2);
-      border-color: var(--orange-2);
-    }
-
-    .logo {
-      font-size: 34px;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-    }
-
-    .searchbar,
-    .top-pill,
-    .chip,
-    .mini-chip,
-    .stat,
-    .btn,
-    .ghost,
-    .gym-card,
-    .mini-card,
-    .sidebar,
-    .section,
-    .swatch,
-    .calendar-box,
-    .map-box,
-    .list-item {
-      border: 3px solid;
-    }
-
-    .searchbar {
-      height: 46px;
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      font-weight: 700;
-    }
-
-    .dark .searchbar {
-      background: var(--black-3);
-      border-color: var(--white-3);
-      color: var(--white-3);
-    }
-
-    .light .searchbar {
-      background: var(--white-1);
-      border-color: var(--black-2);
-      color: var(--black-2);
-    }
-
-    .top-pill {
-      padding: 10px 14px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .dark .top-pill {
-      background: var(--orange-2);
-      color: var(--white-1);
-      border-color: var(--orange-3);
-    }
-
-    .light .top-pill {
-      background: var(--orange-3);
-      color: var(--white-1);
-      border-color: var(--orange-1);
-    }
-
-    .shell {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      min-height: 0;
-    }
-
-    .sidebar {
-      padding: 18px;
-      display: grid;
-      grid-template-rows: auto auto auto 1fr auto;
-      gap: 16px;
-      border-left: 0;
-      border-bottom: 0;
-    }
-
-    .dark .sidebar {
-      background: var(--black-2);
-      border-color: var(--white-3);
-    }
-
-    .light .sidebar {
-      background: var(--white-2);
-      border-color: var(--black-2);
-    }
-
-    .side-title,
-    .section-title,
-    .card-title,
-    .big-number {
-      font-weight: 900;
-      letter-spacing: -0.03em;
-    }
-
-    .side-title { font-size: 22px; }
-    .section-title { font-size: 24px; }
-    .card-title { font-size: 28px; }
-    .big-number { font-size: 34px; }
-
-    .chip-grid,
-    .mini-chip-grid,
-    .swatches,
-    .stats,
-    .actions,
-    .list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .chip,
-    .mini-chip,
-    .btn,
-    .ghost,
-    .stat,
-    .list-item {
-      font-weight: 800;
-    }
-
-    .chip { padding: 10px 12px; }
-    .mini-chip { padding: 8px 10px; font-size: 13px; }
-    .btn, .ghost { padding: 12px 14px; }
-    .stat { padding: 14px; min-width: 120px; }
-    .list-item { padding: 10px 12px; }
-
-    .dark .chip,
-    .dark .mini-chip,
-    .dark .ghost,
-    .dark .list-item {
-      background: var(--black-3);
-      color: var(--white-2);
-      border-color: var(--white-3);
-    }
-
-    .light .chip,
-    .light .mini-chip,
-    .light .ghost,
-    .light .list-item {
-      background: var(--white-1);
-      color: var(--black-2);
-      border-color: var(--black-2);
-    }
-
-    .dark .chip.active,
-    .dark .mini-chip.active,
-    .dark .btn,
-    .dark .stat.highlight,
-    .dark .list-item.active {
-      background: var(--orange-2);
-      color: var(--white-1);
-      border-color: var(--orange-3);
-    }
-
-    .light .chip.active,
-    .light .mini-chip.active,
-    .light .btn,
-    .light .stat.highlight,
-    .light .list-item.active {
-      background: var(--orange-3);
-      color: var(--white-1);
-      border-color: var(--orange-1);
-    }
-
-    .dark .stat {
-      background: var(--black-3);
-      color: var(--white-1);
-      border-color: var(--white-3);
-    }
-
-    .light .stat {
-      background: var(--white-3);
-      color: var(--black-3);
-      border-color: var(--black-2);
-    }
-
-    .content {
-      padding: 18px;
-      display: grid;
-      grid-template-rows: auto auto auto 1fr;
-      gap: 18px;
-      min-width: 0;
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 18px;
-    }
-
-    .section {
-      padding: 18px;
-    }
-
-    .dark .section,
-    .dark .gym-card,
-    .dark .mini-card,
-    .dark .calendar-box,
-    .dark .map-box {
-      background: var(--black-3);
-      color: var(--white-1);
-      border-color: var(--white-3);
-    }
-
-    .light .section,
-    .light .gym-card,
-    .light .mini-card,
-    .light .calendar-box,
-    .light .map-box {
-      background: var(--white-3);
-      color: var(--black-3);
-      border-color: var(--black-2);
-    }
-
-    .eyebrow {
-      font-size: 13px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
-    }
-
-    .dark .eyebrow { color: var(--orange-3); }
-    .light .eyebrow { color: var(--orange-1); }
-
-    .hero-copy {
-      font-size: 16px;
-      line-height: 1.5;
-      margin: 10px 0 16px;
-    }
-
-    .grid-two {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .gym-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .gym-card {
-      padding: 18px;
-      display: grid;
-      gap: 12px;
-    }
-
-    .rating-row,
-    .meta-row,
-    .price-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      font-weight: 800;
-    }
-
-    .dark .accent-text { color: var(--orange-3); }
-    .light .accent-text { color: var(--orange-1); }
-
-    .muted {
-      font-weight: 700;
-    }
-
-    .dark .muted { color: var(--white-3); }
-    .light .muted { color: var(--black-2); }
-
-    .mini-card {
-      padding: 16px;
-      display: grid;
-      gap: 10px;
-      min-height: 148px;
-    }
-
-    .split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-    }
-
-    .calendar-box, .map-box {
-      min-height: 210px;
-      padding: 16px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-    }
-
-    .day {
-      aspect-ratio: 1 / 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      border: 2px solid;
-    }
-
-    .dark .day {
-      background: var(--black-2);
-      color: var(--white-1);
-      border-color: var(--white-3);
-    }
-
-    .light .day {
-      background: var(--white-1);
-      color: var(--black-3);
-      border-color: var(--black-2);
-    }
-
-    .dark .day.active { background: var(--orange-2); border-color: var(--orange-3); }
-    .light .day.active { background: var(--orange-3); border-color: var(--orange-1); color: var(--white-1); }
-
-    .map-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-      flex: 1;
-    }
-
-    .map-node {
-      min-height: 34px;
-      border: 2px solid;
-    }
-
-    .dark .map-node { background: var(--black-2); border-color: var(--white-3); }
-    .light .map-node { background: var(--white-1); border-color: var(--black-2); }
-
-    .dark .map-node.hot { background: var(--orange-2); border-color: var(--orange-3); }
-    .dark .map-node.warm { background: var(--orange-1); border-color: var(--orange-3); }
-    .light .map-node.hot { background: var(--orange-3); border-color: var(--orange-1); }
-    .light .map-node.warm { background: var(--orange-2); border-color: var(--orange-1); }
-
-    .swatches {
-      gap: 8px;
-    }
-
-    .swatch {
-      width: 58px;
-      height: 58px;
-    }
-
-    .swatch.b1 { background: var(--black-1); border-color: var(--white-3); }
-    .swatch.b2 { background: var(--black-2); border-color: var(--white-3); }
-    .swatch.b3 { background: var(--black-3); border-color: var(--white-3); }
-    .swatch.w1 { background: var(--white-1); border-color: var(--black-2); }
-    .swatch.w2 { background: var(--white-2); border-color: var(--black-2); }
-    .swatch.w3 { background: var(--white-3); border-color: var(--black-2); }
-    .swatch.o1 { background: var(--orange-1); border-color: var(--orange-3); }
-    .swatch.o2 { background: var(--orange-2); border-color: var(--orange-1); }
-    .swatch.o3 { background: var(--orange-3); border-color: var(--orange-1); }
-
-    .legend {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      font-weight: 800;
-    }
-
-    .legend span {
-      padding: 8px 10px;
-      border: 2px solid;
-    }
-
-    .dark .legend span {
-      background: var(--black-2);
-      color: var(--white-1);
-      border-color: var(--white-3);
-    }
-
-    .light .legend span {
-      background: var(--white-1);
-      color: var(--black-3);
-      border-color: var(--black-2);
-    }
-
-    @media (max-width: 1200px) {
-      .board { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 900px) {
-      .shell,
-      .hero,
-      .gym-grid,
-      .split,
-      .grid-two { grid-template-columns: 1fr; }
-
-      .topbar { grid-template-columns: 1fr; }
-      .app { min-height: auto; }
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>ExerSearch – Data Flow Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --orange-dark:#ab3200;
+    --orange:#fc4a00;
+    --orange-light:#ff5a16;
+    --text:#222;
+    --muted:#9a9a9a;
+    --line:#444;
+    --line-soft:#b9b9b9;
+    --proc-bg:#f7f7f7;
+    --store-bg:#fff8f2;
+    --store-strip:#ffe2cf;
+    --store-border:#f0a56f;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  body{
+    background:#fff;
+    font-family:'Inter',sans-serif;
+    padding:40px 46px;
+    color:var(--text);
+  }
+
+  h2{
+    font-size:15px;
+    font-weight:700;
+    margin-bottom:4px;
+  }
+
+  .sub{
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:26px;
+  }
+
+  svg text{ font-family:'Inter',sans-serif; }
+
+  .lbl{
+    font-size:9.4px;
+    fill:var(--line);
+  }
+
+  .lbl-soft{
+    font-size:9px;
+    fill:var(--line-soft);
+  }
+</style>
 </head>
 <body>
-  <div class="board">
-    <section class="app dark">
-      <header class="topbar">
-        <div class="logo">Exersearch</div>
-        <div class="searchbar">Search gyms, classes, trainers</div>
-        <div class="top-pill">Nearby • 12 results</div>
-        <div class="top-pill">Dark mode</div>
-      </header>
-      <div class="shell">
-        <aside class="sidebar">
-          <div>
-            <div class="side-title">Filters</div>
-            <div class="muted">Strict palette demo using only your exact hex values.</div>
-          </div>
 
-          <div>
-            <div class="eyebrow">Goals</div>
-            <div class="chip-grid">
-              <div class="chip active">Strength</div>
-              <div class="chip">Weight Loss</div>
-              <div class="chip">Powerlifting</div>
-              <div class="chip">Recovery</div>
-            </div>
-          </div>
 
-          <div>
-            <div class="eyebrow">Amenities</div>
-            <div class="mini-chip-grid">
-              <div class="mini-chip active">24/7</div>
-              <div class="mini-chip">Showers</div>
-              <div class="mini-chip">Parking</div>
-              <div class="mini-chip">Women Only</div>
-              <div class="mini-chip">Coaching</div>
-              <div class="mini-chip">Sauna</div>
-            </div>
-          </div>
+<svg width="1320" height="900" viewBox="0 0 1320 900">
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3z" fill="#444"/>
+    </marker>
+    <marker id="ar-soft" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3z" fill="#b9b9b9"/>
+    </marker>
+  </defs>
 
-          <div>
-            <div class="section mini-card">
-              <div class="eyebrow">Palette</div>
-              <div class="swatches">
-                <div class="swatch b1"></div>
-                <div class="swatch b2"></div>
-                <div class="swatch b3"></div>
-                <div class="swatch w1"></div>
-                <div class="swatch w2"></div>
-                <div class="swatch w3"></div>
-                <div class="swatch o1"></div>
-                <div class="swatch o2"></div>
-                <div class="swatch o3"></div>
-              </div>
-              <div class="legend">
-                <span>#181718</span><span>#101820</span><span>#0d141b</span>
-                <span>#f6f8fa</span><span>#f1f4f8</span><span>#ebf0f5</span>
-                <span>#ab3200</span><span>#fc4a00</span><span>#ff5a16</span>
-              </div>
-            </div>
-          </div>
+  <!-- =========================
+       EXTERNAL ENTITIES
+  ========================== -->
 
-          <div class="actions">
-            <div class="btn">Apply Filters</div>
-            <div class="ghost">Reset</div>
-          </div>
-        </aside>
+  <!-- User -->
+  <rect x="38" y="248" width="130" height="54" rx="2" fill="var(--orange-dark)"/>
+  <rect x="30" y="240" width="130" height="54" rx="2" fill="var(--orange)"/>
+  <text x="95" y="264" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">User /</text>
+  <text x="95" y="282" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Gym Goer</text>
 
-        <main class="content">
-          <section class="hero">
-            <div class="section">
-              <div class="eyebrow">Smart Match</div>
-              <div class="section-title">Find the right gym in minutes.</div>
-              <div class="hero-copy muted">This mockup pushes your palette across layout, hierarchy, controls, cards, stats, map blocks, and scheduling surfaces without introducing any extra tones.</div>
-              <div class="stats">
-                <div class="stat highlight"><div class="big-number">92%</div>match score</div>
-                <div class="stat"><div class="big-number">18</div>open late</div>
-                <div class="stat"><div class="big-number">7</div>nearby now</div>
-              </div>
-            </div>
-            <div class="section">
-              <div class="eyebrow">Quick Actions</div>
-              <div class="list">
-                <div class="list-item active">Best Value</div>
-                <div class="list-item">Top Rated</div>
-                <div class="list-item">Shortest Travel</div>
-                <div class="list-item">Premium Gear</div>
-                <div class="list-item">Open 24/7</div>
-                <div class="list-item">Coach Included</div>
-              </div>
-            </div>
-          </section>
+  <!-- Gym Owner -->
+  <rect x="38" y="588" width="130" height="54" rx="2" fill="var(--orange-dark)"/>
+  <rect x="30" y="580" width="130" height="54" rx="2" fill="var(--orange)"/>
+  <text x="95" y="606" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Gym Owner</text>
+  <text x="95" y="624" text-anchor="middle" font-size="10" fill="#ffe5d4">Portal User</text>
 
-          <section class="gym-grid">
-            <article class="gym-card">
-              <div class="eyebrow">Recommended</div>
-              <div class="card-title">Elite Fitness Lab</div>
-              <div class="rating-row"><span class="accent-text">★ 4.9</span><span class="muted">2.1 km away</span><span class="muted">Open all day</span></div>
-              <div class="muted">Power racks, calibrated plates, HIIT zone, and recovery area in one clean setup.</div>
-              <div class="meta-row">
-                <div class="mini-chip active">Strength</div>
-                <div class="mini-chip">Recovery</div>
-                <div class="mini-chip">Coach</div>
-              </div>
-              <div class="price-row"><span class="accent-text">₱1,800/mo</span><span class="muted">No joining fee</span></div>
-              <div class="actions"><div class="btn">View Gym</div><div class="ghost">Save</div></div>
-            </article>
+  <!-- Admin -->
+  <rect x="1128" y="78" width="130" height="54" rx="2" fill="var(--orange-dark)"/>
+  <rect x="1120" y="70" width="130" height="54" rx="2" fill="var(--orange)"/>
+  <text x="1185" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Admin</text>
 
-            <article class="gym-card">
-              <div class="eyebrow">Trending</div>
-              <div class="card-title">Powerhouse Central</div>
-              <div class="rating-row"><span class="accent-text">★ 4.8</span><span class="muted">3.4 km away</span><span class="muted">Closes 11 PM</span></div>
-              <div class="muted">A heavier, more competitive atmosphere with top benches, deadlift platforms, and team training.</div>
-              <div class="meta-row">
-                <div class="mini-chip active">Powerlifting</div>
-                <div class="mini-chip">Parking</div>
-                <div class="mini-chip">Showers</div>
-              </div>
-              <div class="price-row"><span class="accent-text">₱2,200/mo</span><span class="muted">3 trial passes</span></div>
-              <div class="actions"><div class="btn">Compare</div><div class="ghost">Details</div></div>
-            </article>
-          </section>
+  <!-- Google Maps API -->
+  <rect x="1128" y="258" width="130" height="54" rx="2" fill="var(--orange-dark)"/>
+  <rect x="1120" y="250" width="130" height="54" rx="2" fill="var(--orange)"/>
+  <text x="1185" y="278" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Google Maps</text>
+  <text x="1185" y="296" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">API</text>
 
-          <section class="split">
-            <div class="calendar-box">
-              <div class="eyebrow">Peak Hours</div>
-              <div class="section-title">Best times this week</div>
-              <div class="calendar-grid">
-                <div class="day">M</div><div class="day active">T</div><div class="day">W</div><div class="day">T</div><div class="day active">F</div><div class="day">S</div><div class="day">S</div>
-              </div>
-              <div class="legend"><span>6–8 AM quiet</span><span>7–9 PM busy</span><span>Friday best value</span></div>
-            </div>
+  <!-- Email Service -->
+  <rect x="1128" y="598" width="130" height="54" rx="2" fill="var(--orange-dark)"/>
+  <rect x="1120" y="590" width="130" height="54" rx="2" fill="var(--orange)"/>
+  <text x="1185" y="618" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Email</text>
+  <text x="1185" y="636" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">Service</text>
 
-            <div class="map-box">
-              <div class="eyebrow">Heat Map</div>
-              <div class="section-title">Nearby density</div>
-              <div class="map-grid">
-                <div class="map-node"></div><div class="map-node hot"></div><div class="map-node"></div><div class="map-node warm"></div><div class="map-node"></div><div class="map-node"></div>
-                <div class="map-node"></div><div class="map-node"></div><div class="map-node warm"></div><div class="map-node hot"></div><div class="map-node"></div><div class="map-node"></div>
-                <div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node hot"></div><div class="map-node"></div>
-                <div class="map-node warm"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
-    </section>
+  <!-- =========================
+       PROCESSES
+  ========================== -->
 
-    <section class="app light">
-      <header class="topbar">
-        <div class="logo">Exersearch</div>
-        <div class="searchbar">Search gyms, classes, trainers</div>
-        <div class="top-pill">Nearby • 12 results</div>
-        <div class="top-pill">Light mode</div>
-      </header>
-      <div class="shell">
-        <aside class="sidebar">
-          <div>
-            <div class="side-title">Filters</div>
-            <div class="muted">Same layout, same structure, same 9 colors.</div>
-          </div>
+  <!-- P1 -->
+  <rect x="250" y="70" width="200" height="60" rx="1" fill="var(--proc-bg)" stroke="#d8d8d8" stroke-width="1.4"/>
+  <rect x="250" y="70" width="30" height="60" rx="1" fill="var(--orange)"/>
+  <text x="355" y="95" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Auth &amp; User</text>
+  <text x="355" y="117" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Registration</text>
 
-          <div>
-            <div class="eyebrow">Goals</div>
-            <div class="chip-grid">
-              <div class="chip active">Strength</div>
-              <div class="chip">Weight Loss</div>
-              <div class="chip">Powerlifting</div>
-              <div class="chip">Recovery</div>
-            </div>
-          </div>
+  <!-- P2 -->
+  <rect x="250" y="245" width="200" height="60" rx="1" fill="var(--proc-bg)" stroke="#d8d8d8" stroke-width="1.4"/>
+  <rect x="250" y="245" width="30" height="60" rx="1" fill="var(--orange)"/>
+  <text x="355" y="271" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">FIT-Rank Gym</text>
+  <text x="355" y="293" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Recommendation</text>
 
-          <div>
-            <div class="eyebrow">Amenities</div>
-            <div class="mini-chip-grid">
-              <div class="mini-chip active">24/7</div>
-              <div class="mini-chip">Showers</div>
-              <div class="mini-chip">Parking</div>
-              <div class="mini-chip">Women Only</div>
-              <div class="mini-chip">Coaching</div>
-              <div class="mini-chip">Sauna</div>
-            </div>
-          </div>
+  <!-- P3 -->
+  <rect x="250" y="445" width="200" height="60" rx="1" fill="var(--proc-bg)" stroke="#d8d8d8" stroke-width="1.4"/>
+  <rect x="250" y="445" width="30" height="60" rx="1" fill="var(--orange)"/>
+  <text x="355" y="471" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Workout &amp; Meal</text>
+  <text x="355" y="493" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Planning</text>
 
-          <div>
-            <div class="section mini-card">
-              <div class="eyebrow">Palette</div>
-              <div class="swatches">
-                <div class="swatch b1"></div>
-                <div class="swatch b2"></div>
-                <div class="swatch b3"></div>
-                <div class="swatch w1"></div>
-                <div class="swatch w2"></div>
-                <div class="swatch w3"></div>
-                <div class="swatch o1"></div>
-                <div class="swatch o2"></div>
-                <div class="swatch o3"></div>
-              </div>
-              <div class="legend">
-                <span>#181718</span><span>#101820</span><span>#0d141b</span>
-                <span>#f6f8fa</span><span>#f1f4f8</span><span>#ebf0f5</span>
-                <span>#ab3200</span><span>#fc4a00</span><span>#ff5a16</span>
-              </div>
-            </div>
-          </div>
+  <!-- P4 -->
+  <rect x="250" y="580" width="200" height="60" rx="1" fill="var(--proc-bg)" stroke="#d8d8d8" stroke-width="1.4"/>
+  <rect x="250" y="580" width="30" height="60" rx="1" fill="var(--orange)"/>
+  <text x="355" y="606" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Gym Owner</text>
+  <text x="355" y="628" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Management</text>
 
-          <div class="actions">
-            <div class="btn">Apply Filters</div>
-            <div class="ghost">Reset</div>
-          </div>
-        </aside>
+  <!-- P6 -->
+  <rect x="820" y="70" width="200" height="60" rx="1" fill="var(--proc-bg)" stroke="#d8d8d8" stroke-width="1.4"/>
+  <rect x="820" y="70" width="30" height="60" rx="1" fill="var(--orange)"/>
+  <text x="925" y="95" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Admin &amp; System</text>
+  <text x="925" y="117" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Control</text>
 
-        <main class="content">
-          <section class="hero">
-            <div class="section">
-              <div class="eyebrow">Smart Match</div>
-              <div class="section-title">Show the full power of the palette.</div>
-              <div class="hero-copy muted">The light version uses your three whites for depth, your three blacks for structure, and your oranges only where they need to command attention.</div>
-              <div class="stats">
-                <div class="stat highlight"><div class="big-number">92%</div>match score</div>
-                <div class="stat"><div class="big-number">18</div>open late</div>
-                <div class="stat"><div class="big-number">7</div>nearby now</div>
-              </div>
-            </div>
-            <div class="section">
-              <div class="eyebrow">Quick Actions</div>
-              <div class="list">
-                <div class="list-item active">Best Value</div>
-                <div class="list-item">Top Rated</div>
-                <div class="list-item">Shortest Travel</div>
-                <div class="list-item">Premium Gear</div>
-                <div class="list-item">Open 24/7</div>
-                <div class="list-item">Coach Included</div>
-              </div>
-            </div>
-          </section>
+  <!-- P5 -->
+  <rect x="820" y="445" width="200" height="60" rx="1" fill="var(--proc-bg)" stroke="#d8d8d8" stroke-width="1.4"/>
+  <rect x="820" y="445" width="30" height="60" rx="1" fill="var(--orange)"/>
+  <text x="925" y="471" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">ML Weight</text>
+  <text x="925" y="493" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">Training</text>
 
-          <section class="gym-grid">
-            <article class="gym-card">
-              <div class="eyebrow">Recommended</div>
-              <div class="card-title">Elite Fitness Lab</div>
-              <div class="rating-row"><span class="accent-text">★ 4.9</span><span class="muted">2.1 km away</span><span class="muted">Open all day</span></div>
-              <div class="muted">Power racks, calibrated plates, HIIT zone, and recovery area in one clean setup.</div>
-              <div class="meta-row">
-                <div class="mini-chip active">Strength</div>
-                <div class="mini-chip">Recovery</div>
-                <div class="mini-chip">Coach</div>
-              </div>
-              <div class="price-row"><span class="accent-text">₱1,800/mo</span><span class="muted">No joining fee</span></div>
-              <div class="actions"><div class="btn">View Gym</div><div class="ghost">Save</div></div>
-            </article>
+  <!-- =========================
+       DATA STORES
+  ========================== -->
 
-            <article class="gym-card">
-              <div class="eyebrow">Trending</div>
-              <div class="card-title">Powerhouse Central</div>
-              <div class="rating-row"><span class="accent-text">★ 4.8</span><span class="muted">3.4 km away</span><span class="muted">Closes 11 PM</span></div>
-              <div class="muted">A heavier, more competitive atmosphere with top benches, deadlift platforms, and team training.</div>
-              <div class="meta-row">
-                <div class="mini-chip active">Powerlifting</div>
-                <div class="mini-chip">Parking</div>
-                <div class="mini-chip">Showers</div>
-              </div>
-              <div class="price-row"><span class="accent-text">₱2,200/mo</span><span class="muted">3 trial passes</span></div>
-              <div class="actions"><div class="btn">Compare</div><div class="ghost">Details</div></div>
-            </article>
-          </section>
+  <!-- User DB -->
+  <rect x="560" y="80" width="30" height="46" fill="var(--store-strip)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="575" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="var(--orange-dark)">C</text>
+  <rect x="590" y="80" width="210" height="46" fill="var(--store-bg)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="695" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#333">User DB</text>
 
-          <section class="split">
-            <div class="calendar-box">
-              <div class="eyebrow">Peak Hours</div>
-              <div class="section-title">Best times this week</div>
-              <div class="calendar-grid">
-                <div class="day">M</div><div class="day active">T</div><div class="day">W</div><div class="day">T</div><div class="day active">F</div><div class="day">S</div><div class="day">S</div>
-              </div>
-              <div class="legend"><span>6–8 AM quiet</span><span>7–9 PM busy</span><span>Friday best value</span></div>
-            </div>
+  <!-- Gym DB -->
+  <rect x="560" y="252" width="30" height="46" fill="var(--store-strip)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="575" y="280" text-anchor="middle" font-size="10" font-weight="700" fill="var(--orange-dark)">C</text>
+  <rect x="590" y="252" width="210" height="46" fill="var(--store-bg)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="695" y="280" text-anchor="middle" font-size="11" font-weight="700" fill="#333">Gym DB</text>
 
-            <div class="map-box">
-              <div class="eyebrow">Heat Map</div>
-              <div class="section-title">Nearby density</div>
-              <div class="map-grid">
-                <div class="map-node"></div><div class="map-node hot"></div><div class="map-node"></div><div class="map-node warm"></div><div class="map-node"></div><div class="map-node"></div>
-                <div class="map-node"></div><div class="map-node"></div><div class="map-node warm"></div><div class="map-node hot"></div><div class="map-node"></div><div class="map-node"></div>
-                <div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node hot"></div><div class="map-node"></div>
-                <div class="map-node warm"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div><div class="map-node"></div>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
-    </section>
-  </div>
+  <!-- Interaction Logs -->
+  <rect x="560" y="442" width="30" height="46" fill="var(--store-strip)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="575" y="470" text-anchor="middle" font-size="10" font-weight="700" fill="var(--orange-dark)">C</text>
+  <rect x="590" y="442" width="210" height="46" fill="var(--store-bg)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="695" y="470" text-anchor="middle" font-size="11" font-weight="700" fill="#333">Interaction Logs</text>
+
+  <!-- ML Weights -->
+  <rect x="560" y="590" width="30" height="46" fill="var(--store-strip)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="575" y="618" text-anchor="middle" font-size="10" font-weight="700" fill="var(--orange-dark)">C</text>
+  <rect x="590" y="590" width="210" height="46" fill="var(--store-bg)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="695" y="618" text-anchor="middle" font-size="11" font-weight="700" fill="#333">ML Weights</text>
+
+  <!-- Gym Owner DB -->
+  <rect x="560" y="688" width="30" height="46" fill="var(--store-strip)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="575" y="716" text-anchor="middle" font-size="10" font-weight="700" fill="var(--orange-dark)">C</text>
+  <rect x="590" y="688" width="210" height="46" fill="var(--store-bg)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="695" y="716" text-anchor="middle" font-size="11" font-weight="700" fill="#333">Gym Owner DB</text>
+
+  <!-- Plans DB -->
+  <rect x="560" y="770" width="30" height="46" fill="var(--store-strip)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="575" y="798" text-anchor="middle" font-size="10" font-weight="700" fill="var(--orange-dark)">C</text>
+  <rect x="590" y="770" width="210" height="46" fill="var(--store-bg)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="695" y="798" text-anchor="middle" font-size="11" font-weight="700" fill="#333">Plans DB</text>
+
+  <!-- App Settings -->
+  <rect x="820" y="182" width="30" height="46" fill="var(--store-strip)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="835" y="210" text-anchor="middle" font-size="10" font-weight="700" fill="var(--orange-dark)">C</text>
+  <rect x="850" y="182" width="210" height="46" fill="var(--store-bg)" stroke="var(--store-border)" stroke-width="1.2"/>
+  <text x="955" y="210" text-anchor="middle" font-size="11" font-weight="700" fill="#333">App Settings</text>
+
+  <!-- =========================
+       FLOWS
+  ========================== -->
+
+  <!-- User -> P1 (adjusted with lower user position) -->
+  <polyline points="95,240 95,100 250,100"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="145" y="88" class="lbl">Registration Data</text>
+
+  <!-- P1 -> User DB -->
+  <line x1="450" y1="100" x2="560" y2="100"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="510" y="88" class="lbl">User Record</text>
+
+  <!-- P1 -> P6 -->
+  <line x1="450" y1="116" x2="820" y2="116"
+        stroke="var(--line-soft)" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#ar-soft)"/>
+  <text x="634" y="134" class="lbl-soft">User Stats</text>
+
+  <!-- P6 -> Admin -->
+  <line x1="1020" y1="100" x2="1120" y2="100"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="1042" y="88" class="lbl">Reports, Logs</text>
+
+  <!-- Admin -> P6 -->
+  <line x1="1120" y1="118" x2="1020" y2="118"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="1045" y="138" class="lbl">Config, Content</text>
+
+  <!-- P6 -> App Settings -->
+  <line x1="955" y1="130" x2="955" y2="182"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="968" y="165" class="lbl">Backup / Config</text>
+
+  <!-- P6 -> Email Service -->
+  <polyline points="1020,118 1080,118 1080,618 1120,618"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="1085" y="395" class="lbl">Email Payload</text>
+
+<!-- Email Service -> User -->
+<polyline points="1120,632 1210,632 1210,835 185,835 185,260 160,260"
+          fill="none"
+          stroke="var(--line-soft)"
+          stroke-width="1.1"
+          stroke-dasharray="5,4"
+          marker-end="url(#ar-soft)"/>
+
+  <!-- User -> P2 -->
+  <line x1="160" y1="255" x2="250" y2="255"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="170" y="238" class="lbl">Preference, Budget</text>
+
+  <!-- P2 -> User -->
+  <line x1="250" y1="285" x2="160" y2="285"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="170" y="308" class="lbl">Ranked Gym Results</text>
+
+  <!-- P2 -> Gym DB -->
+  <line x1="450" y1="272" x2="560" y2="272"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="520" y="258" class="lbl">Query / Read</text>
+
+  <!-- Gym DB -> P2 -->
+  <line x1="560" y1="292" x2="450" y2="292"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="520" y="310" class="lbl">Gym Data</text>
+
+  <!-- P2 / Gym DB -> Google Maps -->
+  <polyline points="800,275 855,275 855,277 1120,277"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="650" y="258" class="lbl">Origin, Destination</text>
+
+  <!-- Google Maps -> P2 (kept straight longer, then down, then back to process) -->
+  <polyline points="1120,298 930,298 930,305 450,305"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="935" y="330" class="lbl">Travel Time</text>
+
+  <!-- User DB -> P2 -->
+  <polyline points="640,126 640,232 355,232 355,245"
+            fill="none" stroke="var(--line-soft)" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#ar-soft)"/>
+  <text x="652" y="178" class="lbl-soft">User Preferences</text>
+
+  <!-- ML Weights -> P2 -->
+<polyline points="560,608 540,608 540,325 355,325 355,305"
+          fill="none"
+          stroke="var(--line)"
+          stroke-width="1.4"
+          marker-end="url(#ar)"/>
+  <text x="505" y="596" class="lbl">TOPSIS Weights</text>
+
+  <!-- User -> P3 (adjusted with lower user position) -->
+  <polyline points="95,294 95,482 250,482"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="104" y="390" class="lbl">Plan Request</text>
+
+  <!-- P3 -> User (adjusted with lower user position) -->
+  <polyline points="250,505 180,505 180,270 160,270"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="106" y="488" class="lbl">Workout &amp; Meal Plan</text>
+
+  <!-- P3 -> Interaction Logs -->
+  <line x1="450" y1="470" x2="560" y2="470"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="520" y="458" class="lbl">Save Plans</text>
+
+  <!-- P3 -> Plans DB -->
+  <polyline points="450,495 518,495 518,793 560,793"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="458" y="520" class="lbl">Generated Plans</text>
+
+  <!-- Plans DB -> P3 -->
+  <polyline points="560,780 530,780 530,510 450,510"
+            fill="none" stroke="var(--line-soft)" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#ar-soft)"/>
+  <text x="458" y="542" class="lbl-soft">Read Templates</text>
+
+  <!-- P2 -> Interaction Logs -->
+  <polyline points="700,298 700,442"
+            fill="none" stroke="var(--line-soft)" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#ar-soft)"/>
+  <text x="712" y="370" class="lbl-soft">Interaction Log</text>
+
+  <!-- Interaction Logs -> P5 -->
+  <line x1="800" y1="470" x2="820" y2="470"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="805" y="455" class="lbl">Event Data</text>
+
+  <!-- P5 -> ML Weights -->
+  <polyline points="1020,475 1060,475 1060,625 800,625"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="905" y="608" class="lbl">Trained Weights</text>
+
+  <!-- Gym Owner -> P4 -->
+  <line x1="160" y1="607" x2="250" y2="607"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="165" y="594" class="lbl">Gym Info, Equipment</text>
+
+  <!-- P4 -> Gym Owner -->
+  <line x1="250" y1="627" x2="160" y2="627"
+        stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="165" y="646" class="lbl">Analytics, Stats</text>
+
+  <!-- P4 -> Gym Owner DB -->
+  <polyline points="450,607 530,607 530,711 560,711"
+            fill="none" stroke="var(--line)" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="457" y="594" class="lbl">Gym Record</text>
+
+  <!-- Gym Owner DB -> P4 -->
+  <polyline points="560,724 520,724 520,627 450,627"
+            fill="none" stroke="var(--line-soft)" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#ar-soft)"/>
+  <text x="458" y="662" class="lbl-soft">Gym Records</text>
+
+  <!-- Gym Owner DB -> Gym DB -->
+  <polyline points="690,688 690,640 730,640 730,298"
+            fill="none" stroke="var(--line-soft)" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#ar-soft)"/>
+  <text x="742" y="560" class="lbl-soft">Location, Price, Equip</text>
+
+  <!-- P4 -> P6 -->
+  <polyline points="450,594 790,594 790,130 820,130"
+            fill="none" stroke="var(--line-soft)" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#ar-soft)"/>
+  <text x="795" y="580" class="lbl-soft">Owner Application</text>
+
+</svg>
+
 </body>
 </html>
