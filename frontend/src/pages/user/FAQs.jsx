@@ -3,6 +3,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import ScrollThemeWidget from "../../utils/ScrollThemeWidget";
 import ScrollThemeWidget from "../../utils/ScrollThemeWidget";
+import ScrollThemeWidget from "../../utils/ScrollThemeWidget";
 
 import {
   Search,
@@ -284,17 +285,10 @@ function expandQuery(rawQuery) {
 }
 
 function buildSearchIndex(faqs) {
-<<<<<<< Updated upstream
   const docs = faqs.map((faq) => {
     const qTokens = tokenize(faq.question, { removeStops: true, doStem: true });
     const aTokens = tokenize(faq.answer, { removeStops: true, doStem: true });
     const bigrams = ngrams(qTokens, 2);
-=======
-  const docs = faqs.map(faq => {
-    const qTokens = tokenize(faq.question, { removeStops: true, doStem: true });
-    const aTokens = tokenize(faq.answer,   { removeStops: true, doStem: true });
-    const bigrams  = ngrams(qTokens, 2);
->>>>>>> Stashed changes
     const trigrams = ngrams(qTokens, 3);
     const soundexSet = new Set([
       ...qTokens.filter((t) => t.length > 3).map(soundex),
