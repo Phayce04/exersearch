@@ -1,123 +1,117 @@
-const API = "https://exersearch.test";
+// src/utils/amenitiesApi.js
+import { api } from "./apiClient";
 
-export const API_BASE_URL = API;
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
-export function getTokenMaybe() {
-  return localStorage.getItem("token") || "";
+function apiError(e, fallback = "Request failed.") {
+  return (
+    e?.response?.data?.message ||
+    (e?.response?.data ? JSON.stringify(e.response.data, null, 2) : null) ||
+    e?.message ||
+    fallback
+  );
 }
 
-async function safeJson(res) {
+export async function createAmenity(payload) {
   try {
-    return await res.json();
-  } catch {
-    return {};
+    const res = await api.post("/amenities", payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to create amenity."));
   }
 }
 
-async function request(path, options = {}) {
-  const token = getTokenMaybe();
-  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (HTTP ${res.status})`);
+export async function updateAmenity(id, payload) {
+  try {
+    const res = await api.patch(`/amenities/${id}`, payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to update amenity."));
   }
-
-  return data;
 }
 
-export function createAmenity(payload) {
-  return request("/api/v1/amenities", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export async function deleteAmenity(id) {
+  try {
+    const res = await api.delete(`/amenities/${id}`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to delete amenity."));
+  }
 }
 
-export function updateAmenity(id, payload) {
-  return request(`/api/v1/amenities/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
+export async function importAmenitiesCsv(file) {
+  try {
+    const form = new FormData();
+    form.append("file", file);
 
-export function deleteAmenity(id) {
-  return request(`/api/v1/amenities/${id}`, { method: "DELETE" });
-}
-
-export function importAmenitiesCsv(file) {
-  const form = new FormData();
-  form.append("file", file);
-  return request("/api/v1/amenities/import-csv", { method: "POST", body: form });
+    const res = await api.post("/amenities/import-csv", form);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to import amenities CSV."));
+  }
 }
 
 export async function uploadAmenityImage(file, kind = "covers") {
-  const token = getTokenMaybe();
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("type", "amenities");
+    form.append("kind", kind);
 
-  const form = new FormData();
-  form.append("file", file);
-  form.append("type", "amenities");
-  form.append("kind", kind);
-
-  const res = await fetch(`${API}/api/v1/media/upload`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: form,
-  });
-
-  const data = await safeJson(res);
-  if (!res.ok) {
-    throw new Error(data?.message || `Upload failed (HTTP ${res.status})`);
+    const res = await api.post("/media/upload", form);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to upload amenity image."));
   }
-
-  return data;
 }
 
-export function listAmenities() {
-  return request("/api/v1/amenities", { method: "GET" });
+export async function listAmenities() {
+  try {
+    const res = await api.get("/amenities");
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load amenities."));
+  }
 }
 
-export function getGymAmenities(gymId) {
-  return request(`/api/v1/gyms/${gymId}/amenities`, { method: "GET" });
+export async function getGymAmenities(gymId) {
+  try {
+    const res = await api.get(`/gyms/${gymId}/amenities`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load gym amenities."));
+  }
 }
 
-export function attachAmenityToGym(gymId, amenityId, pivot = {}) {
-  return request(`/api/v1/gyms/${gymId}/amenities`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+export async function attachAmenityToGym(gymId, amenityId, pivot = {}) {
+  try {
+    const res = await api.post(`/gyms/${gymId}/amenities`, {
       amenity_id: Number(amenityId),
       ...pivot,
-    }),
-  });
+    });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to attach amenity to gym."));
+  }
 }
 
-export function updateGymAmenityPivot(gymId, amenityId, pivot = {}) {
-  return request(`/api/v1/gyms/${gymId}/amenities/${amenityId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(pivot),
-  });
+export async function updateGymAmenityPivot(gymId, amenityId, pivot = {}) {
+  try {
+    const res = await api.patch(`/gyms/${gymId}/amenities/${amenityId}`, pivot);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to update gym amenity."));
+  }
 }
 
-export function detachAmenityFromGym(gymId, amenityId) {
-  return request(`/api/v1/gyms/${gymId}/amenities/${amenityId}`, {
-    method: "DELETE",
-  });
+export async function detachAmenityFromGym(gymId, amenityId) {
+  try {
+    const res = await api.delete(`/gyms/${gymId}/amenities/${amenityId}`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to detach amenity from gym."));
+  }
 }
 
 function toAmenityId(a) {
@@ -172,5 +166,5 @@ export async function syncGymAmenitiesByIds(
 export function absoluteUrl(maybeRelativeUrl) {
   if (!maybeRelativeUrl) return "";
   if (/^https?:\/\//i.test(maybeRelativeUrl)) return maybeRelativeUrl;
-  return `${API}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
+  return `${API_BASE_URL}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
 }

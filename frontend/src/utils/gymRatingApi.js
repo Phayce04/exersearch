@@ -1,70 +1,69 @@
 // src/utils/gymRatingApi.js
-const API = "https://exersearch.test";
+import { api } from "./apiClient";
 
-function getTokenMaybe() {
-  return localStorage.getItem("token") || "";
-}
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
-async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return {};
-  }
-}
-
-async function request(path, options = {}) {
-  const token = getTokenMaybe();
-  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (HTTP ${res.status})`);
-  }
-
-  return data;
+function apiError(e, fallback = "Request failed.") {
+  return (
+    e?.response?.data?.message ||
+    (e?.response?.data ? JSON.stringify(e.response.data, null, 2) : null) ||
+    e?.message ||
+    fallback
+  );
 }
 
 /* ------------------------------------------------------------------
  * PUBLIC
  * ------------------------------------------------------------------ */
 
-export function getGymRatings(gymId, params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/gyms/${gymId}/ratings${qs ? `?${qs}` : ""}`, {
-    method: "GET",
-  });
+export async function getGymRatings(gymId, params = {}) {
+  try {
+    const res = await api.get(`/gyms/${gymId}/ratings`, { params });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load gym ratings."));
+  }
 }
 
 /* ------------------------------------------------------------------
  * AUTH
  * ------------------------------------------------------------------ */
 
-export function getMyRatings(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/me/ratings${qs ? `?${qs}` : ""}`, { method: "GET" });
+export async function getMyRatings(params = {}) {
+  try {
+    const res = await api.get("/me/ratings", { params });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load your ratings."));
+  }
 }
 
-export function getCanRateGym(gymId) {
-  return request(`/api/v1/gyms/${gymId}/ratings/can-rate`, { method: "GET" });
+export async function getCanRateGym(gymId) {
+  try {
+    const res = await api.get(`/gyms/${gymId}/ratings/can-rate`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to check if gym can be rated."));
+  }
 }
 
-export function upsertMyGymRating(gymId, payload) {
-  return request(`/api/v1/gyms/${gymId}/ratings`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export async function upsertMyGymRating(gymId, payload) {
+  try {
+    const res = await api.post(`/gyms/${gymId}/ratings`, payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to submit gym rating."));
+  }
+}
+
+export async function ownerGetGymRatings(gymId, params = {}) {
+  try {
+    const res = await api.get(`/owner/gyms/${gymId}/ratings`, { params });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load owner gym ratings."));
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -75,7 +74,6 @@ export function ratingBadgeMeta(r) {
   const verified = !!r?.verified;
   if (verified) return { label: "Verified", tone: "verified" };
 
-  // fallback for older records that only have verified_via
   if (r?.verified_via) return { label: "Verified", tone: "verified" };
 
   return { label: "Unverified", tone: "unverified" };
@@ -85,8 +83,7 @@ export function normalizeGymRatingsResponse(data) {
   const summary = data?.summary || {};
   const ratingsPaginated = data?.ratings || {};
 
-  const rows =
-    Array.isArray(ratingsPaginated?.data) ? ratingsPaginated.data : [];
+  const rows = Array.isArray(ratingsPaginated?.data) ? ratingsPaginated.data : [];
 
   return {
     summary: {
@@ -115,10 +112,3 @@ export function normalizeGymRatingsResponse(data) {
     },
   };
 }
-export function ownerGetGymRatings(gymId, params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/owner/gyms/${gymId}/ratings${qs ? `?${qs}` : ""}`, {
-    method: "GET",
-  });
-}
-export const API_BASE_URL = API;

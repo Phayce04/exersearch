@@ -1,12 +1,4 @@
-import axios from "axios";
-
-const API_BASE = "https://exersearch.test";
-const TOKEN_KEY = "token";
-
-function authHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { api } from "./apiClient";
 
 function apiError(e, fallback = "Request failed.") {
   return (
@@ -21,9 +13,7 @@ function apiError(e, fallback = "Request failed.") {
 
 export async function getMacroPresets() {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/macro-presets`, {
-      withCredentials: true,
-    });
+    const res = await api.get("/macro-presets");
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to load macro presets."));
@@ -32,9 +22,7 @@ export async function getMacroPresets() {
 
 export async function getMacroPreset(id) {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/macro-presets/${id}`, {
-      withCredentials: true,
-    });
+    const res = await api.get(`/macro-presets/${id}`);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to load macro preset."));
@@ -43,11 +31,7 @@ export async function getMacroPreset(id) {
 
 export async function calculateMacroPreset(id, calories) {
   try {
-    const res = await axios.post(
-      `${API_BASE}/api/v1/macro-presets/${id}/calculate`,
-      { calories },
-      { withCredentials: true }
-    );
+    const res = await api.post(`/macro-presets/${id}/calculate`, { calories });
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to calculate macros."));
@@ -58,11 +42,7 @@ export async function calculateMacroPreset(id, calories) {
 
 export async function getAdminMacroPresets(params = {}) {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/admin/macro-presets`, {
-      headers: authHeaders(),
-      withCredentials: true,
-      params,
-    });
+    const res = await api.get("/admin/macro-presets", { params });
     return res.data; // rows array
   } catch (e) {
     throw new Error(apiError(e, "Failed to load admin macro presets."));
@@ -71,10 +51,7 @@ export async function getAdminMacroPresets(params = {}) {
 
 export async function createMacroPreset(payload) {
   try {
-    const res = await axios.post(`${API_BASE}/api/v1/admin/macro-presets`, payload, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.post("/admin/macro-presets", payload);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to create macro preset."));
@@ -83,10 +60,7 @@ export async function createMacroPreset(payload) {
 
 export async function updateMacroPreset(id, payload) {
   try {
-    const res = await axios.patch(`${API_BASE}/api/v1/admin/macro-presets/${id}`, payload, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.patch(`/admin/macro-presets/${id}`, payload);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to update macro preset."));
@@ -95,10 +69,7 @@ export async function updateMacroPreset(id, payload) {
 
 export async function deleteMacroPreset(id) {
   try {
-    const res = await axios.delete(`${API_BASE}/api/v1/admin/macro-presets/${id}`, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.delete(`/admin/macro-presets/${id}`);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to delete macro preset."));
@@ -107,14 +78,9 @@ export async function deleteMacroPreset(id) {
 
 export async function toggleMacroPreset(id) {
   try {
-    const res = await axios.patch(`${API_BASE}/api/v1/admin/macro-presets/${id}/toggle`, null, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.patch(`/admin/macro-presets/${id}/toggle`);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to toggle macro preset."));
   }
 }
-
-export const API_BASE_URL = API_BASE;

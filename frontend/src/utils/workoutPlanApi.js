@@ -1,273 +1,182 @@
-const API = "https://exersearch.test";
+import { api } from "./apiClient";
 
-export function getTokenMaybe() {
-  return localStorage.getItem("token") || "";
+const API = import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
+
+export async function getUserPreferences() {
+  const res = await api.get("/user/preferences");
+  return res.data;
 }
 
-async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return {};
-  }
+export async function saveUserPreferences(payload = {}) {
+  const res = await api.post("/user/preferences", payload);
+  return res.data;
 }
 
-async function request(path, options = {}) {
-  const token = getTokenMaybe();
-  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
+export async function getUserPreferredEquipments() {
+  const res = await api.get("/user/preferred-equipments");
+  return res.data;
+}
 
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+export async function saveUserPreferredEquipments(equipmentIds = []) {
+  const res = await api.post("/user/preferred-equipments", {
+    equipment_ids: equipmentIds,
   });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (HTTP ${res.status})`);
-  }
-
-  return data;
+  return res.data;
 }
 
-/* ------------------------------------------------------------------ */
-/* USER PREFERENCES + PREFERRED EQUIPMENTS                            */
-/* ------------------------------------------------------------------ */
-
-export function getUserPreferences() {
-  return request(`/api/v1/user/preferences`);
+export async function getEquipments(params = {}) {
+  const res = await api.get("/equipments", { params });
+  return res.data;
 }
 
-export function saveUserPreferences(payload = {}) {
-  return request(`/api/v1/user/preferences`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+export async function getExercises(params = {}) {
+  const res = await api.get("/exercises", { params });
+  return res.data;
+}
+
+export async function getExercise(id) {
+  const res = await api.get(`/exercises/${id}`);
+  return res.data;
+}
+
+export async function getWorkoutTemplates(params = {}) {
+  const res = await api.get("/workout-templates", { params });
+  return res.data;
+}
+
+export async function getWorkoutTemplate(id) {
+  const res = await api.get(`/workout-templates/${id}`);
+  return res.data;
+}
+
+export async function generateUserWorkoutPlan(payload = {}) {
+  const res = await api.post("/user/workout-plans/generate", payload);
+  return res.data;
+}
+
+export async function getUserWorkoutPlans(params = {}) {
+  const res = await api.get("/user/workout-plans", { params });
+  return res.data;
+}
+
+export async function getUserWorkoutPlan(id) {
+  const res = await api.get(`/user/workout-plans/${id}`);
+  return res.data;
+}
+
+export async function createUserWorkoutPlan(payload) {
+  const res = await api.post("/user/workout-plans", payload);
+  return res.data;
+}
+
+export async function updateUserWorkoutPlan(id, payload) {
+  const res = await api.patch(`/user/workout-plans/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteUserWorkoutPlan(id) {
+  const res = await api.delete(`/user/workout-plans/${id}`);
+  return res.data;
+}
+
+export async function recalibrateWorkoutPlanGym(user_plan_id, gym_id) {
+  const res = await api.post(`/user/workout-plans/${user_plan_id}/recalibrate-gym`, {
+    gym_id,
   });
+  return res.data;
 }
 
-export function getUserPreferredEquipments() {
-  return request(`/api/v1/user/preferred-equipments`);
+export async function getUserWorkoutPlanDays(params = {}) {
+  const res = await api.get("/user/workout-plan-days", { params });
+  return res.data;
 }
 
-export function saveUserPreferredEquipments(equipmentIds = []) {
-  return request(`/api/v1/user/preferred-equipments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ equipment_ids: equipmentIds }),
-  });
+export async function getUserWorkoutPlanDay(id) {
+  const res = await api.get(`/user/workout-plan-days/${id}`);
+  return res.data;
 }
 
-export function getEquipments(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/equipments${qs ? `?${qs}` : ""}`);
+export async function createUserWorkoutPlanDay(payload) {
+  const res = await api.post("/user/workout-plan-days", payload);
+  return res.data;
 }
 
-/* ------------------------------------------------------------------ */
-/* EXERCISES                                                          */
-/* ------------------------------------------------------------------ */
-
-export function getExercises(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/exercises${qs ? `?${qs}` : ""}`);
+export async function updateUserWorkoutPlanDay(id, payload) {
+  const res = await api.patch(`/user/workout-plan-days/${id}`, payload);
+  return res.data;
 }
 
-export function getExercise(id) {
-  return request(`/api/v1/exercises/${id}`);
+export async function deleteUserWorkoutPlanDay(id) {
+  const res = await api.delete(`/user/workout-plan-days/${id}`);
+  return res.data;
 }
 
-/* ------------------------------------------------------------------ */
-/* WORKOUT TEMPLATES                                                  */
-/* ------------------------------------------------------------------ */
-
-export function getWorkoutTemplates(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/workout-templates${qs ? `?${qs}` : ""}`);
-}
-
-export function getWorkoutTemplate(id) {
-  return request(`/api/v1/workout-templates/${id}`);
-}
-
-/* ------------------------------------------------------------------ */
-/* USER WORKOUT PLANS                                                 */
-/* ------------------------------------------------------------------ */
-
-export function generateUserWorkoutPlan(payload = {}) {
-  return request(`/api/v1/user/workout-plans/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function getUserWorkoutPlans(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/user/workout-plans${qs ? `?${qs}` : ""}`);
-}
-
-export function getUserWorkoutPlan(id) {
-  return request(`/api/v1/user/workout-plans/${id}`);
-}
-
-export function createUserWorkoutPlan(payload) {
-  return request(`/api/v1/user/workout-plans`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateUserWorkoutPlan(id, payload) {
-  return request(`/api/v1/user/workout-plans/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deleteUserWorkoutPlan(id) {
-  return request(`/api/v1/user/workout-plans/${id}`, {
-    method: "DELETE",
-  });
-}
-
-export function recalibrateWorkoutPlanGym(user_plan_id, gym_id) {
-  return request(`/api/v1/user/workout-plans/${user_plan_id}/recalibrate-gym`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ gym_id }),
-  });
-}
-
-/* ------------------------------------------------------------------ */
-/* USER WORKOUT PLAN DAYS                                             */
-/* ------------------------------------------------------------------ */
-
-export function getUserWorkoutPlanDays(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/user/workout-plan-days${qs ? `?${qs}` : ""}`);
-}
-
-export function getUserWorkoutPlanDay(id) {
-  return request(`/api/v1/user/workout-plan-days/${id}`);
-}
-
-export function createUserWorkoutPlanDay(payload) {
-  return request(`/api/v1/user/workout-plan-days`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateUserWorkoutPlanDay(id, payload) {
-  return request(`/api/v1/user/workout-plan-days/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deleteUserWorkoutPlanDay(id) {
-  return request(`/api/v1/user/workout-plan-days/${id}`, {
-    method: "DELETE",
-  });
-}
-
-export function recalibrateWorkoutDayGym(user_plan_day_id, gym_id) {
-  return request(
-    `/api/v1/user/workout-plan-days/${user_plan_day_id}/recalibrate-gym`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gym_id }),
-    }
+export async function recalibrateWorkoutDayGym(user_plan_day_id, gym_id) {
+  const res = await api.post(
+    `/user/workout-plan-days/${user_plan_day_id}/recalibrate-gym`,
+    { gym_id }
   );
+  return res.data;
 }
 
-/* ------------------------------------------------------------------ */
-/* USER WORKOUT PLAN DAY EXERCISES                                    */
-/* ------------------------------------------------------------------ */
-
-export function getUserWorkoutPlanDayExercises(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/user/workout-plan-day-exercises${qs ? `?${qs}` : ""}`);
+export async function getUserWorkoutPlanDayExercises(params = {}) {
+  const res = await api.get("/user/workout-plan-day-exercises", { params });
+  return res.data;
 }
 
-export function getUserWorkoutPlanDayExercise(id) {
-  return request(`/api/v1/user/workout-plan-day-exercises/${id}`);
+export async function getUserWorkoutPlanDayExercise(id) {
+  const res = await api.get(`/user/workout-plan-day-exercises/${id}`);
+  return res.data;
 }
 
-export function createUserWorkoutPlanDayExercise(payload) {
-  return request(`/api/v1/user/workout-plan-day-exercises`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+export async function createUserWorkoutPlanDayExercise(payload) {
+  const res = await api.post("/user/workout-plan-day-exercises", payload);
+  return res.data;
+}
+
+export async function updateUserWorkoutPlanDayExercise(id, payload) {
+  const res = await api.patch(`/user/workout-plan-day-exercises/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteUserWorkoutPlanDayExercise(id) {
+  const res = await api.delete(`/user/workout-plan-day-exercises/${id}`);
+  return res.data;
+}
+
+export async function getWorkoutExerciseReplacementOptions(id, limit = 5) {
+  const res = await api.get(`/user/workout-plan-day-exercises/${id}/replacement-options`, {
+    params: { limit },
   });
+  return res.data;
 }
 
-export function updateUserWorkoutPlanDayExercise(id, payload) {
-  return request(`/api/v1/user/workout-plan-day-exercises/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+export async function replaceWorkoutExerciseWithChoice(id, new_exercise_id) {
+  const res = await api.post(`/user/workout-plan-day-exercises/${id}/replace`, {
+    new_exercise_id,
   });
+  return res.data;
 }
 
-export function deleteUserWorkoutPlanDayExercise(id) {
-  return request(`/api/v1/user/workout-plan-day-exercises/${id}`, {
-    method: "DELETE",
-  });
+export async function getUserSavedGyms() {
+  const res = await api.get("/user/saved-gyms");
+  return res.data;
 }
 
-export function getWorkoutExerciseReplacementOptions(id, limit = 5) {
-  const qs = new URLSearchParams({ limit: String(limit) }).toString();
-  return request(
-    `/api/v1/user/workout-plan-day-exercises/${id}/replacement-options${qs ? `?${qs}` : ""}`
-  );
+export async function saveUserGym(gym_id) {
+  const res = await api.post("/user/saved-gyms", { gym_id });
+  return res.data;
 }
 
-export function replaceWorkoutExerciseWithChoice(id, new_exercise_id) {
-  return request(`/api/v1/user/workout-plan-day-exercises/${id}/replace`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ new_exercise_id }),
-  });
+export async function searchGyms(params = {}) {
+  const res = await api.get("/gyms", { params });
+  return res.data;
 }
 
-/* ------------------------------------------------------------------ */
-/* GYMS                                                               */
-/* ------------------------------------------------------------------ */
-
-export function getUserSavedGyms() {
-  return request(`/api/v1/user/saved-gyms`);
+export async function getGym(id) {
+  const res = await api.get(`/gyms/${id}`);
+  return res.data;
 }
-
-export function saveUserGym(gym_id) {
-  return request(`/api/v1/user/saved-gyms`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ gym_id }),
-  });
-}
-
-export function searchGyms(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/gyms${qs ? `?${qs}` : ""}`);
-}
-
-export function getGym(id) {
-  return request(`/api/v1/gyms/${id}`);
-}
-
-/* ------------------------------------------------------------------ */
-/* URL UTILS                                                          */
-/* ------------------------------------------------------------------ */
 
 export function absoluteUrl(maybeRelativeUrl) {
   if (!maybeRelativeUrl) return "";

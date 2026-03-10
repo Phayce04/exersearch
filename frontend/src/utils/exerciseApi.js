@@ -1,12 +1,8 @@
-import axios from "axios";
+// src/utils/exerciseApi.js
+import { api } from "./apiClient";
 
-const API_BASE = "https://exersearch.test";
-const TOKEN_KEY = "token";
-
-function authHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
 function apiError(e, fallback = "Request failed.") {
   return (
@@ -19,11 +15,7 @@ function apiError(e, fallback = "Request failed.") {
 
 export async function getExercises(params = {}) {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/exercises`, {
-      headers: authHeaders(),
-      withCredentials: true,
-      params,
-    });
+    const res = await api.get("/exercises", { params });
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to load exercises."));
@@ -32,10 +24,7 @@ export async function getExercises(params = {}) {
 
 export async function getExercise(id) {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/exercises/${id}`, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.get(`/exercises/${id}`);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to load exercise."));
@@ -44,10 +33,7 @@ export async function getExercise(id) {
 
 export async function createExercise(payload) {
   try {
-    const res = await axios.post(`${API_BASE}/api/v1/exercises`, payload, {
-      headers: { ...authHeaders() },
-      withCredentials: true,
-    });
+    const res = await api.post("/exercises", payload);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to create exercise."));
@@ -56,10 +42,7 @@ export async function createExercise(payload) {
 
 export async function updateExercise(id, payload) {
   try {
-    const res = await axios.patch(`${API_BASE}/api/v1/exercises/${id}`, payload, {
-      headers: { ...authHeaders() },
-      withCredentials: true,
-    });
+    const res = await api.patch(`/exercises/${id}`, payload);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to update exercise."));
@@ -68,10 +51,7 @@ export async function updateExercise(id, payload) {
 
 export async function deleteExercise(id) {
   try {
-    const res = await axios.delete(`${API_BASE}/api/v1/exercises/${id}`, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.delete(`/exercises/${id}`);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to delete exercise."));
@@ -81,7 +61,5 @@ export async function deleteExercise(id) {
 export function absoluteUrl(maybeRelativeUrl) {
   if (!maybeRelativeUrl) return "";
   if (/^https?:\/\//i.test(maybeRelativeUrl)) return maybeRelativeUrl;
-  return `${API_BASE}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
+  return `${API_BASE_URL}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
 }
-
-export const API_BASE_URL = API_BASE;

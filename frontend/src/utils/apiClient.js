@@ -2,7 +2,7 @@
 import axios from "axios";
 import Swal from "sweetalert2";
 
-const API_BASE = "https://exersearch.test";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 const TOKEN_KEY = "token";
 const ROLE_KEY = "role";
 
@@ -60,6 +60,7 @@ api.interceptors.response.use(
         allowEscapeKey: false,
       });
 
+      handlingMaintenance = false;
       return Promise.reject(error);
     }
 

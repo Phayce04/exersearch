@@ -1,14 +1,10 @@
-// src/utils/userHomeApi.js
-import axios from "axios";
+import { api } from "./apiClient";
 
-export const API_BASE = "https://exersearch.test";
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 export const TOKEN_KEY = "token";
 
 export const FALLBACK_AVATAR = "/defaulticon.png";
 
-/* -----------------------------
-  Existing helpers (keep yours)
------------------------------ */
 export function safeStr(v) {
   return v == null ? "" : String(v);
 }
@@ -63,51 +59,44 @@ export function distanceKm(lat1, lon1, lat2, lon2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-/* -----------------------------
-  API calls (keep yours)
------------------------------ */
 export async function fetchMe(token) {
-  const res = await axios.get(`${API_BASE}/api/v1/me`, {
+  const res = await api.get("/me", {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    withCredentials: true,
   });
   return res.data || null;
 }
 
 export async function fetchPublicSettings() {
-  const res = await axios.get(`${API_BASE}/api/v1/settings/public`, { withCredentials: true });
+  const res = await api.get("/settings/public");
   const data = res.data?.data ?? res.data;
   return data || {};
 }
 
 export async function fetchUserProfile(token) {
-  const res = await axios.get(`${API_BASE}/api/v1/user/profile`, {
+  const res = await api.get("/user/profile", {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    withCredentials: true,
   });
   return res.data?.data ?? res.data?.profile ?? res.data ?? null;
 }
 
 export async function fetchGyms() {
-  const res = await axios.get(`${API_BASE}/api/v1/gyms`, { withCredentials: true });
+  const res = await api.get("/gyms");
   const rows = res.data?.data ?? res.data?.gyms ?? res.data ?? [];
   return Array.isArray(rows) ? rows : [];
 }
 
 export async function fetchSavedGyms(token) {
-  const res = await axios.get(`${API_BASE}/api/v1/user/saved-gyms`, {
+  const res = await api.get("/user/saved-gyms", {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    withCredentials: true,
   });
   const rows = res.data?.data ?? res.data?.saved_gyms ?? res.data ?? [];
   return Array.isArray(rows) ? rows : [];
 }
 
 export async function fetchLatestReviews(token, limit = 3) {
-  const res = await axios.get(`${API_BASE}/api/v1/ratings/latest`, {
+  const res = await api.get("/ratings/latest", {
     params: { limit },
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    withCredentials: true,
   });
   const rows = res.data?.data ?? res.data?.reviews ?? res.data ?? [];
   return Array.isArray(rows) ? rows : [];
@@ -117,18 +106,14 @@ export async function fetchRatingsSummary(token, gymIds = []) {
   const ids = Array.isArray(gymIds) ? gymIds.filter(Boolean) : [];
   const params = ids.length ? { gym_ids: ids.join(",") } : undefined;
 
-  const res = await axios.get(`${API_BASE}/api/v1/gyms/ratings/summary`, {
+  const res = await api.get("/gyms/ratings/summary", {
     params,
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    withCredentials: true,
   });
 
   return res.data?.data ?? {};
 }
 
-/* -----------------------------
-  Mapping & lists (keep yours)
------------------------------ */
 export function mapGymRowToCard(row) {
   const g = row || {};
 
@@ -284,11 +269,6 @@ export function mergeRatingsIntoGyms(gymCards, ratingMap) {
   });
 }
 
-/* =========================================================
-  ✅ NEW: Move Home.jsx “fat” into here (pure helpers + static)
-========================================================= */
-
-/** ---------- Roles / UI Mode ---------- */
 export const UI_MODE_KEY = "ui_mode";
 export const ROLE_LEVEL = { user: 1, owner: 2, superadmin: 3 };
 
@@ -322,7 +302,6 @@ export function currentUiFromPath(pathname) {
   return "user";
 }
 
-/** ---------- Avatar picker ---------- */
 export function pickAvatarSrc(effectiveUser, currentUi) {
   const u = effectiveUser;
   if (!u) return FALLBACK_AVATAR;
@@ -375,7 +354,6 @@ export function pickAvatarSrc(effectiveUser, currentUi) {
   return toAbsUrl(raw);
 }
 
-/** ---------- Static UI data ---------- */
 export const PROMOS = [
   {
     id: 1,
@@ -458,7 +436,6 @@ export function buildTabs(savedCount) {
   ];
 }
 
-/** ---------- Derived data helpers ---------- */
 export function progressPct(done, target) {
   const d = safeNum(done);
   const t = Math.max(1, safeNum(target));
@@ -547,29 +524,27 @@ export function filterGymsTopN(baseList, opts = {}, topN = 5) {
 
   return sortGyms(list, sortBy).slice(0, topN);
 }
+
 export async function fetchFreeFirstVisitGyms(limit = 6) {
-  const res = await axios.get(`${API_BASE}/api/v1/gyms/free-first-visits`, {
+  const res = await api.get("/gyms/free-first-visits", {
     params: { limit },
-    withCredentials: true,
   });
   const rows = res.data?.data ?? res.data ?? [];
   return Array.isArray(rows) ? rows : [];
 }
 
 export async function fetchUserRecentActivity(token, limit = 5) {
-  const res = await axios.get(`${API_BASE}/api/v1/user/activity`, {
+  const res = await api.get("/user/activity", {
     params: { limit },
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    withCredentials: true,
   });
   const rows = res.data?.data ?? res.data ?? [];
   return Array.isArray(rows) ? rows : [];
 }
 
 export async function fetchWorkoutGoal(token) {
-  const res = await axios.get(`${API_BASE}/api/v1/user/workout-goal`, {
+  const res = await api.get("/user/workout-goal", {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    withCredentials: true,
   });
   return res.data?.data ?? null;
 }

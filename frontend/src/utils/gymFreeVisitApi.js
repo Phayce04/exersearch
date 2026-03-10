@@ -1,63 +1,46 @@
 // src/utils/gymFreeVisitApi.js
-const API = "https://exersearch.test";
+import { api } from "./apiClient";
 
-export function getTokenMaybe() {
-  return localStorage.getItem("token") || "";
-}
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
-async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return {};
-  }
-}
-
-async function request(path, options = {}) {
-  const token = getTokenMaybe();
-  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (HTTP ${res.status})`);
-  }
-
-  return data;
+function apiError(e, fallback = "Request failed.") {
+  return (
+    e?.response?.data?.message ||
+    (e?.response?.data ? JSON.stringify(e.response.data, null, 2) : null) ||
+    e?.message ||
+    fallback
+  );
 }
 
 /* ============================= */
 /* ========== USER ============= */
 /* ============================= */
 
-export function claimFreeVisit(gymId) {
+export async function claimFreeVisit(gymId) {
   if (gymId == null) throw new Error("gymId is required");
 
-  return request(`/api/v1/gyms/${gymId}/free-visit/claim`, {
-    method: "POST",
-  });
+  try {
+    const res = await api.post(`/gyms/${gymId}/free-visit/claim`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to claim free visit."));
+  }
 }
 
-export function getMyFreeVisits({ page = 1, perPage = 20 } = {}) {
-  const qs = new URLSearchParams();
-  qs.set("page", String(page));
-  qs.set("per_page", String(perPage));
-
-  return request(`/api/v1/me/free-visits?${qs.toString()}`, {
-    method: "GET",
-  });
+export async function getMyFreeVisits({ page = 1, perPage = 20 } = {}) {
+  try {
+    const res = await api.get("/me/free-visits", {
+      params: { page, per_page: perPage },
+    });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load free visits."));
+  }
 }
 
 /* Helper: always safely extract rows */
+
 export function normalizeFreeVisitList(response) {
   if (!response) return [];
 
@@ -70,54 +53,54 @@ export function normalizeFreeVisitList(response) {
 export function findMyFreeVisitForGym(response, gymId) {
   const rows = normalizeFreeVisitList(response);
 
-  return (
-    rows.find((r) => String(r?.gym_id) === String(gymId)) || null
-  );
+  return rows.find((r) => String(r?.gym_id) === String(gymId)) || null;
 }
 
 /* ============================= */
 /* ========== OWNER ============ */
 /* ============================= */
 
-export function ownerListFreeVisits(
+export async function ownerListFreeVisits(
   gymId,
   { status, q, page = 1, perPage = 20 } = {}
 ) {
   if (gymId == null) throw new Error("gymId is required");
 
-  const qs = new URLSearchParams();
-  if (status) qs.set("status", status);
-  if (q) qs.set("q", q);
-  qs.set("page", String(page));
-  qs.set("per_page", String(perPage));
-
-  return request(
-    `/api/v1/owner/gyms/${gymId}/free-visits?${qs.toString()}`,
-    { method: "GET" }
-  );
+  try {
+    const res = await api.get(`/owner/gyms/${gymId}/free-visits`, {
+      params: {
+        status,
+        q,
+        page,
+        per_page: perPage,
+      },
+    });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load owner free visits."));
+  }
 }
 
-export function ownerMarkFreeVisitUsed(freeVisitId) {
-  if (freeVisitId == null)
-    throw new Error("freeVisitId is required");
+export async function ownerMarkFreeVisitUsed(freeVisitId) {
+  if (freeVisitId == null) throw new Error("freeVisitId is required");
 
-  return request(
-    `/api/v1/owner/free-visits/${freeVisitId}/use`,
-    { method: "POST" }
-  );
+  try {
+    const res = await api.post(`/owner/free-visits/${freeVisitId}/use`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to mark free visit used."));
+  }
 }
 
-export function ownerSetFreeVisitEnabled(gymId, enabled) {
+export async function ownerSetFreeVisitEnabled(gymId, enabled) {
   if (gymId == null) throw new Error("gymId is required");
 
-  return request(
-    `/api/v1/owner/gyms/${gymId}/free-visit-enabled`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: Boolean(enabled) }),
-    }
-  );
+  try {
+    const res = await api.patch(`/owner/gyms/${gymId}/free-visit-enabled`, {
+      enabled: Boolean(enabled),
+    });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to update free visit setting."));
+  }
 }
-
-export const API_BASE_URL = API;  

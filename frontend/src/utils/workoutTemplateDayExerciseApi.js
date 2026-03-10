@@ -1,64 +1,20 @@
-// src/utils/workoutTemplateDayExerciseApi.js
-const API = "https://exersearch.test";
-const TOKEN_KEY = "token";
+import { api } from "./apiClient";
 
-export function getTokenMaybe() {
-  return localStorage.getItem(TOKEN_KEY) || "";
+const API = import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
+
+export async function createTemplateDayExercise(payload) {
+  const res = await api.post("/workout-template-day-exercises", payload);
+  return res.data;
 }
 
-async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return {};
-  }
+export async function updateTemplateDayExercise(id, payload) {
+  const res = await api.put(`/workout-template-day-exercises/${id}`, payload);
+  return res.data;
 }
 
-async function request(path, options = {}) {
-  const token = getTokenMaybe();
-  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (HTTP ${res.status})`);
-  }
-  return data;
-}
-
-/* ------------------------------------------------------------------
- * CRUD (ADMIN)
- * ------------------------------------------------------------------ */
-
-export function createTemplateDayExercise(payload) {
-  // POST /api/v1/workout-template-day-exercises
-  return request(`/api/v1/workout-template-day-exercises`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateTemplateDayExercise(id, payload) {
-  // PUT /api/v1/workout-template-day-exercises/{id}
-  return request(`/api/v1/workout-template-day-exercises/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deleteTemplateDayExercise(id) {
-  return request(`/api/v1/workout-template-day-exercises/${id}`, { method: "DELETE" });
+export async function deleteTemplateDayExercise(id) {
+  const res = await api.delete(`/workout-template-day-exercises/${id}`);
+  return res.data;
 }
 
 export const API_BASE_URL = API;

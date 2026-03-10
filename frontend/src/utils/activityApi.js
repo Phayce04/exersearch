@@ -1,7 +1,7 @@
 // src/utils/activityApi.js
 import axios from "axios";
 
-const API_BASE = "https://exersearch.test";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 const TOKEN_KEY = "token";
 
 function authHeaders() {
@@ -24,12 +24,6 @@ function apiError(e, fallback = "Request failed.") {
 
 /**
  * GET /api/v1/admin/activities
- * params:
- *  - q: string
- *  - event: string (view|click|save|contact|visit|subscribe)
- *  - source: string
- *  - days: number (1|7|30|90|365)
- *  - limit: number (max 5000 in controller)
  */
 export async function getAdminActivities(params = {}) {
   try {
@@ -45,7 +39,7 @@ export async function getAdminActivities(params = {}) {
 }
 
 /* ------------------------------------------------------------------
- * URL UTILS (optional)
+ * URL UTILS
  * ------------------------------------------------------------------ */
 
 export function absoluteUrl(maybeRelativeUrl) {

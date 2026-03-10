@@ -1,5 +1,6 @@
 // src/utils/findGymsData.js
-export const API_BASE = "https://exersearch.test";
+export const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
 // ---------- URL helpers ----------
 export function absoluteUrl(url) {
@@ -102,7 +103,6 @@ export function isMachine(e) {
 }
 
 export function isFreeWeight(e) {
-  // support both "free_weight" (new) and "Free Weight" (old)
   const c = String(e?.category || "").toLowerCase();
   return c === "free_weight" || c === "free weight";
 }
@@ -132,12 +132,10 @@ function pushGrouped(map, label, equipment) {
 }
 
 function sortGroups(groups) {
-  // sort each list by name
   Object.keys(groups).forEach((k) => {
     groups[k].sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
   });
 
-  // return stable ordered entries: common groups first, then alpha
   const priority = [
     "Chest",
     "Back",
@@ -198,7 +196,6 @@ export function groupEquipmentsByTypeAndMuscle(equipments) {
       continue;
     }
 
-    // fallback
     labels.forEach((lbl) => pushGrouped(accessory, lbl, e));
   }
 

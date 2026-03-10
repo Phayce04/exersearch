@@ -1,5 +1,4 @@
-const API_BASE = "https://exersearch.test";
-
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 export function absUrl(u) {
   if (!u) return null;
   const s = String(u).trim();

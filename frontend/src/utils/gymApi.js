@@ -1,38 +1,16 @@
 // src/utils/gymApi.js
-const API = "https://exersearch.test";
+import { api } from "./apiClient";
 
-export function getTokenMaybe() {
-  return localStorage.getItem("token") || "";
-}
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
-async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return {};
-  }
-}
-
-async function request(path, options = {}) {
-  const token = getTokenMaybe();
-  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (HTTP ${res.status})`);
-  }
-
-  return data;
+function apiError(e, fallback = "Request failed.") {
+  return (
+    e?.response?.data?.message ||
+    (e?.response?.data ? JSON.stringify(e.response.data, null, 2) : null) ||
+    e?.message ||
+    fallback
+  );
 }
 
 /* ------------------------------------------------------------------
@@ -40,44 +18,64 @@ async function request(path, options = {}) {
  * ------------------------------------------------------------------ */
 
 // CREATE gym
-export function createGym(payload) {
-  return request(`/api/v1/gyms`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export async function createGym(payload) {
+  try {
+    const res = await api.post("/gyms", payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to create gym."));
+  }
 }
 
 // UPDATE gym
-export function updateGym(id, payload) {
-  return request(`/api/v1/gyms/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export async function updateGym(id, payload) {
+  try {
+    const res = await api.patch(`/gyms/${id}`, payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to update gym."));
+  }
 }
 
 // DELETE gym
-export function deleteGym(id) {
-  return request(`/api/v1/gyms/${id}`, { method: "DELETE" });
+export async function deleteGym(id) {
+  try {
+    const res = await api.delete(`/gyms/${id}`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to delete gym."));
+  }
 }
 
 /* ------------------------------------------------------------------
  * READ
  * ------------------------------------------------------------------ */
 
-export function getGyms(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/gyms${qs ? `?${qs}` : ""}`);
+export async function getGyms(params = {}) {
+  try {
+    const res = await api.get("/gyms", { params });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load gyms."));
+  }
 }
 
-export function getGym(id) {
-  return request(`/api/v1/gyms/${id}`);
+export async function getGym(id) {
+  try {
+    const res = await api.get(`/gyms/${id}`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load gym."));
+  }
 }
 
-export function getMyGyms(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  return request(`/api/v1/my-gyms${qs ? `?${qs}` : ""}`);
+export async function getMyGyms(params = {}) {
+  try {
+    const res = await api.get("/my-gyms", { params });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load your gyms."));
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -85,61 +83,42 @@ export function getMyGyms(params = {}) {
  * ------------------------------------------------------------------ */
 
 export async function uploadGymImage(file, kind = "covers") {
-  const token = getTokenMaybe();
+  try {
+    const form = new FormData();
+    form.append("type", "gyms");
+    form.append("kind", kind);
+    form.append("file", file);
 
-  const form = new FormData();
-  form.append("type", "gyms"); // ✅ required by MediaUploadController
-  form.append("kind", kind); // covers | logos | gallery
-  form.append("file", file);
+    const res = await api.post("/media/upload", form);
+    const data = res.data;
 
-  const res = await fetch(`${API}/api/v1/media/upload`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: form,
-  });
+    const url = data?.url || "";
+    if (!url) throw new Error("Upload succeeded but no URL was returned.");
 
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Upload failed (HTTP ${res.status})`);
+    return { url };
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to upload gym image."));
   }
-
-  const url = data.url || "";
-  if (!url) throw new Error("Upload succeeded but no URL was returned.");
-
-  return { url };
 }
 
 /* ------------------------------------------------------------------
  * MAP HELPERS
  * ------------------------------------------------------------------ */
 
-// Normalizes map output (Google Maps, Leaflet, etc.)
-// Supports:
-// - normalizeLatLng(lat, lng)
-// - normalizeLatLng({ lat, lng })
-// - normalizeLatLng({ latitude, longitude })
-// - normalizeLatLng(googleLatLngObject)
 export function normalizeLatLng(a, b) {
   const toNum = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   };
 
-  // Case 1: called as (lat, lng)
   if (typeof a === "number" || typeof a === "string") {
     const latitude = toNum(a);
     const longitude = toNum(b);
     return { latitude, longitude };
   }
 
-  // Case 2: null/undefined
   if (!a) return { latitude: null, longitude: null };
 
-  // Case 3: Google Maps LatLng object
   if (typeof a.lat === "function" && typeof a.lng === "function") {
     return {
       latitude: toNum(a.lat()),
@@ -147,7 +126,6 @@ export function normalizeLatLng(a, b) {
     };
   }
 
-  // Case 4: plain objects
   if (typeof a === "object") {
     if ("lat" in a && "lng" in a) {
       return { latitude: toNum(a.lat), longitude: toNum(a.lng) };
@@ -167,7 +145,5 @@ export function normalizeLatLng(a, b) {
 export function absoluteUrl(maybeRelativeUrl) {
   if (!maybeRelativeUrl) return "";
   if (/^https?:\/\//i.test(maybeRelativeUrl)) return maybeRelativeUrl;
-  return `${API}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
+  return `${API_BASE_URL}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
 }
-
-export const API_BASE_URL = API;

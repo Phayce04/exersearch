@@ -1,13 +1,8 @@
 // src/utils/ingredientApi.js
-import axios from "axios";
+import { api } from "./apiClient";
 
-const API_BASE = "https://exersearch.test";
-const TOKEN_KEY = "token";
-
-function authHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
 function apiError(e, fallback = "Request failed.") {
   return (
@@ -24,11 +19,7 @@ function apiError(e, fallback = "Request failed.") {
 
 export async function getIngredients(params = {}) {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/ingredients`, {
-      headers: authHeaders(),
-      withCredentials: true,
-      params,
-    });
+    const res = await api.get("/ingredients", { params });
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to load ingredients."));
@@ -37,10 +28,7 @@ export async function getIngredients(params = {}) {
 
 export async function getIngredientCategories() {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/ingredients/categories`, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.get("/ingredients/categories");
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to load categories."));
@@ -53,11 +41,7 @@ export async function getIngredientCategories() {
 
 export async function getAdminIngredients(params = {}) {
   try {
-    const res = await axios.get(`${API_BASE}/api/v1/admin/ingredients`, {
-      headers: authHeaders(),
-      withCredentials: true,
-      params,
-    });
+    const res = await api.get("/admin/ingredients", { params });
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to load admin ingredients."));
@@ -66,10 +50,7 @@ export async function getAdminIngredients(params = {}) {
 
 export async function createIngredient(payload) {
   try {
-    const res = await axios.post(`${API_BASE}/api/v1/admin/ingredients`, payload, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.post("/admin/ingredients", payload);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to create ingredient."));
@@ -78,10 +59,7 @@ export async function createIngredient(payload) {
 
 export async function updateIngredient(id, payload) {
   try {
-    const res = await axios.patch(`${API_BASE}/api/v1/admin/ingredients/${id}`, payload, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.patch(`/admin/ingredients/${id}`, payload);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to update ingredient."));
@@ -90,10 +68,7 @@ export async function updateIngredient(id, payload) {
 
 export async function deleteIngredient(id) {
   try {
-    const res = await axios.delete(`${API_BASE}/api/v1/admin/ingredients/${id}`, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.delete(`/admin/ingredients/${id}`);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to delete ingredient."));
@@ -102,14 +77,9 @@ export async function deleteIngredient(id) {
 
 export async function toggleIngredient(id) {
   try {
-    const res = await axios.patch(`${API_BASE}/api/v1/admin/ingredients/${id}/toggle`, null, {
-      headers: authHeaders(),
-      withCredentials: true,
-    });
+    const res = await api.patch(`/admin/ingredients/${id}/toggle`);
     return res.data;
   } catch (e) {
     throw new Error(apiError(e, "Failed to toggle ingredient."));
   }
 }
-
-export const API_BASE_URL = API_BASE;

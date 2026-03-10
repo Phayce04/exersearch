@@ -1,100 +1,79 @@
 // src/utils/equipmentApi.js
-const API = "https://exersearch.test";
+import { api } from "./apiClient";
 
-export function getTokenMaybe() {
-  return localStorage.getItem("token") || "";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
+
+function apiError(e, fallback = "Request failed.") {
+  return (
+    e?.response?.data?.message ||
+    (e?.response?.data ? JSON.stringify(e.response.data, null, 2) : null) ||
+    e?.message ||
+    fallback
+  );
 }
 
-async function safeJson(res) {
+export async function createEquipment(payload) {
   try {
-    return await res.json();
-  } catch {
-    return {};
+    const res = await api.post("/equipments", payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to create equipment."));
   }
 }
 
-async function request(path, options = {}) {
-  const token = getTokenMaybe();
-  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Request failed (HTTP ${res.status})`);
+export async function updateEquipment(id, payload) {
+  try {
+    const res = await api.patch(`/equipments/${id}`, payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to update equipment."));
   }
-
-  return data;
 }
 
-export function createEquipment(payload) {
-  return request(`/api/v1/equipments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+export async function deleteEquipment(id) {
+  try {
+    const res = await api.delete(`/equipments/${id}`);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to delete equipment."));
+  }
 }
 
-export function updateEquipment(id, payload) {
-  return request(`/api/v1/equipments/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
+export async function importEquipmentsCsv(file) {
+  try {
+    const form = new FormData();
+    form.append("file", file);
 
-export function deleteEquipment(id) {
-  return request(`/api/v1/equipments/${id}`, { method: "DELETE" });
-}
-
-export function importEquipmentsCsv(file) {
-  const form = new FormData();
-  form.append("file", file);
-  return request("/api/v1/equipments/import-csv", { method: "POST", body: form });
+    const res = await api.post("/equipments/import-csv", form);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to import equipments CSV."));
+  }
 }
 
 // Uploads to /storage/equipments/<kind>/...
 export async function uploadEquipmentImage(file, kind = "covers") {
-  const token = getTokenMaybe();
+  try {
+    const form = new FormData();
+    form.append("type", "equipments");
+    form.append("kind", kind);
+    form.append("file", file);
 
-  const form = new FormData();
-  form.append("type", "equipments"); // ✅ required by MediaUploadController
-  form.append("kind", kind);         // covers | logos | gallery
-  form.append("file", file);
+    const res = await api.post("/media/upload", form);
+    const data = res.data;
 
-  const res = await fetch(`${API}/api/v1/media/upload`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: form,
-  });
+    const url = data?.url || "";
+    if (!url) throw new Error("Upload succeeded but no URL was returned.");
 
-  const data = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Upload failed (HTTP ${res.status})`);
+    return { url };
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to upload equipment image."));
   }
-
-  // controller returns { url: "/storage/..." }
-  const url = data.url || "";
-  if (!url) throw new Error("Upload succeeded but no URL was returned.");
-  return { url };
 }
 
 export function absoluteUrl(maybeRelativeUrl) {
   if (!maybeRelativeUrl) return "";
   if (/^https?:\/\//i.test(maybeRelativeUrl)) return maybeRelativeUrl;
-  return `${API}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
+  return `${API_BASE_URL}${maybeRelativeUrl.startsWith("/") ? "" : "/"}${maybeRelativeUrl}`;
 }
-
-export const API_BASE_URL = API;

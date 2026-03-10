@@ -1,7 +1,7 @@
-// src/utils/ownerApplicationApi.js
 
-// ✅ Keep your working fetch-based API (DO NOT REMOVE)
-const API = "https://exersearch.test";
+import { api } from "./apiClient";
+
+const API = import.meta.env.VITE_API_BASE_URL || "https://exersearch.test";
 
 export function getTokenMaybe() {
   return localStorage.getItem("token") || "";
@@ -37,9 +37,6 @@ async function request(path, options = {}) {
   return data;
 }
 
-/* ======================================================
-   ADMIN — OWNER APPLICATIONS (FETCH - existing, keep)
-   ====================================================== */
 
 export function getOwnerApplications(params = {}) {
   const query = new URLSearchParams(params).toString();
@@ -66,9 +63,7 @@ export function rejectOwnerApplication(id, reason = null) {
   });
 }
 
-/* ======================================================
-   USER — OWNER APPLICATION (FETCH - existing, keep)
-   ====================================================== */
+
 
 export function submitOwnerApplication(payload) {
   return request(`/api/v1/owner-applications`, {
@@ -82,12 +77,7 @@ export function getMyOwnerApplication() {
   return request(`/api/v1/owner-applications/me`);
 }
 
-/* ======================================================
-   ✅ OPTIONAL: apiClient-based equivalents (ADDED, do not break existing)
-   If you want to migrate later, import these instead.
-   ====================================================== */
 
-import { api } from "./apiClient";
 
 function cleanParams(params = {}) {
   const out = {};

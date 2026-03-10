@@ -1,114 +1,61 @@
 // src/utils/findGymsApi.js
-import { API_BASE } from "./findGymsData";
+import { api } from "./apiClient";
 
-// ---- helpers ----
-function getToken() {
-  return localStorage.getItem("token") || "";
-}
-
-async function readResponse(res) {
-  const ct = res.headers.get("content-type") || "";
-  const text = await res.text().catch(() => "");
-  let json = null;
-
-  if (text && ct.includes("application/json")) {
-    try {
-      json = JSON.parse(text);
-    } catch {
-      // ignore parse fail
-    }
-  }
-
-  return { ct, text, json };
-}
-
-// ---- debug fetch ----
-export async function apiRequest(path, { method = "GET", body = null } = {}) {
-  const token = getToken();
-  const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const headers = {
-    Accept: "application/json",
-  };
-
-  let payload;
-  if (body !== null && body !== undefined) {
-    headers["Content-Type"] = "application/json";
-    payload = JSON.stringify(body);
-  }
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  console.groupCollapsed(
-    `%c[API] ${method} ${url}`,
-    "color:#ff8c00;font-weight:800;"
+function apiError(e, fallback = "Request failed.") {
+  return (
+    e?.response?.data?.message ||
+    e?.response?.data?.error ||
+    (e?.response?.data ? JSON.stringify(e.response.data, null, 2) : null) ||
+    e?.message ||
+    fallback
   );
-  console.log("token?", token ? "YES" : "NO");
-  console.log("headers:", headers);
-  console.log("body:", body);
-
-  let res;
-  try {
-    res = await fetch(url, {
-      method,
-      headers,
-      credentials: "include",
-      body: payload,
-    });
-  } catch (e) {
-    console.error("NETWORK ERROR:", e);
-    console.groupEnd();
-    throw new Error(`Network error: ${String(e?.message || e)}`);
-  }
-
-  const { ct, text, json } = await readResponse(res);
-
-  console.log("status:", res.status, res.ok ? "(OK)" : "(NOT OK)");
-  console.log("content-type:", ct);
-  console.log("response json:", json);
-  console.log("response text:", text ? text.slice(0, 1200) : "(empty)");
-  console.groupEnd();
-
-  if (!res.ok) {
-    const msg =
-      json?.message ||
-      json?.error ||
-      (text ? text.slice(0, 500) : `HTTP ${res.status}`);
-    throw new Error(msg);
-  }
-
-  return json ?? text;
 }
 
 // -------------------------
 // GET: existing user picks
 // -------------------------
-export function getUserPreference() {
-  // returns { data: { goal, activity_level, budget, plan_type, ... } } (or data: null)
-  return apiRequest("/api/v1/user/preferences", { method: "GET" });
+
+export async function getUserPreference() {
+  try {
+    const res = await api.get("/user/preferences");
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load user preferences."));
+  }
 }
 
-export function getUserPreferredEquipments() {
-  // returns { data: [ ... ] }
-  return apiRequest("/api/v1/user/preferred-equipments", { method: "GET" });
+export async function getUserPreferredEquipments() {
+  try {
+    const res = await api.get("/user/preferred-equipments");
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load preferred equipments."));
+  }
 }
 
-export function getUserPreferredAmenities() {
-  // returns { data: [ ... ] }
-  return apiRequest("/api/v1/user/preferred-amenities", { method: "GET" });
+export async function getUserPreferredAmenities() {
+  try {
+    const res = await api.get("/user/preferred-amenities");
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load preferred amenities."));
+  }
 }
 
-export function getUserProfile() {
-  // returns { user: {...}, user_profile: { address, latitude, longitude, ... } }
-  return apiRequest("/api/v1/user/profile", { method: "GET" });
+export async function getUserProfile() {
+  try {
+    const res = await api.get("/user/profile");
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to load user profile."));
+  }
 }
 
 // -------------------------
 // SAVE: preferences (POST)
 // -------------------------
 
-// ✅ IMPORTANT: omit null/empty keys so we don't wipe existing values
-export function saveUserPreferences(fields = {}) {
+export async function saveUserPreferences(fields = {}) {
   const payload = {};
 
   if (fields.goal !== undefined && fields.goal !== null && fields.goal !== "") {
@@ -123,35 +70,61 @@ export function saveUserPreferences(fields = {}) {
     payload.activity_level = fields.activity_level;
   }
 
-  if (fields.budget !== undefined && fields.budget !== null && fields.budget !== "") {
+  if (
+    fields.budget !== undefined &&
+    fields.budget !== null &&
+    fields.budget !== ""
+  ) {
     payload.budget = fields.budget;
   }
 
-  if (fields.plan_type !== undefined && fields.plan_type !== null && fields.plan_type !== "") {
+  if (
+    fields.plan_type !== undefined &&
+    fields.plan_type !== null &&
+    fields.plan_type !== ""
+  ) {
     payload.plan_type = fields.plan_type;
   }
 
-  return apiRequest("/api/v1/user/preferences", { method: "POST", body: payload });
+  try {
+    const res = await api.post("/user/preferences", payload);
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to save user preferences."));
+  }
 }
 
-export function savePreferredEquipments(equipment_ids) {
-  return apiRequest("/api/v1/user/preferred-equipments", {
-    method: "POST",
-    body: { equipment_ids },
-  });
+export async function savePreferredEquipments(equipment_ids) {
+  try {
+    const res = await api.post("/user/preferred-equipments", { equipment_ids });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to save preferred equipments."));
+  }
 }
 
-export function savePreferredAmenities(amenity_ids) {
-  return apiRequest("/api/v1/user/preferred-amenities", {
-    method: "POST",
-    body: { amenity_ids },
-  });
+export async function savePreferredAmenities(amenity_ids) {
+  try {
+    const res = await api.post("/user/preferred-amenities", { amenity_ids });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to save preferred amenities."));
+  }
 }
 
-export function saveUserProfileLocation({ address = null, latitude = null, longitude = null }) {
-  // backend is now patch-safe, so this won't wipe other profile fields
-  return apiRequest("/api/v1/user/profile", {
-    method: "PUT",
-    body: { address, latitude, longitude },
-  });
+export async function saveUserProfileLocation({
+  address = null,
+  latitude = null,
+  longitude = null,
+}) {
+  try {
+    const res = await api.put("/user/profile", {
+      address,
+      latitude,
+      longitude,
+    });
+    return res.data;
+  } catch (e) {
+    throw new Error(apiError(e, "Failed to save user profile location."));
+  }
 }
