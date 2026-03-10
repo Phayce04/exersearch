@@ -1,11 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
-<<<<<<< Updated upstream
-import { api } from "../../utils/apiClient";
-=======
-import ScrollThemeWidget from "../../utils/ScrollThemeWidget";
->>>>>>> Stashed changes
 
 import {
   Search,
@@ -28,7 +23,8 @@ import {
   X,
 } from "lucide-react";
 import "./FAQs.css";
-
+import { api } from "../../utils/apiClient";
+import ScrollThemeWidget from "../../utils/ScrollThemeWidget";
 // ═══════════════════════════════════════════════════════════════════
 //  SEARCH ENGINE (unchanged)
 // ═══════════════════════════════════════════════════════════════════
@@ -337,12 +333,8 @@ function buildSearchIndex(faqs) {
   return { docs, idf, avgLen, N };
 }
 
-<<<<<<< Updated upstream
 const BM25_K1 = 1.5;
-const BM25_B = 0.75;
-=======
-const BM25_K1 = 1.5, BM25_B = 0.75;
->>>>>>> Stashed changes
+const BM25_B  = 0.75;
 
 function bm25Score(tf, idf, docLen, avgLen) {
   const norm = 1 - BM25_B + BM25_B * (docLen / avgLen);
@@ -432,57 +424,36 @@ function detectIntentBoost(rawQuery, faqCategory) {
 
 function searchFaqs(query, faqs, index, category = "all") {
   const q = query.trim();
-<<<<<<< Updated upstream
   if (!q) {
-    return category === "all" ? faqs : faqs.filter((f) => f.category === category);
+    return category === "all" ? faqs : faqs.filter(f => f.category === category);
   }
-
-=======
-  if (!q) return category === "all" ? faqs : faqs.filter(f => f.category === category);
->>>>>>> Stashed changes
   const { terms, stemmed, soundexCodes, raw } = expandQuery(q);
   const { docs, idf, avgLen } = index;
   const results = [];
   for (const doc of docs) {
     if (category !== "all" && doc.faq.category !== category) continue;
-
     let score = 0;
+
     for (const term of stemmed) {
       const tf_a = doc.aTokens.filter((t) => t === term).length;
       const qtf = doc.qTokens.filter((t) => t === term).length;
       const termIdf = idf.get(term) ?? Math.log(1 + 1);
-
-      if (qtf > 0) score += WEIGHT.question * bm25Score(qtf, termIdf, doc.qTokens.length, avgLen * 0.4);
-      if (tf_a > 0) score += WEIGHT.answer * bm25Score(tf_a, termIdf, doc.aTokens.length, avgLen * 0.6);
+      if (qtf  > 0) score += WEIGHT.question * bm25Score(qtf,  termIdf, doc.qTokens.length, avgLen * 0.4);
+      if (tf_a > 0) score += WEIGHT.answer   * bm25Score(tf_a, termIdf, doc.aTokens.length, avgLen * 0.6);
     }
+
     score += WEIGHT.question * phraseBonus(doc.faq.question, raw);
-<<<<<<< Updated upstream
-    score += WEIGHT.answer * phraseBonus(doc.faq.answer, raw) * 0.5;
-
-    const qLower = doc.faq.question.toLowerCase();
-    if (qLower.startsWith(raw)) score += 30 * WEIGHT.questionStart;
-    else if (raw.split(" ").every((w) => qLower.includes(w))) score += 15;
-
-    const queryBigrams = ngrams(stemmed, 2);
-    const queryTrigrams = ngrams(stemmed, 3);
-
-    for (const bg of queryBigrams) {
-      if (doc.bigrams.includes(bg)) score += 10 * WEIGHT.bigram;
-    }
-    for (const tg of queryTrigrams) {
-      if (doc.trigrams.includes(tg)) score += 18 * WEIGHT.trigram;
-    }
-
-=======
     score += WEIGHT.answer   * phraseBonus(doc.faq.answer,   raw) * 0.5;
+
     const qLower = doc.faq.question.toLowerCase();
     if (qLower.startsWith(raw)) score += 30 * WEIGHT.questionStart;
     else if (raw.split(" ").every(w => qLower.includes(w))) score += 15;
+
     const queryBigrams  = ngrams(stemmed, 2);
     const queryTrigrams = ngrams(stemmed, 3);
     for (const bg of queryBigrams)  if (doc.bigrams.includes(bg))  score += 10 * WEIGHT.bigram;
     for (const tg of queryTrigrams) if (doc.trigrams.includes(tg)) score += 18 * WEIGHT.trigram;
->>>>>>> Stashed changes
+
     let phoneticHits = 0;
     for (const code of soundexCodes) { if (doc.soundexSet.has(code)) phoneticHits++; }
     score += phoneticHits * 4 * WEIGHT.phonetic;
@@ -491,26 +462,18 @@ function searchFaqs(query, faqs, index, category = "all") {
     score += detectIntentBoost(raw, doc.faq.category);
     for (const qt of terms) {
       if (qt.length < 3) continue;
-      for (const dt of doc.qTokens) { if (dt.startsWith(qt) && dt !== qt) score += 3; }
+      for (const dt of doc.qTokens) {
+        if (dt.startsWith(qt) && dt !== qt) score += 3;
+      }
     }
-<<<<<<< Updated upstream
 
-    const hitsQ = stemmed.filter((t) => doc.qTokens.includes(t)).length;
-    const hitsA = stemmed.filter((t) => doc.aTokens.includes(t)).length;
-    if (hitsQ > 0 && hitsA > 0) score += 5;
-
-    const covered = stemmed.filter((t) => doc.tf.has(t)).length;
-    const coverage = stemmed.length > 0 ? covered / stemmed.length : 0;
-    score *= 0.5 + 0.5 * coverage;
-
-=======
     const hitsQ = stemmed.filter(t => doc.qTokens.includes(t)).length;
     const hitsA = stemmed.filter(t => doc.aTokens.includes(t)).length;
     if (hitsQ > 0 && hitsA > 0) score += 5;
     const covered = stemmed.filter(t => doc.tf.has(t)).length;
     const coverage = stemmed.length > 0 ? covered / stemmed.length : 0;
     score *= (0.5 + 0.5 * coverage);
->>>>>>> Stashed changes
+
     if (score > 0.5) results.push({ faq: doc.faq, score });
   }
   results.sort((a, b) => b.score - a.score);
@@ -773,13 +736,9 @@ export default function FAQsPage() {
   }, [supportEmail]);
 
   const filteredFaqs = useMemo(() => {
-<<<<<<< Updated upstream
     if (!searchIndex) {
-      return activeCategory === "all" ? faqs : faqs.filter((f) => f.category === activeCategory);
+      return activeCategory === "all" ? faqs : faqs.filter(f => f.category === activeCategory);
     }
-=======
-    if (!searchIndex) return activeCategory === "all" ? faqs : faqs.filter(f => f.category === activeCategory);
->>>>>>> Stashed changes
     return searchFaqs(searchQuery, faqs, searchIndex, activeCategory);
   }, [faqs, searchQuery, activeCategory, searchIndex]);
 
@@ -789,33 +748,21 @@ export default function FAQsPage() {
     <>
       <Header />
 
-<<<<<<< Updated upstream
-      <div className={`fq ${heroIn ? "fq--in" : ""}`}>
         <section className="fq-banner">
           <div className="fq-banner__noise" />
           <div className="fq-banner__glow" />
-
           <div className="fq-wrap fq-banner__inner">
             <div className="fq-banner__left">
               <p className="fq-banner__eyebrow">Help Center</p>
-
               <h1 className="fq-banner__title">
-                How can we
-                <br />
-                <em>help you?</em>
+                How can we<br /><em>help you?</em>
               </h1>
-
               <p className="fq-banner__sub">
                 {faqs.length ? `${faqs.length}` : "—"} articles across {CATEGORIES.length - 1} topics.
               </p>
             </div>
-
             <div className="fq-banner__stats">
-              {[
-                ["50+", "Partner gyms"],
-                ["24h", "Reply time"],
-                ["100%", "Free forever"],
-              ].map(([v, l]) => (
+              {[["50+", "Partner gyms"], ["24h", "Reply time"], ["100%", "Free forever"]].map(([v, l]) => (
                 <div key={l} className="fq-bstat">
                   <span className="fq-bstat__v">{v}</span>
                   <span className="fq-bstat__l">{l}</span>
@@ -826,30 +773,10 @@ export default function FAQsPage() {
         </section>
 
         <div className="fq-wrap fq-body">
+
           <aside className="fq-sidebar">
             <div className="fq-sb-search">
               <Search size={14} className="fq-sb-search__ico" />
-
-=======
-        {/* ── HERO ── */}
-        <section className="fq-hero">
-          <div className="fq-hero__noise" />
-          <div className="fq-hero__glow" />
-          <div className="fq-hero__grid" />
-
-          <div className="fq-hero__inner">
-            <p className="fq-hero__eyebrow">Help Center</p>
-            <h1 className="fq-hero__title">
-              How can we<br /><em>help you?</em>
-            </h1>
-            <p className="fq-hero__sub">
-              {faqs.length ? faqs.length : "—"} articles across {CATEGORIES.length - 1} topics.
-            </p>
-
-            {/* Search */}
-            <div className="fq-hero__search">
-              <Search size={16} className="fq-hero__search-ico" />
->>>>>>> Stashed changes
               <input
                 ref={searchRef}
                 className="fq-hero__input"
@@ -861,19 +788,8 @@ export default function FAQsPage() {
               />
 
               {searchQuery && (
-<<<<<<< Updated upstream
-                <button
-                  className="fq-sb-search__clear"
-                  onClick={() => {
-                    setSearchQuery("");
-                    searchRef.current?.focus();
-                  }}
-                >
+                <button className="fq-sb-search__clear" onClick={() => { setSearchQuery(""); searchRef.current?.focus(); }}>
                   <X size={10} />
-=======
-                <button className="fq-hero__clear" onClick={() => { setSearchQuery(""); searchRef.current?.focus(); }}>
-                  <X size={11} />
->>>>>>> Stashed changes
                 </button>
               )}
             </div>
@@ -883,34 +799,22 @@ export default function FAQsPage() {
               <div className="fq-hero__chips">
                 <span className="fq-hero__chip-label">Try:</span>
                 {QUICK_SEARCHES.map((t, i) => (
-<<<<<<< Updated upstream
-                  <button key={i} className="fq-sb-chip" onClick={() => setSearchQuery(t)}>
-                    {t}
-                  </button>
-=======
-                  <button key={i} className="fq-qchip" onClick={() => setSearchQuery(t)}>{t}</button>
->>>>>>> Stashed changes
+                  <button key={i} className="fq-sb-chip" onClick={() => setSearchQuery(t)}>{t}</button>
                 ))}
               </div>
             )}
-          </div>
 
-<<<<<<< Updated upstream
             <p className="fq-sb-heading">Browse topics</p>
-
             <nav className="fq-sb-nav">
-              {CATEGORIES.map((cat) => {
+              {CATEGORIES.map(cat => {
                 const Icon = cat.icon;
-
                 return (
                   <button
                     key={cat.id}
                     className={`fq-sb-cat ${activeCategory === cat.id ? "fq-sb-cat--on" : ""}`}
                     onClick={() => setActiveCategory(cat.id)}
                   >
-                    <span className="fq-sb-cat__ico">
-                      <Icon size={13} />
-                    </span>
+                    <span className="fq-sb-cat__ico"><Icon size={13} /></span>
                     <span className="fq-sb-cat__lbl">{cat.label}</span>
                     <span className="fq-sb-cat__n">{countFor(cat.id)}</span>
                   </button>
@@ -921,60 +825,21 @@ export default function FAQsPage() {
             <div className="fq-sb-contact">
               <p className="fq-sb-contact__title">Still need help?</p>
               <p className="fq-sb-contact__sub">We reply within 24 hours.</p>
-
               <a href={gmailUrl} target="_blank" rel="noopener noreferrer" className="fq-sb-clink">
-                <Mail size={13} />
-                <span>{supportEmail}</span>
+                <Mail size={13} /><span>{supportEmail}</span>
                 <ArrowRight size={10} className="fq-sb-clink__arr" />
               </a>
-
               <a href={`tel:${contactPhone.replace(/\s+/g, "")}`} className="fq-sb-clink">
-                <Phone size={13} />
-                <span>{contactPhone}</span>
+                <Phone size={13} /><span>{contactPhone}</span>
                 <ArrowRight size={10} className="fq-sb-clink__arr" />
               </a>
-
               <div className="fq-sb-clink fq-sb-clink--soon">
-                <MessageSquare size={13} />
-                <span>Live chat — coming soon</span>
-=======
-          {/* Stats strip */}
-          <div className="fq-hero__stats">
-            {[["50+", "Partner gyms"], ["24h", "Reply time"], ["100%", "Free forever"]].map(([v, l]) => (
-              <div key={l} className="fq-hstat">
-                <span className="fq-hstat__v">{v}</span>
-                <span className="fq-hstat__l">{l}</span>
->>>>>>> Stashed changes
+                <MessageSquare size={13} /><span>Live chat — coming soon</span>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          </aside>
 
-        {/* ── CATEGORY PILLS ── */}
-        <div className="fq-cats">
-          <div className="fq-cats__inner">
-            {CATEGORIES.map(cat => {
-              const Icon = cat.icon;
-              return (
-                <button
-                  key={cat.id}
-                  className={`fq-cat ${activeCategory === cat.id ? "fq-cat--on" : ""}`}
-                  onClick={() => setActiveCategory(cat.id)}
-                >
-                  <Icon size={12} />
-                  {cat.label}
-                  <span className="fq-cat__n">{countFor(cat.id)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── BODY ── */}
-        <div className="fq-body">
-          <div className="fq-wrap">
-
-            {/* Toolbar */}
+          <main className="fq-panel">
             <div className="fq-panel__bar">
               <span className="fq-panel__label">
                 {loading ? (
@@ -1055,30 +920,9 @@ export default function FAQsPage() {
                 ))}
               </div>
             )}
-
-            {/* Contact strip */}
-            <div className="fq-contact">
-              <div className="fq-contact__left">
-                <h3>Still need help?</h3>
-                <p>We reply within 24 hours. No bots, real people.</p>
-              </div>
-              <div className="fq-contact__links">
-                <a href={gmailUrl} target="_blank" rel="noopener noreferrer" className="fq-clink">
-                  <Mail size={13} /><span>{supportEmail}</span>
-                </a>
-                <a href={`tel:${contactPhone.replace(/\s+/g, "")}`} className="fq-clink">
-                  <Phone size={13} /><span>{contactPhone}</span>
-                </a>
-                <div className="fq-clink fq-clink--soon">
-                  <MessageSquare size={13} /><span>Live chat soon</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
+          </main>
         </div>
       </div>
-
       <Footer />
       <ScrollThemeWidget />
     </>
