@@ -6,7 +6,13 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [],
+    'allowed_origins' => [
+        'https://frontend-production-f74d.up.railway.app',
+        'https://exersearch.online',
+        'https://www.exersearch.online',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+    ],
 
     'allowed_origins_patterns' => [
         '#^https?://.*\.railway\.app$#',
