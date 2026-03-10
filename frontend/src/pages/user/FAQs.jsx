@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 import ScrollThemeWidget from "../../utils/ScrollThemeWidget";
+import ScrollThemeWidget from "../../utils/ScrollThemeWidget";
 
 import {
   Search,
