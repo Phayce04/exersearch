@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Send, User, Trash2 } from 'lucide-react';
-import './Chatbot.css';
+import './ChatBot.css';
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);

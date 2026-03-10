@@ -3091,7 +3091,6 @@
 [data-theme="dark"] .swal2-cancel {
   color: #ded2c5 !important;
 }
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap');
 
 :root{
   --im-font: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
