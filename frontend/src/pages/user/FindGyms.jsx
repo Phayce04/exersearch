@@ -13,7 +13,7 @@ import {
   fetchAmenities,
   fetchEquipments,
   groupEquipmentsByTypeAndMuscle,
-  labelForSelectedKey,
+  labelForSelectedKey, 
   absoluteUrl,
   prettyCategory,
   parseTargets,
