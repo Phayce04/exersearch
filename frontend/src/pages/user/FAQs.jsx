@@ -728,6 +728,7 @@ export default function FAQsPage() {
   return (
     <>
       <Header />
+      <div className={`fq ${heroIn ? "fq--in" : ""}`}>
 
         {/* ── HERO ── */}
         <section className="fq-hero">
