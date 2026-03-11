@@ -35,6 +35,7 @@ import HowItWorks from "./pages/user/HowItWorks";
 import Contact from "./pages/user/Contact";
 
 import Chatbot from "./pages/user/ChatBot";
+import NotFound from "./pages/user/NotFound";
 
 import OwnerLayout from "./pages/owner/OwnerLayout";
 import OwnerHome from "./pages/owner/OwnerHome";
@@ -94,8 +95,8 @@ function App() {
       <Routes>
         {/* ─── PUBLIC ROUTES (with theme support) ─── */}
         <Route path="/about-us" element={<AboutUs />} />
-        <Route path="faqs" element={<UserFaq />} />
-        <Route path="reviews" element={<Reviews />} />
+        <Route path="/faqs" element={<UserFaq />} />
+        <Route path="/reviews" element={<Reviews />} />
         <Route path="/why-exersearch" element={<WhyExerSearch />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/contact" element={<Contact />} />
@@ -111,6 +112,7 @@ function App() {
 
         <Route path="meal-plan" element={<MealPlanGenerator />} />
         <Route path="/chatbot" element={<Chatbot />} />
+        <Route path="/404" element={<NotFound />} />
 
         {/* ─── USER ROUTES (UserLayout handles widget) ─── */}
         <Route path="/home/*" element={<UserLayout />}>

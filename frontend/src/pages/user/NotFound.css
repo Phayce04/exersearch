@@ -1,0 +1,388 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ══════════════════════════════════════════════════════════════
+   THEME VARIABLES
+══════════════════════════════════════════════════════════════ */
+.nf-page {
+  /* Light Theme Colors */
+  --nf-sky: #87CEEB;
+  --nf-water-light: #B3DCDF;
+  --nf-water-dark: #87CEEB;
+  --nf-land: #DEB887;
+  --nf-track: #5D89AF;
+  --nf-track-bar: #709ABF;
+  --nf-cloud: #FFFFFF;
+  --nf-cloud-stroke: #B3DCDF;
+  --nf-train: #FFFFFF;
+  --nf-train-stroke: #709ABF;
+  --nf-wheel: #FFFFFF;
+  --nf-wheel-stroke: #5D89AF;
+}
+
+.nf-page[data-theme="dark"] {
+  /* Dark Theme Colors */
+  --nf-sky: #1a2332;
+  --nf-water-light: #2a3a4a;
+  --nf-water-dark: #1a2332;
+  --nf-land: #3a4a5a;
+  --nf-track: #4a6080;
+  --nf-track-bar: #5a7090;
+  --nf-cloud: #e5e5e5;
+  --nf-cloud-stroke: #2a3a4a;
+  --nf-train: #f5f5f5;
+  --nf-train-stroke: #5a7090;
+  --nf-wheel: #e5e5e5;
+  --nf-wheel-stroke: #4a6080;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAGE BASE
+══════════════════════════════════════════════════════════════ */
+.nf-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 2rem 4rem;
+  background: var(--lnd-bg-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  transition: background 0.3s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SVG SCENE
+══════════════════════════════════════════════════════════════ */
+.nf-scene {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+}
+
+.nf-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SVG ELEMENTS STYLING
+══════════════════════════════════════════════════════════════ */
+
+/* Sky & Water */
+.nf-sky {
+  fill: var(--nf-sky);
+  transition: fill 0.3s ease;
+}
+
+.nf-land {
+  fill: var(--nf-land);
+  transition: fill 0.3s ease;
+}
+
+/* Animated Land Bumps */
+#nf-bumps {
+  animation: nf-land-slide 10s linear infinite;
+}
+
+@keyframes nf-land-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(1000px); }
+}
+
+/* Railroad Tracks */
+.nf-track {
+  fill: var(--nf-track);
+  transition: fill 0.3s ease;
+}
+
+.nf-track-bar {
+  fill: var(--nf-track-bar);
+  transition: fill 0.3s ease;
+}
+
+#nf-tracks {
+  animation: nf-track-slide 650ms linear infinite;
+}
+
+@keyframes nf-track-slide {
+  from { transform: translateX(0px); }
+  to { transform: translateX(100px); }
+}
+
+/* Clouds */
+.nf-cloud {
+  fill: var(--nf-cloud);
+  stroke: var(--nf-cloud-stroke);
+  stroke-miterlimit: 10;
+  transition: fill 0.3s ease, stroke 0.3s ease;
+}
+
+#nf-cloud1 {
+  animation: nf-cloud-float 15s linear infinite;
+}
+
+#nf-cloud2 {
+  animation: nf-cloud-float 25s linear infinite;
+  animation-delay: 5s;
+}
+
+#nf-cloud3 {
+  animation: nf-cloud-float 20s linear infinite;
+  animation-delay: 3s;
+}
+
+#nf-cloud4 {
+  animation: nf-cloud-bob 4s ease-in-out infinite;
+}
+
+@keyframes nf-cloud-float {
+  0% { transform: translateX(-1000px) translateY(3px); }
+  100% { transform: translateX(1000px) translateY(0); }
+}
+
+@keyframes nf-cloud-bob {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(8px); }
+}
+
+/* Train */
+.nf-train-body {
+  fill: var(--nf-water-dark);
+  transition: fill 0.3s ease;
+}
+
+.nf-car,
+.nf-streamline,
+.nf-ladder-frame {
+  fill: var(--nf-train);
+  stroke: var(--nf-train-stroke);
+  stroke-miterlimit: 10;
+  transition: fill 0.3s ease, stroke 0.3s ease;
+}
+
+.nf-window-frame {
+  fill: none;
+  stroke: var(--nf-train-stroke);
+  stroke-miterlimit: 10;
+  transition: stroke 0.3s ease;
+}
+
+.nf-window-line,
+.nf-ladder-rung {
+  stroke: var(--nf-train-stroke);
+  stroke-miterlimit: 10;
+  fill: none;
+  transition: stroke 0.3s ease;
+}
+
+/* Wheels */
+.nf-wheel {
+  fill: var(--nf-wheel);
+  stroke: var(--nf-wheel-stroke);
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  transition: fill 0.3s ease, stroke 0.3s ease;
+}
+
+.nf-wheel-inner {
+  fill: var(--nf-track);
+  transition: fill 0.3s ease;
+}
+
+/* Wheel Braces */
+.nf-brace {
+  stroke: var(--nf-train-stroke);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-miterlimit: 10;
+  fill: none;
+  animation: nf-brace-shake 1s linear infinite;
+  transition: stroke 0.3s ease;
+}
+
+@keyframes nf-brace-shake {
+  0% { transform: translateX(-2px); }
+  25% { transform: translateX(3px); }
+  50% { transform: translateX(-2px); }
+  75% { transform: translateX(3px); }
+  100% { transform: translateX(-2px); }
+}
+
+/* Train Jiggle */
+#nf-train {
+  animation: nf-train-jiggle 0.35s linear infinite;
+}
+
+@keyframes nf-train-jiggle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(1px); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TEXT OVERLAY ON SVG
+══════════════════════════════════════════════════════════════ */
+.nf-text-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.nf-404 {
+  font-size: clamp(4rem, 12vw, 8rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  margin: 0 0 0.5rem;
+  background: linear-gradient(135deg, #ff5a16 0%, #fc4a00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+  animation: nf-404-pulse 2s ease-in-out infinite;
+}
+
+@keyframes nf-404-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.nf-message {
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--lnd-text-primary);
+  margin: 0;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(255, 255, 255, 0.5);
+  transition: color 0.3s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CONTENT BELOW SCENE
+══════════════════════════════════════════════════════════════ */
+.nf-content {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.nf-subtitle {
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  color: var(--lnd-text-tertiary);
+  line-height: 1.7;
+  margin: 0 0 2rem;
+  transition: color 0.3s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BUTTON
+══════════════════════════════════════════════════════════════ */
+.nf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff5a16 0%, #fc4a00 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  box-shadow: 
+    0 4px 14px rgba(255, 90, 22, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.nf-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.nf-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 24px rgba(255, 90, 22, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.nf-btn:hover::before {
+  opacity: 1;
+}
+
+.nf-btn:active {
+  transform: translateY(0);
+}
+
+.nf-btn-icon {
+  transition: transform 0.25s ease;
+}
+
+.nf-btn:hover .nf-btn-icon {
+  transform: scale(1.1);
+}
+
+.nf-btn-arrow {
+  transition: transform 0.25s ease;
+  opacity: 0.8;
+}
+
+.nf-btn:hover .nf-btn-arrow {
+  transform: translateX(3px);
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .nf-page {
+    padding: 100px 1.5rem 3rem;
+  }
+
+  .nf-scene {
+    margin-bottom: 2rem;
+  }
+
+  .nf-404 {
+    font-size: 4rem;
+  }
+
+  .nf-message {
+    font-size: 1.25rem;
+  }
+
+  .nf-btn {
+    padding: 0.875rem 1.75rem;
+    font-size: 0.9375rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nf-404 {
+    font-size: 3rem;
+  }
+
+  .nf-message {
+    font-size: 1rem;
+  }
+
+  .nf-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+}
