@@ -4,7 +4,13 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ['frontend-production-f74d.up.railway.app'],
+    allowedHosts: [
+      "frontend-production-f74d.up.railway.app",
+      "exersearch.online",
+      "www.exersearch.online",
+      "localhost",
+      "127.0.0.1",
+    ],
     proxy: {
       "/api": {
         target: "https://exersearch.test",
@@ -12,5 +18,12 @@ export default defineConfig({
         secure: false,
       },
     },
+  },
+  preview: {
+    allowedHosts: [
+      "frontend-production-f74d.up.railway.app",
+      "exersearch.online",
+      "www.exersearch.online",
+    ],
   },
 });
