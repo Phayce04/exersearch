@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Auth\UserAuthController;
 use App\Http\Controllers\AmenityController;
 use App\Http\Controllers\EquipmentController;
