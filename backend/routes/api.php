@@ -1,539 +1,493 @@
 <?php
 
-namespace App\Http\Controllers;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Auth\UserAuthController;
+use App\Http\Controllers\AmenityController;
+use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\GymAmenityController;
+use App\Http\Controllers\GymController;
+use App\Http\Controllers\GymEquipmentController;
+use App\Http\Controllers\GymInteractionController;
+use App\Http\Controllers\GymOwnerApplicationController;
+use App\Http\Controllers\GymRecommendationController;
+use App\Http\Controllers\MediaUploadController;
+use App\Http\Controllers\MeController;
+use App\Http\Controllers\ProfilePhotoController;
+use App\Http\Controllers\UserPreferenceController;
+use App\Http\Controllers\UserPreferredAmenityController;
+use App\Http\Controllers\UserPreferredEquipmentController;
+use App\Http\Controllers\EquipmentImportController;
 
-use App\Models\Gym;
-use App\Models\GymMembership;
+use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminOwnerController;
+use App\Http\Controllers\AdminProfileController;
+use App\Http\Controllers\AdminAppSettingsController;
+use App\Http\Controllers\AppSettingsPublicController;
+use App\Http\Controllers\SavedGymController;
+
+use App\Http\Controllers\AdminAdminController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserProfileController;
+
+use App\Http\Controllers\ExerciseController;
+use App\Http\Controllers\WorkoutTemplateController;
+use App\Http\Controllers\WorkoutTemplateDayController;
+use App\Http\Controllers\WorkoutTemplateDayExerciseController;
+
+use App\Http\Controllers\UserWorkoutPlanController;
+use App\Http\Controllers\UserWorkoutPlanDayController;
+use App\Http\Controllers\UserWorkoutPlanDayExerciseController;
+
+use App\Http\Controllers\OwnerProfileController;
+use App\Http\Controllers\DatabaseBackupController;
+
 use App\Models\User;
-use App\Models\OwnerProfile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Http\Resources\GymResource;
-use App\Http\Resources\EquipmentResource;
-use App\Http\Resources\AmenityResource;
-use App\Services\NotificationService;
+use Illuminate\Support\Facades\URL;
+use App\Http\Controllers\GymAnalyticsController;
 
-class GymController extends Controller
-{
-    public function index(Request $request)
-    {
-        $query = Gym::with(['owner', 'equipments', 'amenities'])
-            ->where('status', 'approved');
+use App\Http\Controllers\GymMembershipController;
+use App\Http\Controllers\GymFreeVisitController;
+use App\Http\Controllers\GymInquiryController;
+use App\Http\Controllers\GymRatingController;
+use App\Http\Controllers\OwnerManualMemberController;
 
-        if ($request->has('gym_type')) $query->where('gym_type', $request->gym_type);
-        if ($request->has('is_airconditioned')) $query->where('is_airconditioned', $request->is_airconditioned);
-        if ($request->has('has_personal_trainers')) $query->where('has_personal_trainers', $request->has_personal_trainers);
-        if ($request->has('has_classes')) $query->where('has_classes', $request->has_classes);
-        if ($request->has('is_24_hours')) $query->where('is_24_hours', $request->is_24_hours);
+use App\Models\Meal;
+use App\Http\Controllers\MealController;
+use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\MacroPresetController;
+use App\Http\Controllers\MealPlanController;
 
-        foreach (['daily_price', 'monthly_price', 'annual_price'] as $field) {
-            if ($request->has($field)) $query->where($field, $request->get($field));
-            if ($request->has("{$field}_min")) $query->where($field, '>=', $request->get("{$field}_min"));
-            if ($request->has("{$field}_max")) $query->where($field, '<=', $request->get("{$field}_max"));
-        }
+use App\Http\Controllers\GymActivityFeedController;
+use App\Http\Controllers\UserWorkoutGoalController;
+use App\Http\Controllers\FaqController;
 
-        if ($request->has('amenity_id')) {
-            $query->whereHas('amenities', fn ($q) => $q->where('amenity_id', $request->amenity_id));
-        }
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\GymAnnouncementController;
+use App\Http\Controllers\AdminDashboardController;
 
-        if ($request->has('equipment_category')) {
-            $query->whereHas('equipments', fn ($q) => $q->where('category', $request->equipment_category));
-        }
+use App\Http\Controllers\ChatController;
 
-        if ($request->has('equipment_difficulty')) {
-            $query->whereHas('equipments', fn ($q) => $q->where('difficulty', $request->equipment_difficulty));
-        }
+Route::prefix('v1')->group(function () {
+ Route::get('/mail-test', function () {
+        set_time_limit(120);
 
-        $perPage = max(1, min((int) $request->query('per_page', 10), 200));
-
-        return GymResource::collection($query->paginate($perPage));
-    }
-
-    public function show($gym_id)
-    {
-        $gym = Gym::with(['equipments', 'amenities', 'owner'])
-            ->where('status', 'approved')
-            ->findOrFail($gym_id);
-
-        return new GymResource($gym);
-    }
-
-    public function equipments(Request $request, $gym_id)
-    {
-        $gym = Gym::where('status', 'approved')->findOrFail($gym_id);
-        $query = $gym->equipments();
-
-        if ($request->has('category')) $query->where('category', $request->category);
-        if ($request->has('difficulty')) $query->where('difficulty', $request->difficulty);
-
-        $perPage = max(1, min((int) $request->query('per_page', 10), 200));
-
-        return EquipmentResource::collection($query->paginate($perPage));
-    }
-
-    public function equipmentDetail($gym_id, $equipment_id)
-    {
-        $gym = Gym::where('status', 'approved')->findOrFail($gym_id);
-
-        $equipment = $gym->equipments()
-            ->where('equipments.equipment_id', $equipment_id)
-            ->firstOrFail();
-
-        return new EquipmentResource($equipment);
-    }
-
-    public function amenities(Request $request, $gym_id)
-    {
-        $gym = Gym::where('status', 'approved')->findOrFail($gym_id);
-        $query = $gym->amenities();
-
-        if ($request->has('available')) {
-            $query->wherePivot('availability_status', $request->available);
-        }
-
-        $perPage = max(1, min((int) $request->query('per_page', 10), 200));
-
-        return AmenityResource::collection($query->paginate($perPage));
-    }
-
-    public function amenityDetail($gym_id, $amenity_id)
-    {
-        $gym = Gym::where('status', 'approved')->findOrFail($gym_id);
-
-        $amenity = $gym->amenities()
-            ->where('amenities.amenity_id', $amenity_id)
-            ->firstOrFail();
-
-        return new AmenityResource($amenity);
-    }
-
-    public function myGyms(Request $request)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) abort(403, 'Unauthorized');
-
-        $query = Gym::with(['owner', 'equipments', 'amenities']);
-        if ($user->role !== 'superadmin') $query->where('owner_id', $user->user_id);
-
-        $perPage = max(1, min((int) $request->query('per_page', 20), 200));
-
-        return GymResource::collection($query->orderByDesc('created_at')->paginate($perPage));
-    }
-
-    public function adminIndex(Request $request)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) abort(403, 'Unauthorized');
-
-        $perPage = max(1, min((int) $request->query('per_page', 20), 200));
-        $q = trim((string) $request->query('q', ''));
-        $status = $request->query('status');
-
-        $query = Gym::with(['owner', 'equipments', 'amenities'])
-            ->when($q !== '', function ($qq) use ($q) {
-                $qq->where(function ($w) use ($q) {
-                    $w->where('name', 'ilike', "%{$q}%")
-                        ->orWhere('address', 'ilike', "%{$q}%")
-                        ->orWhere('gym_type', 'ilike', "%{$q}%");
-                });
-            })
-            ->when($status, fn ($qq) => $qq->where('status', $status))
-            ->orderByDesc('created_at');
-
-        return GymResource::collection($query->paginate($perPage));
-    }
-
-    public function adminUnownedGyms(Request $request)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) {
-            abort(403, 'Unauthorized');
-        }
-
-        $perPage = max(1, min((int) $request->query('per_page', 20), 200));
-        $q = trim((string) $request->query('q', ''));
-
-        $query = Gym::with(['owner', 'equipments', 'amenities'])
-            ->whereNull('owner_id')
-            ->when($q !== '', function ($qq) use ($q) {
-                $qq->where(function ($w) use ($q) {
-                    $w->where('name', 'ilike', "%{$q}%")
-                        ->orWhere('address', 'ilike', "%{$q}%")
-                        ->orWhere('gym_type', 'ilike', "%{$q}%");
-                });
-            })
-            ->orderBy('name');
-
-        return GymResource::collection($query->paginate($perPage));
-    }
-
-    public function searchableOwners(Request $request)
-    {
-        $actor = auth()->user();
-
-        if (!$actor || !in_array($actor->role, ['admin', 'superadmin'])) {
-            abort(403, 'Unauthorized');
-        }
-
-        $q = trim((string) $request->query('q', ''));
-        $perPage = max(1, min((int) $request->query('per_page', 20), 100));
-
-        $query = User::query()
-            ->select(['user_id', 'name', 'email', 'role'])
-            ->when($q !== '', function ($qq) use ($q) {
-                $qq->where(function ($w) use ($q) {
-                    $w->where('name', 'ilike', "%{$q}%")
-                        ->orWhere('email', 'ilike', "%{$q}%");
-                });
-            })
-            ->whereIn('role', ['user', 'owner', 'superadmin'])
-            ->orderBy('name');
-
-        return response()->json($query->paginate($perPage));
-    }
-
-    public function adminShow($gym_id)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) abort(403, 'Unauthorized');
-
-        $gym = Gym::with(['owner', 'equipments', 'amenities'])->findOrFail($gym_id);
-
-        return new GymResource($gym);
-    }
-
-    public function adminApprove($gym_id)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) abort(403, 'Unauthorized');
-
-        $gym = Gym::with(['owner'])->findOrFail($gym_id);
-
-        $gym->update([
-            'status' => 'approved',
-            'approved_at' => now(),
-            'approved_by' => $user->user_id,
-        ]);
-
-        if (!empty($gym->owner_id)) {
-            NotificationService::create([
-                'recipient_id' => (int) $gym->owner_id,
-                'recipient_role' => 'owner',
-                'type' => 'GYM_APPROVED',
-                'title' => 'Gym approved',
-                'message' => '"' . ($gym->name ?? 'Your gym') . '" was approved by admin.',
-                'gym_id' => (int) $gym->gym_id,
-                'actor_id' => (int) $user->user_id,
-                'url' => '/owner/my-gyms',
-                'meta' => ['status' => 'approved'],
+        try {
+            Log::info('mail-test route hit', [
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'username' => config('mail.mailers.smtp.username'),
+                'from' => config('mail.from.address'),
             ]);
-        }
 
+            Mail::raw('SMTP test email from ExerSearch via Resend.', function ($message) {
+                $message->to('exersearch5@gmail.com')
+                    ->subject('SMTP Test - ExerSearch');
+            });
+
+            Log::info('mail-test sent successfully');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mail sent successfully',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('mail-test failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], 500);
+        }
+    });
+ Route::get('/mail-config-check', function () {
         return response()->json([
-            'message' => 'Gym approved successfully.',
-            'data' => new GymResource($gym->load(['owner', 'equipments', 'amenities'])),
+            'default' => config('mail.default'),
+            'host' => config('mail.mailers.smtp.host'),
+            'port' => config('mail.mailers.smtp.port'),
+            'username' => config('mail.mailers.smtp.username'),
+            'from_address' => config('mail.from.address'),
+            'from_name' => config('mail.from.name'),
         ]);
-    }
+    });
+    Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
 
-    public function adminReject(Request $request, $gym_id)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['admin', 'superadmin'])) abort(403, 'Unauthorized');
+    Route::get('/faqs', [FaqController::class, 'index']);
+    Route::get('/faqs/active', [FaqController::class, 'active']);
+    Route::get('/faqs/{faq}', [FaqController::class, 'show']);
 
-        $gym = Gym::with(['owner'])->findOrFail($gym_id);
-        $reason = trim((string) $request->input('reason', ''));
+    Route::post('/auth/login', [UserAuthController::class, 'login']);
+    Route::post('/auth/register', [UserAuthController::class, 'register']);
+    Route::post('/auth/google', [UserAuthController::class, 'google']);
 
-        $gym->update([
-            'status' => 'rejected',
-            'approved_at' => null,
-            'approved_by' => null,
-        ]);
+    Route::get('/gyms', [GymController::class, 'index']);
+    Route::get('/gyms/{gym}', [GymController::class, 'show'])->whereNumber('gym');
 
-        if (!empty($gym->owner_id)) {
-            NotificationService::create([
-                'recipient_id' => (int) $gym->owner_id,
-                'recipient_role' => 'owner',
-                'type' => 'GYM_REJECTED',
-                'title' => 'Gym rejected',
-                'message' => '"' . ($gym->name ?? 'Your gym') . '" was rejected by admin.' . ($reason ? " Reason: {$reason}" : ''),
-                'gym_id' => (int) $gym->gym_id,
-                'actor_id' => (int) $user->user_id,
-                'url' => '/owner/my-gyms',
-                'meta' => ['status' => 'rejected', 'reason' => $reason ?: null],
-            ]);
+    Route::get('/gyms/{gym}/equipments', [GymController::class, 'equipments'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/equipments/{equipment}', [GymController::class, 'equipmentDetail'])
+        ->whereNumber('gym')->whereNumber('equipment');
+
+    Route::get('/gyms/{gym}/amenities', [GymController::class, 'amenities'])->whereNumber('gym');
+    Route::get('/gyms/{gym}/amenities/{amenity}', [GymController::class, 'amenityDetail'])
+        ->whereNumber('gym')->whereNumber('amenity');
+
+    Route::get('/gyms/{gym}/ratings', [GymRatingController::class, 'gymRatings'])->whereNumber('gym');
+
+    Route::get('/gyms/{gymId}/announcements', [GymAnnouncementController::class, 'publicList'])
+        ->whereNumber('gymId');
+
+    Route::get('/equipments', [EquipmentController::class, 'index']);
+    Route::get('/equipments/{id}', [EquipmentController::class, 'show'])->whereNumber('id');
+
+    Route::get('/amenities', [AmenityController::class, 'index']);
+    Route::get('/amenities/{id}', [AmenityController::class, 'show'])->whereNumber('id');
+
+    Route::get('/gym-equipments', [GymEquipmentController::class, 'index']);
+    Route::get('/gym-amenities', [GymAmenityController::class, 'index']);
+    Route::get('/gym-amenities/{id}', [GymAmenityController::class, 'show'])->whereNumber('id');
+
+    Route::prefix('meals')->group(function () {
+        Route::get('/', [MealController::class, 'index']);
+        Route::get('/stats', [MealController::class, 'stats']);
+        Route::get('/filter', [MealController::class, 'filterByDiet']);
+        Route::get('/type/{type}', [MealController::class, 'getByType']);
+        Route::get('/{id}', [MealController::class, 'show']);
+    });
+
+    Route::prefix('ingredients')->group(function () {
+        Route::get('/', [IngredientController::class, 'index']);
+        Route::get('/categories', [IngredientController::class, 'categories']);
+        Route::get('/{id}', [IngredientController::class, 'show']);
+    });
+
+    Route::prefix('macro-presets')->group(function () {
+        Route::get('/', [MacroPresetController::class, 'index']);
+        Route::get('/{id}', [MacroPresetController::class, 'show']);
+        Route::post('/{id}/calculate', [MacroPresetController::class, 'calculate']);
+    });
+
+    Route::prefix('meal-plan')->group(function () {
+        Route::post('/generate', [MealPlanController::class, 'generate']);
+    });
+
+    Route::post('/chat', [ChatController::class, 'sendMessage']);
+
+    Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+        if (!URL::hasValidSignature($request)) {
+            return response()->view('email-verify-result', [
+                'ok' => false,
+                'title' => 'Invalid or expired link',
+                'message' => 'This verification link is invalid or has expired. Please request a new verification email from the app.',
+            ], 403);
         }
 
-        return response()->json([
-            'message' => 'Gym rejected.',
-            'data' => new GymResource($gym->load(['owner', 'equipments', 'amenities'])),
-        ]);
-    }
+        $user = User::findOrFail((int) $id);
 
-    public function assignOwner(Request $request, $gym_id)
-    {
-        $actor = auth()->user();
-
-        if (!$actor || $actor->role !== 'superadmin') {
-            abort(403, 'Unauthorized');
+        if (!hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
+            return response()->view('email-verify-result', [
+                'ok' => false,
+                'title' => 'Invalid link',
+                'message' => 'This verification link is invalid. Please request a new verification email from the app.',
+            ], 403);
         }
 
-        $data = $request->validate([
-            'owner_id' => 'required|integer|exists:users,user_id',
-            'force' => 'nullable|boolean',
-            'upgrade_user_to_owner' => 'nullable|boolean',
-        ]);
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
 
-        $newOwnerId = (int) $data['owner_id'];
-        $force = (bool) ($data['force'] ?? false);
-        $upgradeUserToOwner = (bool) ($data['upgrade_user_to_owner'] ?? true);
+        return response()->view('email-verify-result', [
+            'ok' => true,
+            'title' => 'Email verified',
+            'message' => 'Your email has been verified successfully. You can now go back and log in.',
+        ], 200);
+    })->middleware('signed')->name('verification.verify');
 
-        $result = DB::transaction(function () use ($gym_id, $newOwnerId, $force, $upgradeUserToOwner, $actor) {
-            $gym = Gym::with('owner')->lockForUpdate()->findOrFail($gym_id);
-            $newOwner = User::lockForUpdate()->findOrFail($newOwnerId);
+    Route::get('/gyms/free-first-visits', [GymFreeVisitController::class, 'listEnabledGyms']);
 
-            $oldOwnerId = $gym->owner_id ? (int) $gym->owner_id : null;
+    Route::middleware('auth:sanctum')->group(function () {
 
-            if ($oldOwnerId && $oldOwnerId !== $newOwnerId && !$force) {
-                abort(409, 'Gym already has an owner. Pass force=true to reassign.');
+        Route::get('/chat/history', [ChatController::class, 'getUserHistory']);
+        Route::delete('/chat/clear', [ChatController::class, 'clearHistory']);
+
+        Route::post('/email/verification-notification', function (Request $request) {
+            if ($request->user()->hasVerifiedEmail()) {
+                return response()->json(['message' => 'Email already verified.'], 200);
             }
+            $request->user()->sendEmailVerificationNotification();
+            return response()->json(['message' => 'Verification link sent.'], 200);
+        })->middleware('throttle:6,1')->name('verification.send');
 
-            if (!in_array($newOwner->role, ['owner', 'superadmin'])) {
-                if ($upgradeUserToOwner) {
-                    $newOwner->update(['role' => 'owner']);
-                } else {
-                    abort(422, 'Selected user is not an owner. Enable upgrade_user_to_owner or choose an owner account.');
-                }
-            }
+        Route::get('/me', MeController::class);
 
-            OwnerProfile::updateOrCreate(
-                ['user_id' => $newOwner->user_id],
-                [
-                    'verified' => true,
-                ]
-            );
+        Route::middleware('verified')->group(function () {
 
-            $gym->update([
-                'owner_id' => $newOwner->user_id,
-                'status' => $gym->status ?: 'approved',
-                'approved_at' => $gym->approved_at ?? now(),
-                'approved_by' => $gym->approved_by ?? $actor->user_id,
-            ]);
+            Route::get('/notifications', [NotificationController::class, 'index']);
+            Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+            Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
+            Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
-            NotificationService::create([
-                'recipient_id' => (int) $newOwner->user_id,
-                'recipient_role' => 'owner',
-                'type' => 'GYM_ASSIGNED',
-                'title' => 'Gym assigned to you',
-                'message' => '"' . ($gym->name ?? 'A gym') . '" was assigned to your owner account.',
-                'gym_id' => (int) $gym->gym_id,
-                'actor_id' => (int) $actor->user_id,
-                'url' => '/owner/my-gyms',
-                'meta' => [
-                    'gym_id' => (int) $gym->gym_id,
-                    'previous_owner_id' => $oldOwnerId,
-                    'assigned_by' => (int) $actor->user_id,
-                ],
-            ]);
+            Route::get('/gyms/{gym}/analytics', [GymAnalyticsController::class, 'show'])->whereNumber('gym');
+            Route::get('/owner/activities', [GymAnalyticsController::class, 'activities']);
 
-            return $gym->fresh(['owner', 'equipments', 'amenities']);
+            Route::post('/me/avatar/{type}', [ProfilePhotoController::class, 'upload'])
+                ->whereIn('type', ['user', 'owner', 'admin']);
+            Route::delete('/me/avatar/{type}', [ProfilePhotoController::class, 'remove'])
+                ->whereIn('type', ['user', 'owner', 'admin']);
+
+            Route::get('/owner/home/cards', [\App\Http\Controllers\OwnerHomeCardsController::class, 'index']);
+            Route::get('/gyms/ratings/summary', [\App\Http\Controllers\GymRatingSummaryController::class, 'index']);
+            Route::get('/ratings/latest', [GymRatingController::class, 'latest']);
+
+            Route::post('/media/upload', [MediaUploadController::class, 'upload']);
+            Route::delete('/media/delete', [MediaUploadController::class, 'delete']);
+
+            Route::get('/gyms/recommend', [GymRecommendationController::class, 'index']);
+            Route::post('/gym-interactions', [GymInteractionController::class, 'store']);
+
+            Route::post('/owner-applications', [GymOwnerApplicationController::class, 'applyOrUpdate']);
+            Route::get('/owner-applications/me', [GymOwnerApplicationController::class, 'myApplication']);
+
+            Route::get('/user/preferences', [UserPreferenceController::class, 'show']);
+            Route::post('/user/preferences', [UserPreferenceController::class, 'storeOrUpdate']);
+
+            Route::get('/user/preferred-equipments', [UserPreferredEquipmentController::class, 'index']);
+            Route::post('/user/preferred-equipments', [UserPreferredEquipmentController::class, 'store']);
+
+            Route::get('/user/preferred-amenities', [UserPreferredAmenityController::class, 'index']);
+            Route::post('/user/preferred-amenities', [UserPreferredAmenityController::class, 'store']);
+
+            Route::get('/user/profile', [UserProfileController::class, 'show']);
+            Route::put('/user/profile', [UserProfileController::class, 'update']);
+
+            Route::get('/owner/profile', [OwnerProfileController::class, 'show']);
+            Route::put('/owner/profile', [OwnerProfileController::class, 'update']);
+            Route::post('/owner/profile', [OwnerProfileController::class, 'storeOrUpdate']);
+
+            Route::post('/user/onboarding/complete', [UserController::class, 'markOnboarded']);
+
+            Route::get('/user/saved-gyms', [SavedGymController::class, 'index']);
+            Route::post('/user/saved-gyms', [SavedGymController::class, 'store']);
+            Route::delete('/user/saved-gyms/{gym_id}', [SavedGymController::class, 'destroy'])->whereNumber('gym_id');
+
+            Route::get('/exercises', [ExerciseController::class, 'index']);
+            Route::get('/exercises/{id}', [ExerciseController::class, 'show'])->whereNumber('id');
+
+            Route::get('/workout-templates', [WorkoutTemplateController::class, 'index']);
+            Route::get('/workout-templates/{id}', [WorkoutTemplateController::class, 'show'])->whereNumber('id');
+
+            Route::post('/user/workout-plans/generate', [UserWorkoutPlanController::class, 'generate']);
+            Route::post('/user/workout-plans/{id}/recalibrate-gym', [UserWorkoutPlanController::class, 'recalibrateGym'])->whereNumber('id');
+
+            Route::get('/user/workout-plans', [UserWorkoutPlanController::class, 'index']);
+            Route::get('/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'show'])->whereNumber('id');
+            Route::post('/user/workout-plans', [UserWorkoutPlanController::class, 'store']);
+            Route::match(['put', 'patch'], '/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'update'])->whereNumber('id');
+            Route::delete('/user/workout-plans/{id}', [UserWorkoutPlanController::class, 'destroy'])->whereNumber('id');
+
+            Route::get('/user/workout-plan-days', [UserWorkoutPlanDayController::class, 'index']);
+            Route::get('/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'show'])->whereNumber('id');
+            Route::post('/user/workout-plan-days', [UserWorkoutPlanDayController::class, 'store']);
+            Route::match(['put', 'patch'], '/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'update'])->whereNumber('id');
+            Route::delete('/user/workout-plan-days/{id}', [UserWorkoutPlanDayController::class, 'destroy'])->whereNumber('id');
+            Route::post('/user/workout-plan-days/{id}/recalibrate-gym', [UserWorkoutPlanDayController::class, 'recalibrateGym'])->whereNumber('id');
+
+            Route::get('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'index']);
+            Route::get('/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'show'])->whereNumber('id');
+            Route::post('/user/workout-plan-day-exercises', [UserWorkoutPlanDayExerciseController::class, 'store']);
+            Route::match(['put', 'patch'], '/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'update'])->whereNumber('id');
+            Route::delete('/user/workout-plan-day-exercises/{id}', [UserWorkoutPlanDayExerciseController::class, 'destroy'])->whereNumber('id');
+            Route::get('/user/workout-plan-day-exercises/{id}/replacement-options', [UserWorkoutPlanDayExerciseController::class, 'replacementOptions'])->whereNumber('id');
+            Route::post('/user/workout-plan-day-exercises/{id}/replace', [UserWorkoutPlanDayExerciseController::class, 'replaceWithChoice'])->whereNumber('id');
+
+            Route::get('/my-gyms', [GymController::class, 'myGyms']);
+            Route::post('/gyms', [GymController::class, 'store']);
+            Route::match(['put', 'patch'], '/gyms/{gym}', [GymController::class, 'update'])->whereNumber('gym');
+            Route::delete('/gyms/{gym}', [GymController::class, 'destroy'])->whereNumber('gym');
+
+            Route::post('/gyms/{gym}/equipments', [GymEquipmentController::class, 'store'])->whereNumber('gym');
+            Route::match(['put', 'patch'], '/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'update'])
+                ->whereNumber('gym')->whereNumber('equipment');
+            Route::delete('/gyms/{gym}/equipments/{equipment}', [GymEquipmentController::class, 'destroy'])
+                ->whereNumber('gym')->whereNumber('equipment');
+
+            Route::post('/gyms/{gym}/amenities', [GymAmenityController::class, 'store'])->whereNumber('gym');
+            Route::match(['put', 'patch'], '/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'update'])
+                ->whereNumber('gym')->whereNumber('amenity');
+            Route::delete('/gyms/{gym}/amenities/{amenity}', [GymAmenityController::class, 'destroy'])
+                ->whereNumber('gym')->whereNumber('amenity');
+
+            Route::get('/gyms/{gymId}/membership/me', [GymMembershipController::class, 'myForGym'])->whereNumber('gymId');
+            Route::post('/gyms/{gymId}/membership/intent', [GymMembershipController::class, 'intent'])->whereNumber('gymId');
+            Route::get('/me/memberships', [GymMembershipController::class, 'myMemberships']);
+
+            Route::post('/gyms/{gymId}/free-visit/claim', [GymFreeVisitController::class, 'claim'])->whereNumber('gymId');
+            Route::get('/me/free-visits', [GymFreeVisitController::class, 'myFreeVisits']);
+
+            Route::get('/user/activity', [GymActivityFeedController::class, 'index']);
+            Route::get('/user/workout-goal', [UserWorkoutGoalController::class, 'show']);
+
+            Route::post('/gyms/{gymId}/inquiries', [GymInquiryController::class, 'ask'])->whereNumber('gymId');
+            Route::get('/me/inquiries', [GymInquiryController::class, 'myInquiries']);
+            Route::post('/me/inquiries/{inquiryId}/read', [GymInquiryController::class, 'userMarkRead'])->whereNumber('inquiryId');
+
+            Route::get('/owner/inquiries/summary', [GymInquiryController::class, 'ownerSummary']);
+
+            Route::get('/me/ratings', [GymRatingController::class, 'myRatings']);
+            Route::get('/gyms/{gymId}/ratings/can-rate', [GymRatingController::class, 'canRate'])->whereNumber('gymId');
+            Route::post('/gyms/{gymId}/ratings', [GymRatingController::class, 'upsertMyRating'])->whereNumber('gymId');
+
+            Route::get('/owner/gyms/{gymId}/ratings', [GymRatingController::class, 'ownerGymRatings'])->whereNumber('gymId');
+
+            Route::post('/owner/gyms/{gymId}/memberships/expire-check', [GymMembershipController::class, 'expireCheck']);
+
+            Route::get('/owner/gyms/{gymId}/memberships', [GymMembershipController::class, 'ownerList'])->whereNumber('gymId');
+            Route::post('/owner/memberships/{membershipId}/activate', [GymMembershipController::class, 'ownerActivate'])->whereNumber('membershipId');
+            Route::patch('/owner/memberships/{membershipId}', [GymMembershipController::class, 'ownerUpdateStatus'])->whereNumber('membershipId');
+
+            Route::get('/owner/gyms/{gymId}/free-visits', [GymFreeVisitController::class, 'ownerList'])->whereNumber('gymId');
+            Route::post('/owner/free-visits/{freeVisitId}/use', [GymFreeVisitController::class, 'ownerMarkUsed'])->whereNumber('freeVisitId');
+            Route::patch('/owner/gyms/{gymId}/free-visit-enabled', [GymFreeVisitController::class, 'ownerToggleEnabled'])->whereNumber('gymId');
+
+            Route::get('/owner/gyms/{gymId}/members/combined', [OwnerManualMemberController::class, 'combined'])->whereNumber('gymId');
+            Route::post('/owner/gyms/{gymId}/manual-members/import', [OwnerManualMemberController::class, 'import'])->whereNumber('gymId');
+            Route::get('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'index'])->whereNumber('gymId');
+            Route::post('/owner/gyms/{gymId}/manual-members', [OwnerManualMemberController::class, 'store'])->whereNumber('gymId');
+            Route::get('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'show'])
+                ->whereNumber('gymId')->whereNumber('manualMemberId');
+            Route::patch('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'update'])
+                ->whereNumber('gymId')->whereNumber('manualMemberId');
+            Route::delete('/owner/gyms/{gymId}/manual-members/{manualMemberId}', [OwnerManualMemberController::class, 'destroy'])
+                ->whereNumber('gymId')->whereNumber('manualMemberId');
+
+            Route::get('/owner/gyms/{gymId}/inquiries', [GymInquiryController::class, 'ownerList'])->whereNumber('gymId');
+            Route::post('/owner/inquiries/{inquiryId}/answer', [GymInquiryController::class, 'ownerAnswer'])->whereNumber('inquiryId');
+            Route::post('/owner/inquiries/{inquiryId}/close', [GymInquiryController::class, 'ownerClose'])->whereNumber('inquiryId');
+            Route::post('/owner/inquiries/{inquiryId}/read', [GymInquiryController::class, 'ownerMarkRead'])->whereNumber('inquiryId');
+
+            Route::get('/owner/gyms/{gymId}/announcements', [GymAnnouncementController::class, 'ownerList'])
+                ->whereNumber('gymId');
+            Route::post('/owner/gyms/{gymId}/announcements', [GymAnnouncementController::class, 'ownerCreate'])
+                ->whereNumber('gymId');
+            Route::delete('/owner/announcements/{announcementId}', [GymAnnouncementController::class, 'ownerDelete'])
+                ->whereNumber('announcementId');
+
+            Route::middleware('admin')->group(function () {
+                Route::post('/faqs', [FaqController::class, 'store']);
+                Route::put('/faqs/{faq}', [FaqController::class, 'update']);
+                Route::patch('/faqs/{faq}', [FaqController::class, 'update']);
+                Route::patch('/faqs/{faq}/toggle', [FaqController::class, 'toggle']);
+                Route::delete('/faqs/{faq}', [FaqController::class, 'destroy']);
+
+                Route::get('/admin/activities', [GymInteractionController::class, 'adminIndex']);
+                Route::get('/admin/settings', [AdminAppSettingsController::class, 'show']);
+                Route::put('/admin/settings', [AdminAppSettingsController::class, 'update']);
+                Route::get('/admin/dashboard', [AdminDashboardController::class, 'show']);
+                Route::get('/admin/profile', [AdminProfileController::class, 'show']);
+                Route::put('/admin/profile', [AdminProfileController::class, 'update']);
+                Route::get('/admin/chat-history', [ChatController::class, 'adminIndex']);
+                Route::post('/admin/chat-history/clear', [ChatController::class, 'adminClear']);
+
+                Route::get('/admin/ingredients', [IngredientController::class, 'adminIndex']);
+                Route::post('/admin/ingredients', [IngredientController::class, 'store']);
+                Route::patch('/admin/ingredients/{id}', [IngredientController::class, 'update'])->whereNumber('id');
+                Route::delete('/admin/ingredients/{id}', [IngredientController::class, 'destroy'])->whereNumber('id');
+                Route::patch('/admin/ingredients/{id}/toggle', [IngredientController::class, 'toggle'])->whereNumber('id');
+
+                Route::get('/admin/macro-presets', [MacroPresetController::class, 'adminIndex']);
+                Route::post('/admin/macro-presets', [MacroPresetController::class, 'store']);
+                Route::match(['put', 'patch'], '/admin/macro-presets/{id}', [MacroPresetController::class, 'update'])->whereNumber('id');
+                Route::delete('/admin/macro-presets/{id}', [MacroPresetController::class, 'destroy'])->whereNumber('id');
+                Route::patch('/admin/macro-presets/{id}/toggle', [MacroPresetController::class, 'toggle'])->whereNumber('id');
+
+                Route::get('/admin/meals', [MealController::class, 'adminIndex']);
+                Route::get('/admin/meals/{id}', [MealController::class, 'adminShow'])->whereNumber('id');
+                Route::post('/admin/meals', [MealController::class, 'store']);
+                Route::match(['put', 'patch'], '/admin/meals/{id}', [MealController::class, 'update'])->whereNumber('id');
+                Route::delete('/admin/meals/{id}', [MealController::class, 'destroy'])->whereNumber('id');
+                Route::patch('/admin/meals/{id}/toggle', [MealController::class, 'toggle'])->whereNumber('id');
+
+                Route::get('/admin/admins', [AdminAdminController::class, 'index']);
+                Route::get('/admin/admins/{user}', [AdminAdminController::class, 'show']);
+                Route::post('/admin/admins', [AdminAdminController::class, 'store']);
+                Route::put('/admin/admins/{user}', [AdminAdminController::class, 'update']);
+                Route::delete('/admin/admins/{user}', [AdminAdminController::class, 'destroy']);
+
+                Route::post('/equipments', [EquipmentController::class, 'store']);
+                Route::match(['put', 'patch'], '/equipments/{id}', [EquipmentController::class, 'update'])->whereNumber('id');
+                Route::delete('/equipments/{id}', [EquipmentController::class, 'destroy'])->whereNumber('id');
+                Route::post('/equipments/import-csv', [EquipmentImportController::class, 'import']);
+
+                Route::post('/amenities', [AmenityController::class, 'store']);
+                Route::match(['put', 'patch'], '/amenities/{id}', [AmenityController::class, 'update'])->whereNumber('id');
+                Route::delete('/amenities/{id}', [AmenityController::class, 'destroy'])->whereNumber('id');
+
+                Route::get('/gyms/map', [GymController::class, 'mapGyms']);
+                Route::get('/owner-applications/map', [GymOwnerApplicationController::class, 'mapPoints']);
+
+                Route::get('/admin/owner-applications', [GymOwnerApplicationController::class, 'index']);
+                Route::get('/admin/owner-applications/{id}', [GymOwnerApplicationController::class, 'show'])->whereNumber('id');
+                Route::patch('/admin/owner-applications/{id}/approve', [GymOwnerApplicationController::class, 'approve'])->whereNumber('id');
+                Route::patch('/admin/owner-applications/{id}/reject', [GymOwnerApplicationController::class, 'reject'])->whereNumber('id');
+
+                Route::get('/admin/gyms', [GymController::class, 'adminIndex']);
+                Route::get('/admin/gyms/{gym}', [GymController::class, 'adminShow'])->whereNumber('gym');
+                Route::patch('/admin/gyms/{gym}/approve', [GymController::class, 'adminApprove'])->whereNumber('gym');
+                Route::patch('/admin/gyms/{gym}/reject', [GymController::class, 'adminReject'])->whereNumber('gym');
+
+                Route::patch('/admin/owner-profiles/{user_id}/verify', [OwnerProfileController::class, 'verify'])->whereNumber('user_id');
+
+                Route::get('/admin/users', [AdminUserController::class, 'index']);
+                Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);
+                Route::get('/admin/users/{user}/preferences', [AdminUserController::class, 'preferences']);
+                Route::put('/admin/users/{user}/preferences', [AdminUserController::class, 'updatePreferences']);
+
+                Route::get('/admin/owners', [AdminOwnerController::class, 'index']);
+                Route::get('/admin/owners/{owner}', [AdminOwnerController::class, 'show']);
+                Route::get('/admin/owners/{owner}/gyms', [AdminOwnerController::class, 'gyms']);
+
+                Route::post('/exercises', [ExerciseController::class, 'store']);
+                Route::match(['put', 'patch'], '/exercises/{id}', [ExerciseController::class, 'update'])->whereNumber('id');
+                Route::delete('/exercises/{id}', [ExerciseController::class, 'destroy'])->whereNumber('id');
+
+                Route::match(['put', 'patch'], '/workout-templates/{id}', [WorkoutTemplateController::class, 'update'])->whereNumber('id');
+                Route::delete('/workout-templates/{id}', [WorkoutTemplateController::class, 'destroy'])->whereNumber('id');
+                Route::post('/workout-templates', [WorkoutTemplateController::class, 'store']);
+
+                Route::get('/workout-template-days', [WorkoutTemplateDayController::class, 'index']);
+                Route::get('/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'show'])->whereNumber('id');
+                Route::post('/workout-template-days', [WorkoutTemplateDayController::class, 'store']);
+                Route::match(['put', 'patch'], '/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'update'])->whereNumber('id');
+                Route::delete('/workout-template-days/{id}', [WorkoutTemplateDayController::class, 'destroy'])->whereNumber('id');
+
+                Route::get('/workout-template-day-exercises', [WorkoutTemplateDayExerciseController::class, 'index']);
+                Route::get('/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'show'])->whereNumber('id');
+                Route::post('/workout-template-day-exercises', [WorkoutTemplateDayExerciseController::class, 'store']);
+                Route::match(['put', 'patch'], '/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'update'])->whereNumber('id');
+                Route::delete('/workout-template-day-exercises/{id}', [WorkoutTemplateDayExerciseController::class, 'destroy'])->whereNumber('id');
+
+                Route::get('/admin/db/backups', [DatabaseBackupController::class, 'index']);
+                Route::get('/admin/db/tables', [DatabaseBackupController::class, 'tables']);
+                Route::post('/admin/db/backup', [DatabaseBackupController::class, 'store']);
+                Route::post('/admin/db/restore', [DatabaseBackupController::class, 'restore']);
+                Route::get('/admin/db/backups/{name}/download', [DatabaseBackupController::class, 'download']);
+
+                Route::get('/admin/announcements', [GymAnnouncementController::class, 'adminList']);
+                Route::delete('/admin/announcements/{announcementId}', [GymAnnouncementController::class, 'adminDelete'])
+                    ->whereNumber('announcementId');
+                Route::post('/admin/gyms/{gymId}/announcements/block', [GymAnnouncementController::class, 'adminBlockGym'])
+                    ->whereNumber('gymId');
+                Route::post('/admin/gyms/{gymId}/announcements/unblock', [GymAnnouncementController::class, 'adminUnblockGym'])
+                    ->whereNumber('gymId');
+            });
         });
-
-        return response()->json([
-            'message' => 'Gym owner assigned successfully.',
-            'data' => new GymResource($result),
-        ]);
-    }
-
-    public function store(Request $request)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) abort(403, 'Unauthorized');
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'address' => 'required|string',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'daily_price' => 'nullable|numeric|min:0',
-            'monthly_price' => 'required|numeric|min:0',
-            'annual_price' => 'nullable|numeric|min:0',
-            'opening_time' => 'nullable',
-            'closing_time' => 'nullable',
-            'gym_type' => 'nullable|string|max:50',
-            'contact_number' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|url|max:255',
-            'facebook_page' => 'nullable|url|max:255',
-            'instagram_page' => 'nullable|url|max:255',
-            'main_image_url' => 'nullable|string',
-            'gallery_urls' => 'nullable|array',
-            'gallery_urls.*' => 'nullable|string',
-            'has_personal_trainers' => 'boolean',
-            'has_classes' => 'boolean',
-            'is_24_hours' => 'boolean',
-            'is_airconditioned' => 'boolean',
-        ]);
-
-        $validated['owner_id'] = $user->user_id;
-
-        if ($user->role !== 'superadmin') {
-            $validated['status'] = 'pending';
-            $validated['approved_at'] = null;
-            $validated['approved_by'] = null;
-        } else {
-            $validated['status'] = 'approved';
-            $validated['approved_at'] = now();
-            $validated['approved_by'] = $user->user_id;
-        }
-
-        $gym = Gym::create($validated);
-
-        if ($user->role !== 'superadmin') {
-            NotificationService::notifyAdmins(
-                'GYM_SUBMITTED',
-                'New gym submitted',
-                'Gym "' . ($gym->name ?? 'New gym') . '" was submitted for approval.',
-                [
-                    'gym_id' => $gym->gym_id,
-                    'actor_id' => $user->user_id,
-                    'url' => '/admin/gym-application',
-                    'meta' => ['status' => $gym->status],
-                ]
-            );
-        }
-
-        return response()->json([
-            'message' => 'Gym created.',
-            'data' => new GymResource($gym->load(['owner', 'equipments', 'amenities'])),
-        ], 201);
-    }
-
-    public function update(Request $request, $gym_id)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) abort(403, 'Unauthorized');
-
-        $query = Gym::where('gym_id', $gym_id);
-        if ($user->role !== 'superadmin') $query->where('owner_id', $user->user_id);
-
-        $gym = $query->firstOrFail();
-
-        $before = [
-            'opening_time' => (string) ($gym->opening_time ?? ''),
-            'closing_time' => (string) ($gym->closing_time ?? ''),
-            'is_24_hours'  => (bool) ($gym->is_24_hours ?? false),
-        ];
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'address' => 'required|string',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'contact_number' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|url|max:255',
-            'facebook_page' => 'nullable|url|max:255',
-            'instagram_page' => 'nullable|url|max:255',
-            'daily_price' => 'nullable|numeric|min:0',
-            'monthly_price' => 'required|numeric|min:0',
-            'annual_price' => 'nullable|numeric|min:0',
-            'opening_time' => 'nullable',
-            'closing_time' => 'nullable',
-            'gym_type' => 'nullable|string|max:50',
-            'main_image_url' => 'nullable|string',
-            'gallery_urls' => 'nullable|array',
-            'gallery_urls.*' => 'nullable|string',
-            'has_personal_trainers' => 'boolean',
-            'has_classes' => 'boolean',
-            'is_24_hours' => 'boolean',
-            'is_airconditioned' => 'boolean',
-        ]);
-
-        $gym->update($validated);
-
-        $after = [
-            'opening_time' => (string) ($gym->opening_time ?? ''),
-            'closing_time' => (string) ($gym->closing_time ?? ''),
-            'is_24_hours'  => (bool) ($gym->is_24_hours ?? false),
-        ];
-
-        $scheduleChanged = $before !== $after;
-
-        if ($scheduleChanged) {
-            $memberIds = GymMembership::query()
-                ->where('gym_id', (int) $gym->gym_id)
-                ->where('status', 'active')
-                ->pluck('user_id')
-                ->unique()
-                ->values()
-                ->all();
-
-            if (!empty($memberIds)) {
-                $rows = [];
-                foreach ($memberIds as $uid) {
-                    $rows[] = [
-                        'recipient_id' => (int) $uid,
-                        'recipient_role' => 'user',
-                        'type' => 'GYM_SCHEDULE_UPDATED',
-                        'title' => 'Gym schedule updated',
-                        'message' => '"' . ($gym->name ?? 'Your gym') . '" updated its schedule.',
-                        'gym_id' => (int) $gym->gym_id,
-                        'actor_id' => (int) $user->user_id,
-                        'url' => '/home/gym/' . (int) $gym->gym_id,
-                        'meta' => [
-                            'before' => $before,
-                            'after' => $after,
-                        ],
-                    ];
-                }
-                NotificationService::bulkInsert($rows);
-            }
-        }
-
-        return response()->json([
-            'message' => 'Gym updated.',
-            'data' => new GymResource($gym->load(['owner', 'equipments', 'amenities'])),
-        ]);
-    }
-
-    public function destroy($gym_id)
-    {
-        $user = auth()->user();
-        if (!$user || !in_array($user->role, ['owner', 'superadmin'])) abort(403, 'Unauthorized');
-
-        $query = Gym::where('gym_id', $gym_id);
-        if ($user->role !== 'superadmin') $query->where('owner_id', $user->user_id);
-
-        $gym = $query->firstOrFail();
-        $gym->delete();
-
-        return response()->json(['message' => 'Gym deleted.']);
-    }
-
-    public function mapGyms(Request $request)
-    {
-        $validated = $request->validate([
-            'south' => 'required|numeric',
-            'west'  => 'required|numeric',
-            'north' => 'required|numeric',
-            'east'  => 'required|numeric',
-        ]);
-
-        $rows = Gym::query()
-            ->select(['gym_id', 'name', 'address', 'latitude', 'longitude', 'owner_id'])
-            ->where('status', 'approved')
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->whereBetween('latitude', [$validated['south'], $validated['north']])
-            ->whereBetween('longitude', [$validated['west'], $validated['east']])
-            ->orderBy('name')
-            ->get();
-
-        return response()->json([
-            'meta' => ['count' => $rows->count(), 'bbox' => $validated],
-            'data' => $rows,
-        ]);
-    }
-}
+    });
+});
