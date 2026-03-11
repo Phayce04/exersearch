@@ -70,7 +70,24 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\ChatController;
 
 Route::prefix('v1')->group(function () {
+Route::get('/mail-test', function () {
+    try {
+        Mail::raw('SMTP test email from ExerSearch.', function ($message) {
+            $message->to('exersearch5@gmail.com')
+                    ->subject('SMTP Test - ExerSearch');
+        });
 
+        return response()->json([
+            'success' => true,
+            'message' => 'Mail sent successfully'
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
     Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
 
     Route::get('/faqs', [FaqController::class, 'index']);
