@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import logo from "../../assets/exersearchlogo.png";
 import "./HeaderFooter.css";
-
-const API_BASE = "https://exersearch.test";
+import { api, RAW_API_BASE } from "../../utils/apiClient";
 
 const COLS = [
   {
@@ -71,7 +70,8 @@ function toAbsUrl(u) {
   const s = String(u).trim();
   if (!s) return "";
   if (/^https?:\/\//i.test(s)) return s;
-  const base = String(API_BASE || "").replace(/\/$/, "");
+
+  const base = String(RAW_API_BASE || "").replace(/\/$/, "");
   const path = s.startsWith("/") ? s : `/${s}`;
   return `${base}${path}`;
 }
@@ -89,15 +89,10 @@ export default function Footer() {
 
     async function loadSettings() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/settings/public`, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        const json = await res.json();
+        const res = await api.get("/settings/public");
 
         if (!mounted) return;
-        setSettings(json?.data || null);
+        setSettings(res?.data?.data || null);
       } catch {
         if (!mounted) return;
         setSettings(null);
@@ -112,46 +107,18 @@ export default function Footer() {
   }, []);
 
   const appName = safeStr(settings?.app_name) || "ExerSearch";
-
-  // ✅ changed from logo_url to user_logo_url
   const logoSrc = toAbsUrl(settings?.user_logo_url) || logo;
-
   const contactPhone = safeStr(settings?.contact_phone) || "+63 123 456 7890";
   const contactEmail = safeStr(settings?.contact_email) || "hello@exersearch.com";
   const contactAddress = safeStr(settings?.address) || "Metro Manila, Philippines";
 
   const socials = useMemo(() => {
     const items = [
-      {
-        name: "Facebook",
-        href: safeHref(settings?.facebook_url),
-        icon: Facebook,
-        color: "#1877F2",
-      },
-      {
-        name: "Instagram",
-        href: safeHref(settings?.instagram_url),
-        icon: Instagram,
-        color: "#E4405F",
-      },
-      {
-        name: "Website",
-        href: safeHref(settings?.website_url),
-        icon: XIcon,
-        color: "#000000",
-      },
-      {
-        name: "YouTube",
-        href: safeHref(settings?.youtube_url),
-        icon: Youtube,
-        color: "#FF0000",
-      },
-      {
-        name: "Email",
-        href: contactEmail ? `mailto:${contactEmail}` : "",
-        icon: Mail,
-        color: "#EA4335",
-      },
+      { name: "Facebook", href: safeHref(settings?.facebook_url), icon: Facebook, color: "#1877F2" },
+      { name: "Instagram", href: safeHref(settings?.instagram_url), icon: Instagram, color: "#E4405F" },
+      { name: "Website", href: safeHref(settings?.website_url), icon: XIcon, color: "#000000" },
+      { name: "YouTube", href: safeHref(settings?.youtube_url), icon: Youtube, color: "#FF0000" },
+      { name: "Email", href: contactEmail ? `mailto:${contactEmail}` : "", icon: Mail, color: "#EA4335" },
     ];
 
     return items.filter((item) => safeStr(item.href));
@@ -172,7 +139,6 @@ export default function Footer() {
                 }}
               />
             </Link>
-
 
             <div className="lnd-foot__contact">
               <div className="lnd-foot__contact-item">

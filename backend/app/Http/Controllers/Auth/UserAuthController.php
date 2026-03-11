@@ -40,14 +40,15 @@ class UserAuthController extends Controller
         ]);
     }
 
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+  public function register(Request $request)
+{
+    $validated = $request->validate([
+        'name'     => 'required|string|max:255',
+        'email'    => 'required|email|unique:users,email',
+        'password' => 'required|string|min:6|confirmed',
+    ]);
 
+    try {
         $user = User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
@@ -69,7 +70,15 @@ class UserAuthController extends Controller
                 'email_verified_at' => $user->email_verified_at,
             ],
         ], 201);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'message' => 'Register failed',
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ], 500);
     }
+}
 
     public function google(Request $request)
     {
