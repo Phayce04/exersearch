@@ -334,7 +334,7 @@ export default function AdminHeader({
   }, [refreshUnread]);
 
   const notifPanelWidth = isMobile
-    ? Math.min(screenWidth - 16, 360)
+    ? Math.max(280, Math.min(screenWidth - 16, 420))
     : isTablet
     ? 320
     : 340;
@@ -344,171 +344,47 @@ export default function AdminHeader({
     : 260;
 
   return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: isMobile ? 8 : 12,
-        padding: isMobile ? 10 : 12,
-        background: t.bg,
-        borderBottom: `1px solid ${t.border}`,
-        flexWrap: "nowrap",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          minWidth: 0,
-          flex: 1,
-          overflow: "hidden",
-        }}
-      >
-        <button
-          onClick={onBurgerClick}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: 12,
-            border: `1px solid ${t.border}`,
-            background: t.soft,
-            color: t.text,
-            cursor: "pointer",
-            display: "grid",
-            placeItems: "center",
-            flex: "0 0 auto",
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M3 5.5h14"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-            <path
-              d="M3 10h14"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-            <path
-              d="M3 14.5h14"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-
+    <>
+      {notifOpen && isMobile && (
         <div
+          onClick={() => setNotifOpen(false)}
           style={{
-            display: "flex",
-            flexDirection: "column",
-            lineHeight: 1.1,
-            minWidth: 0,
-            overflow: "hidden",
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.32)",
+            zIndex: 998,
           }}
-        >
-          <div
-            style={{
-              fontWeight: 950,
-              letterSpacing: 0.2,
-              fontSize: isMobile ? 14 : 16,
-              color: t.text,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: isMobile ? 140 : "none",
-            }}
-          >
-            {title}
-          </div>
-
-          {!isMobile && (
-            <div
-              style={{
-                marginTop: 3,
-                fontSize: 12,
-                fontWeight: 800,
-                color: t.mutedText,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              Admin Panel
-            </div>
-          )}
-        </div>
-      </div>
+        />
+      )}
 
       <div
         style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
           display: "flex",
           alignItems: "center",
-          justifyContent: "flex-end",
-          gap: isMobile ? 8 : 10,
-          width: "auto",
-          marginLeft: "auto",
+          justifyContent: "space-between",
+          gap: isMobile ? 8 : 12,
+          padding: isMobile ? 10 : 12,
+          background: t.bg,
+          borderBottom: `1px solid ${t.border}`,
           flexWrap: "nowrap",
-          minWidth: 0,
-          flex: "0 0 auto",
         }}
       >
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 6,
-            padding: isMobile ? "4px 6px" : "8px 10px",
-            borderRadius: 12,
-            border: `1px solid ${t.border}`,
-            background: t.soft2,
+            gap: 10,
             minWidth: 0,
-            flex: "0 0 auto",
+            flex: 1,
+            overflow: "hidden",
           }}
-          title="Theme"
         >
-          {!isCompact && (
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                color: t.mutedText,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {isDark ? "Dark" : "Light"}
-            </span>
-          )}
-
-          <Switch
-            id="admin-theme-header"
-            checked={isDark}
-            onChange={() =>
-              setTheme((p) => (p === "dark" ? "light" : "dark"))
-            }
-            label=""
-          />
-        </div>
-
-        <div ref={notifRef} style={{ position: "relative", flex: "0 0 auto" }}>
           <button
-            onClick={() => {
-              setNotifOpen((o) => {
-                const next = !o;
-                if (next) loadNotifs();
-                return next;
-              });
-              setMenuOpen(false);
-            }}
+            onClick={onBurgerClick}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             style={{
               width: 42,
               height: 42,
@@ -517,548 +393,687 @@ export default function AdminHeader({
               background: t.soft,
               color: t.text,
               cursor: "pointer",
-              position: "relative",
               display: "grid",
               placeItems: "center",
               flex: "0 0 auto",
             }}
-            title="Notifications"
-            type="button"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
-                d="M10 2a5 5 0 0 0-5 5v2.8l-.9.9A1 1 0 0 0 4.8 12h10.4a1 1 0 0 0 .7-1.7l-.9-.9V7a5 5 0 0 0-5-5Z"
+                d="M3 5.5h14"
                 stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
+                strokeWidth="1.8"
+                strokeLinecap="round"
               />
               <path
-                d="M7.8 15a2.2 2.2 0 0 0 4.4 0"
+                d="M3 10h14"
                 stroke="currentColor"
-                strokeWidth="1.6"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <path
+                d="M3 14.5h14"
+                stroke="currentColor"
+                strokeWidth="1.8"
                 strokeLinecap="round"
               />
             </svg>
-
-            {hasUnread && (
-              <span
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: 10,
-                  width: 10,
-                  height: 10,
-                  borderRadius: 999,
-                  background: MAIN,
-                  boxShadow: `0 0 0 3px rgba(210,63,11,0.18)`,
-                }}
-              />
-            )}
           </button>
 
-          {notifOpen && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              lineHeight: 1.1,
+              minWidth: 0,
+              overflow: "hidden",
+            }}
+          >
             <div
               style={{
-                position: "absolute",
-                right: isMobile ? -44 : 0,
-                top: 50,
-                width: notifPanelWidth,
-                maxWidth: "calc(100vw - 12px)",
-                borderRadius: 14,
-                border: `1px solid ${t.border}`,
-                background: t.bg,
-                boxShadow: t.shadow,
-                padding: 10,
-                zIndex: 999,
-                maxHeight: isMobile ? 420 : 460,
-                display: "flex",
-                flexDirection: "column",
+                fontWeight: 950,
+                letterSpacing: 0.2,
+                fontSize: isMobile ? 14 : 16,
+                color: t.text,
+                whiteSpace: "nowrap",
                 overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: isMobile ? 140 : "none",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: isVerySmall ? "flex-start" : "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  paddingBottom: 8,
-                  flexWrap: isVerySmall ? "wrap" : "nowrap",
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 950,
-                    fontSize: 13,
-                    color: t.text,
-                  }}
-                >
-                  Notifications
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    flexWrap: "nowrap",
-                    marginLeft: "auto",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await markAllNotificationsRead({ role: "admin" });
-                        setNotifications((prev) =>
-                          prev.map((x) => ({ ...x, is_read: true }))
-                        );
-                        setUnreadCount(0);
-                      } catch {
-                        //
-                      }
-                    }}
-                    style={{
-                      border: `1px solid ${t.border}`,
-                      background: t.soft,
-                      color: t.text,
-                      borderRadius: 10,
-                      padding: isMobile ? "6px 8px" : "6px 10px",
-                      cursor: "pointer",
-                      fontWeight: 900,
-                      fontSize: 12,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Mark all read
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setNotifOpen(false)}
-                    style={{
-                      border: `1px solid ${t.border}`,
-                      background: t.soft,
-                      color: t.text,
-                      borderRadius: 10,
-                      width: 34,
-                      height: 32,
-                      cursor: "pointer",
-                      display: "grid",
-                      placeItems: "center",
-                      fontWeight: 900,
-                      flex: "0 0 auto",
-                    }}
-                    title="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  paddingRight: 2,
-                }}
-              >
-                {notifLoading && (
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 12,
-                      background: t.soft2,
-                      border: `1px solid ${t.border}`,
-                      fontWeight: 850,
-                      color: t.mutedText,
-                    }}
-                  >
-                    Loading…
-                  </div>
-                )}
-
-                {!notifLoading && notifErr && (
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 12,
-                      background: t.soft2,
-                      border: `1px solid ${t.border}`,
-                      fontWeight: 850,
-                      color: t.mutedText,
-                    }}
-                  >
-                    {notifErr}
-                  </div>
-                )}
-
-                {!notifLoading && !notifErr && notifications.length === 0 && (
-                  <div
-                    style={{
-                      padding: 10,
-                      borderRadius: 12,
-                      background: t.soft2,
-                      border: `1px solid ${t.border}`,
-                      fontWeight: 850,
-                      color: t.mutedText,
-                    }}
-                  >
-                    All caught up!
-                  </div>
-                )}
-
-                {!notifLoading &&
-                  !notifErr &&
-                  notifications.map((n) => {
-                    const id = Number(n.notification_id ?? n.id);
-                    const unread = !n.is_read;
-
-                    const title = String(n.title ?? "");
-                    const body = String(n.body ?? n.message ?? "");
-
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={async () => {
-                          setNotifications((prev) =>
-                            prev.map((x) =>
-                              Number(x.notification_id ?? x.id) === id
-                                ? { ...x, is_read: true }
-                                : x
-                            )
-                          );
-
-                          setUnreadCount((c) =>
-                            Math.max(0, c - (unread ? 1 : 0))
-                          );
-
-                          try {
-                            await markNotificationRead(id);
-                          } catch {
-                            refreshUnread();
-                            loadNotifs();
-                          }
-
-                          const url =
-                            n?.url ||
-                            n?.meta?.url ||
-                            n?.meta?.route ||
-                            n?.meta?.link;
-
-                          if (url) {
-                            setNotifOpen(false);
-                            navigate(String(url));
-                          }
-                        }}
-                        style={{
-                          width: "100%",
-                          textAlign: "left",
-                          border: `1px solid ${t.border}`,
-                          background: unread ? t.soft : t.bg,
-                          color: t.text,
-                          borderRadius: 12,
-                          padding: 10,
-                          cursor: "pointer",
-                          display: "flex",
-                          gap: 10,
-                          marginTop: 8,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 12,
-                            background: t.soft2,
-                            border: `1px solid ${t.border}`,
-                            display: "grid",
-                            placeItems: "center",
-                            fontSize: 16,
-                            flex: "0 0 auto",
-                          }}
-                        >
-                          {iconForNotifType(n.type)}
-                        </div>
-
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div
-                            style={{
-                              fontWeight: 950,
-                              fontSize: 13,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {title || "Notification"}
-                          </div>
-
-                          <div
-                            style={{
-                              marginTop: 3,
-                              fontWeight: 800,
-                              fontSize: 12,
-                              color: t.mutedText,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical" as any,
-                            }}
-                          >
-                            {body}
-                          </div>
-                        </div>
-
-                        {unread && (
-                          <span
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: 999,
-                              background: MAIN,
-                              marginLeft: "auto",
-                              marginTop: 2,
-                              boxShadow: `0 0 0 3px rgba(210,63,11,0.18)`,
-                              flex: "0 0 auto",
-                            }}
-                            title="Unread"
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-              </div>
+              {title}
             </div>
-          )}
+
+            {!isMobile && (
+              <div
+                style={{
+                  marginTop: 3,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: t.mutedText,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                Admin Panel
+              </div>
+            )}
+          </div>
         </div>
 
-        <div ref={menuRef} style={{ position: "relative", flex: "0 0 auto" }}>
-          <button
-            onClick={() => {
-              setMenuOpen((v) => !v);
-              setNotifOpen(false);
-            }}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: isMobile ? 8 : 10,
+            width: "auto",
+            marginLeft: "auto",
+            flexWrap: "nowrap",
+            minWidth: 0,
+            flex: "0 0 auto",
+          }}
+        >
+          <div
             style={{
-              height: 42,
-              maxWidth: isMobile ? 64 : isTablet ? 200 : 260,
-              borderRadius: 14,
-              border: `1px solid ${t.border}`,
-              background: t.soft,
-              color: t.text,
-              cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: 10,
-              padding: isMobile ? "0 8px 0 6px" : "0 12px 0 6px",
+              gap: 6,
+              padding: isMobile ? "4px 6px" : "8px 10px",
+              borderRadius: 12,
+              border: `1px solid ${t.border}`,
+              background: t.soft2,
               minWidth: 0,
+              flex: "0 0 auto",
             }}
-            title="Profile menu"
-            type="button"
+            title="Theme"
           >
-            <img
-              src={avatarSrc}
-              alt={displayName}
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (target.src !== window.location.origin + FALLBACK_AVATAR) {
-                  target.src = FALLBACK_AVATAR;
-                }
+            {!isCompact && (
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: t.mutedText,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {isDark ? "Dark" : "Light"}
+              </span>
+            )}
+
+            <Switch
+              id="admin-theme-header"
+              checked={isDark}
+              onChange={() =>
+                setTheme((p) => (p === "dark" ? "light" : "dark"))
+              }
+              label=""
+            />
+          </div>
+
+          <div ref={notifRef} style={{ position: "relative", flex: "0 0 auto" }}>
+            <button
+              onClick={() => {
+                setNotifOpen((o) => {
+                  const next = !o;
+                  if (next) loadNotifs();
+                  return next;
+                });
+                setMenuOpen(false);
               }}
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: 999,
-                objectFit: "cover",
+                width: 42,
+                height: 42,
+                borderRadius: 12,
                 border: `1px solid ${t.border}`,
-                display: "block",
-                background: t.soft2,
+                background: t.soft,
+                color: t.text,
+                cursor: "pointer",
+                position: "relative",
+                display: "grid",
+                placeItems: "center",
                 flex: "0 0 auto",
               }}
-            />
+              title="Notifications"
+              type="button"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M10 2a5 5 0 0 0-5 5v2.8l-.9.9A1 1 0 0 0 4.8 12h10.4a1 1 0 0 0 .7-1.7l-.9-.9V7a5 5 0 0 0-5-5Z"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7.8 15a2.2 2.2 0 0 0 4.4 0"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
 
-            {!isCompact && (
+              {hasUnread && (
+                <span
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: 10,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 999,
+                    background: MAIN,
+                    boxShadow: `0 0 0 3px rgba(210,63,11,0.18)`,
+                  }}
+                />
+              )}
+            </button>
+
+            {notifOpen && (
               <div
                 style={{
+                  position: isMobile ? "fixed" : "absolute",
+                  top: isMobile ? 72 : 50,
+                  right: isMobile ? 8 : 0,
+                  left: isMobile ? 8 : "auto",
+                  width: isMobile ? "auto" : notifPanelWidth,
+                  maxWidth: isMobile ? "none" : "calc(100vw - 12px)",
+                  borderRadius: 14,
+                  border: `1px solid ${t.border}`,
+                  background: t.bg,
+                  boxShadow: t.shadow,
+                  padding: 10,
+                  zIndex: 999,
+                  maxHeight: isMobile ? "min(70vh, 520px)" : 460,
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "flex-start",
-                  lineHeight: 1.05,
-                  minWidth: 0,
                   overflow: "hidden",
                 }}
               >
                 <div
                   style={{
-                    fontSize: 12,
-                    fontWeight: 950,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    maxWidth: 120,
+                    display: "flex",
+                    alignItems: isVerySmall ? "flex-start" : "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    paddingBottom: 8,
+                    flexWrap: isVerySmall ? "wrap" : "nowrap",
                   }}
                 >
-                  {displayName}
+                  <div
+                    style={{
+                      fontWeight: 950,
+                      fontSize: 13,
+                      color: t.text,
+                    }}
+                  >
+                    Notifications
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "nowrap",
+                      marginLeft: "auto",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await markAllNotificationsRead({ role: "admin" });
+                          setNotifications((prev) =>
+                            prev.map((x) => ({ ...x, is_read: true }))
+                          );
+                          setUnreadCount(0);
+                        } catch {
+                          //
+                        }
+                      }}
+                      style={{
+                        border: `1px solid ${t.border}`,
+                        background: t.soft,
+                        color: t.text,
+                        borderRadius: 10,
+                        padding: isMobile ? "6px 8px" : "6px 10px",
+                        cursor: "pointer",
+                        fontWeight: 900,
+                        fontSize: 12,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Mark all read
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setNotifOpen(false)}
+                      style={{
+                        border: `1px solid ${t.border}`,
+                        background: t.soft,
+                        color: t.text,
+                        borderRadius: 10,
+                        width: 34,
+                        height: 32,
+                        cursor: "pointer",
+                        display: "grid",
+                        placeItems: "center",
+                        fontWeight: 900,
+                        flex: "0 0 auto",
+                      }}
+                      title="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
+
                 <div
                   style={{
-                    fontSize: 11,
-                    fontWeight: 850,
-                    color: t.mutedText,
+                    flex: 1,
+                    overflowY: "auto",
+                    paddingRight: 2,
                   }}
                 >
-                  {roleLabel}
+                  {notifLoading && (
+                    <div
+                      style={{
+                        padding: 10,
+                        borderRadius: 12,
+                        background: t.soft2,
+                        border: `1px solid ${t.border}`,
+                        fontWeight: 850,
+                        color: t.mutedText,
+                      }}
+                    >
+                      Loading…
+                    </div>
+                  )}
+
+                  {!notifLoading && notifErr && (
+                    <div
+                      style={{
+                        padding: 10,
+                        borderRadius: 12,
+                        background: t.soft2,
+                        border: `1px solid ${t.border}`,
+                        fontWeight: 850,
+                        color: t.mutedText,
+                      }}
+                    >
+                      {notifErr}
+                    </div>
+                  )}
+
+                  {!notifLoading && !notifErr && notifications.length === 0 && (
+                    <div
+                      style={{
+                        padding: 10,
+                        borderRadius: 12,
+                        background: t.soft2,
+                        border: `1px solid ${t.border}`,
+                        fontWeight: 850,
+                        color: t.mutedText,
+                      }}
+                    >
+                      All caught up!
+                    </div>
+                  )}
+
+                  {!notifLoading &&
+                    !notifErr &&
+                    notifications.map((n) => {
+                      const id = Number(n.notification_id ?? n.id);
+                      const unread = !n.is_read;
+
+                      const title = String(n.title ?? "");
+                      const body = String(n.body ?? n.message ?? "");
+
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={async () => {
+                            setNotifications((prev) =>
+                              prev.map((x) =>
+                                Number(x.notification_id ?? x.id) === id
+                                  ? { ...x, is_read: true }
+                                  : x
+                              )
+                            );
+
+                            setUnreadCount((c) =>
+                              Math.max(0, c - (unread ? 1 : 0))
+                            );
+
+                            try {
+                              await markNotificationRead(id);
+                            } catch {
+                              refreshUnread();
+                              loadNotifs();
+                            }
+
+                            const url =
+                              n?.url ||
+                              n?.meta?.url ||
+                              n?.meta?.route ||
+                              n?.meta?.link;
+
+                            if (url) {
+                              setNotifOpen(false);
+                              navigate(String(url));
+                            }
+                          }}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            border: `1px solid ${t.border}`,
+                            background: unread ? t.soft : t.bg,
+                            color: t.text,
+                            borderRadius: 12,
+                            padding: 10,
+                            cursor: "pointer",
+                            display: "flex",
+                            gap: 10,
+                            marginTop: 8,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 12,
+                              background: t.soft2,
+                              border: `1px solid ${t.border}`,
+                              display: "grid",
+                              placeItems: "center",
+                              fontSize: 16,
+                              flex: "0 0 auto",
+                            }}
+                          >
+                            {iconForNotifType(n.type)}
+                          </div>
+
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div
+                              style={{
+                                fontWeight: 950,
+                                fontSize: 13,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {title || "Notification"}
+                            </div>
+
+                            <div
+                              style={{
+                                marginTop: 3,
+                                fontWeight: 800,
+                                fontSize: 12,
+                                color: t.mutedText,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical" as any,
+                              }}
+                            >
+                              {body}
+                            </div>
+                          </div>
+
+                          {unread && (
+                            <span
+                              style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: 999,
+                                background: MAIN,
+                                marginLeft: "auto",
+                                marginTop: 2,
+                                boxShadow: `0 0 0 3px rgba(210,63,11,0.18)`,
+                                flex: "0 0 auto",
+                              }}
+                              title="Unread"
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             )}
+          </div>
 
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 20 20"
-              fill="none"
-              style={{ opacity: 0.9, flex: "0 0 auto" }}
-            >
-              <path
-                d="M6 8l4 4 4-4"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-
-          {menuOpen && (
-            <div
+          <div ref={menuRef} style={{ position: "relative", flex: "0 0 auto" }}>
+            <button
+              onClick={() => {
+                setMenuOpen((v) => !v);
+                setNotifOpen(false);
+              }}
               style={{
-                position: "absolute",
-                right: 0,
-                top: 50,
-                width: menuPanelWidth,
-                maxWidth: "calc(100vw - 16px)",
+                height: 42,
+                maxWidth: isMobile ? 64 : isTablet ? 200 : 260,
                 borderRadius: 14,
                 border: `1px solid ${t.border}`,
-                background: t.bg,
-                boxShadow: t.shadow,
-                padding: 8,
-                zIndex: 999,
+                background: t.soft,
+                color: t.text,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: isMobile ? "0 8px 0 6px" : "0 12px 0 6px",
+                minWidth: 0,
               }}
+              title="Profile menu"
+              type="button"
             >
-              <div style={{ padding: "6px 8px 10px 8px" }}>
+              <img
+                src={avatarSrc}
+                alt={displayName}
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.src !== window.location.origin + FALLBACK_AVATAR) {
+                    target.src = FALLBACK_AVATAR;
+                  }
+                }}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 999,
+                  objectFit: "cover",
+                  border: `1px solid ${t.border}`,
+                  display: "block",
+                  background: t.soft2,
+                  flex: "0 0 auto",
+                }}
+              />
+
+              {!isCompact && (
                 <div
                   style={{
-                    fontWeight: 950,
-                    fontSize: 13,
-                    color: t.text,
-                    wordBreak: "break-word",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    lineHeight: 1.05,
+                    minWidth: 0,
+                    overflow: "hidden",
                   }}
                 >
-                  {displayName}
-                </div>
-
-                {displayEmail ? (
                   <div
                     style={{
-                      fontWeight: 800,
                       fontSize: 12,
+                      fontWeight: 950,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: 120,
+                    }}
+                  >
+                    {displayName}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 850,
                       color: t.mutedText,
-                      marginTop: 2,
+                    }}
+                  >
+                    {roleLabel}
+                  </div>
+                </div>
+              )}
+
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 20 20"
+                fill="none"
+                style={{ opacity: 0.9, flex: "0 0 auto" }}
+              >
+                <path
+                  d="M6 8l4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            {menuOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: 50,
+                  width: menuPanelWidth,
+                  maxWidth: "calc(100vw - 16px)",
+                  borderRadius: 14,
+                  border: `1px solid ${t.border}`,
+                  background: t.bg,
+                  boxShadow: t.shadow,
+                  padding: 8,
+                  zIndex: 999,
+                }}
+              >
+                <div style={{ padding: "6px 8px 10px 8px" }}>
+                  <div
+                    style={{
+                      fontWeight: 950,
+                      fontSize: 13,
+                      color: t.text,
                       wordBreak: "break-word",
                     }}
                   >
-                    {displayEmail}
+                    {displayName}
                   </div>
-                ) : null}
+
+                  {displayEmail ? (
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        fontSize: 12,
+                        color: t.mutedText,
+                        marginTop: 2,
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {displayEmail}
+                    </div>
+                  ) : null}
+                </div>
+
+                {canSwitchToUser && (
+                  <button
+                    onClick={() => switchUi("user")}
+                    style={itemStyle}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = t.soft;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <span style={iconWrap}>👤</span>
+                    Switch to User
+                  </button>
+                )}
+
+                {canSwitchToOwner && (
+                  <button
+                    onClick={() => switchUi("owner")}
+                    style={itemStyle}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = t.soft;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <span style={iconWrap}>🏋️</span>
+                    Switch to Owner
+                  </button>
+                )}
+
+                <button
+                  onClick={() => go("/admin/profile")}
+                  style={itemStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = t.soft;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <span style={iconWrap}>🪪</span>
+                  Profile
+                </button>
+
+                <button
+                  onClick={() => go("/admin/settings")}
+                  style={itemStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = t.soft;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <span style={iconWrap}>⚙️</span>
+                  Settings
+                </button>
+
+                <div
+                  style={{
+                    height: 1,
+                    background: t.border,
+                    margin: "8px 6px",
+                  }}
+                />
+
+                <button
+                  onClick={handleLogout}
+                  style={{ ...itemStyle, color: MAIN }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = t.soft;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <span style={iconWrap}>🚪</span>
+                  Logout
+                </button>
               </div>
-
-              {canSwitchToUser && (
-                <button
-                  onClick={() => switchUi("user")}
-                  style={itemStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = t.soft;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                  }}
-                >
-                  <span style={iconWrap}>👤</span>
-                  Switch to User
-                </button>
-              )}
-
-              {canSwitchToOwner && (
-                <button
-                  onClick={() => switchUi("owner")}
-                  style={itemStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = t.soft;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                  }}
-                >
-                  <span style={iconWrap}>🏋️</span>
-                  Switch to Owner
-                </button>
-              )}
-
-              <button
-                onClick={() => go("/admin/profile")}
-                style={itemStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = t.soft;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span style={iconWrap}>🪪</span>
-                Profile
-              </button>
-
-              <button
-                onClick={() => go("/admin/settings")}
-                style={itemStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = t.soft;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span style={iconWrap}>⚙️</span>
-                Settings
-              </button>
-
-              <div
-                style={{
-                  height: 1,
-                  background: t.border,
-                  margin: "8px 6px",
-                }}
-              />
-
-              <button
-                onClick={handleLogout}
-                style={{ ...itemStyle, color: MAIN }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = t.soft;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span style={iconWrap}>🚪</span>
-                Logout
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

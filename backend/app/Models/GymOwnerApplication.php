@@ -10,6 +10,8 @@ class GymOwnerApplication extends Model
 
     protected $fillable = [
         'user_id',
+        'existing_gym_id',
+
         'gym_name',
         'address',
         'latitude',
@@ -32,6 +34,8 @@ class GymOwnerApplication extends Model
     ];
 
     protected $casts = [
+        'existing_gym_id' => 'integer',
+
         'latitude' => 'decimal:6',
         'longitude' => 'decimal:6',
 
@@ -46,5 +50,10 @@ class GymOwnerApplication extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    public function existingGym()
+    {
+        return $this->belongsTo(Gym::class, 'existing_gym_id', 'gym_id');
     }
 }

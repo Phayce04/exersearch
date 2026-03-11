@@ -402,4 +402,102 @@ class GymController extends Controller
             'data' => $rows,
         ]);
     }
+    public function assignOwner(Request $request, $gym_id)
+{
+    $actor = auth()->user();
+
+    if (!$actor || $actor->role !== 'superadmin') {
+        abort(403, 'Unauthorized');
+    }
+
+    $data = $request->validate([
+        'owner_id' => 'required|integer|exists:users,user_id',
+        'force' => 'nullable|boolean',
+        'upgrade_user_to_owner' => 'nullable|boolean',
+    ]);
+
+    $newOwnerId = (int) $data['owner_id'];
+    $force = (bool) ($data['force'] ?? false);
+    $upgradeUserToOwner = (bool) ($data['upgrade_user_to_owner'] ?? true);
+
+    $result = DB::transaction(function () use ($gym_id, $newOwnerId, $force, $upgradeUserToOwner, $actor) {
+        $gym = Gym::with('owner')->lockForUpdate()->findOrFail($gym_id);
+        $newOwner = User::lockForUpdate()->findOrFail($newOwnerId);
+
+        $oldOwnerId = $gym->owner_id ? (int) $gym->owner_id : null;
+
+        if ($oldOwnerId && $oldOwnerId !== $newOwnerId && !$force) {
+            abort(409, 'Gym already has an owner. Pass force=true to reassign.');
+        }
+
+        if (!in_array($newOwner->role, ['owner', 'superadmin'])) {
+            if ($upgradeUserToOwner) {
+                $newOwner->update(['role' => 'owner']);
+            } else {
+                abort(422, 'Selected user is not an owner. Enable upgrade_user_to_owner or choose an owner account.');
+            }
+        }
+
+        OwnerProfile::updateOrCreate(
+            ['user_id' => $newOwner->user_id],
+            [
+                'verified' => true,
+            ]
+        );
+
+        $gym->update([
+            'owner_id' => $newOwner->user_id,
+            'status' => $gym->status ?: 'approved',
+            'approved_at' => $gym->approved_at ?? now(),
+            'approved_by' => $gym->approved_by ?? $actor->user_id,
+        ]);
+
+        NotificationService::create([
+            'recipient_id' => (int) $newOwner->user_id,
+            'recipient_role' => 'owner',
+            'type' => 'GYM_ASSIGNED',
+            'title' => 'Gym assigned to you',
+            'message' => '"' . ($gym->name ?? 'A gym') . '" was assigned to your owner account.',
+            'gym_id' => (int) $gym->gym_id,
+            'actor_id' => (int) $actor->user_id,
+            'url' => '/owner/my-gyms',
+            'meta' => [
+                'gym_id' => (int) $gym->gym_id,
+                'previous_owner_id' => $oldOwnerId,
+                'assigned_by' => (int) $actor->user_id,
+            ],
+        ]);
+
+        return $gym->fresh(['owner', 'equipments', 'amenities']);
+    });
+
+    return response()->json([
+        'message' => 'Gym owner assigned successfully.',
+        'data' => new GymResource($result),
+    ]);
+}
+public function searchableOwners(Request $request)
+{
+    $actor = auth()->user();
+
+    if (!$actor || !in_array($actor->role, ['admin', 'superadmin'])) {
+        abort(403, 'Unauthorized');
+    }
+
+    $q = trim((string) $request->query('q', ''));
+    $perPage = max(1, min((int) $request->query('per_page', 20), 100));
+
+    $query = User::query()
+        ->select(['user_id', 'name', 'email', 'role'])
+        ->when($q !== '', function ($qq) use ($q) {
+            $qq->where(function ($w) use ($q) {
+                $w->where('name', 'ilike', "%{$q}%")
+                    ->orWhere('email', 'ilike', "%{$q}%");
+            });
+        })
+        ->whereIn('role', ['user', 'owner', 'superadmin'])
+        ->orderBy('name');
+
+    return response()->json($query->paginate($perPage));
+}   
 }

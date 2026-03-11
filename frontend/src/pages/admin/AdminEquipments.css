@@ -1014,7 +1014,7 @@ select.ae-select optgroup {
 
 /* Top filters + modal selects */
 .ae-select,
-select.ae-select,
+select.ae-select, 
 select.ae-fieldInput {
   appearance: none;
   -webkit-appearance: none;
