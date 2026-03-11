@@ -15,7 +15,7 @@ import {
   Megaphone,
 } from "lucide-react";
 
-import "./philosophy.css";
+import "./Philosophy.css";
 import "./philosophy.scss";
 
 /* ─── DATA ─── */
