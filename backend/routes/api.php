@@ -88,7 +88,16 @@ Route::get('/mail-test', function () {
             'error' => $e->getMessage()
         ], 500);
     }
-});
+});    Route::get('/mail-config-check', function () {
+        return response()->json([
+            'default' => config('mail.default'),
+            'host' => config('mail.mailers.smtp.host'),
+            'port' => config('mail.mailers.smtp.port'),
+            'username' => config('mail.mailers.smtp.username'),
+            'from_address' => config('mail.from.address'),
+            'from_name' => config('mail.from.name'),
+        ]);
+    });
     Route::get('/settings/public', [AppSettingsPublicController::class, 'show']);
 
     Route::get('/faqs', [FaqController::class, 'index']);
