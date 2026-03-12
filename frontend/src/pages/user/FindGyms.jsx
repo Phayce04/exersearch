@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { gsap } from "gsap";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import Swal from "sweetalert2";
 import "leaflet/dist/leaflet.css";
 
 import "./../owner/OwnerGymsPage.scss";
@@ -13,7 +14,7 @@ import {
   fetchAmenities,
   fetchEquipments,
   groupEquipmentsByTypeAndMuscle,
-  labelForSelectedKey, 
+  labelForSelectedKey,
   absoluteUrl,
   prettyCategory,
   parseTargets,
@@ -574,27 +575,66 @@ export default function OwnerGymsPage() {
   };
 
   const handleApply = async () => {
+    const budget = buildBudget(selectedItems);
+    const equipment_ids = buildEquipmentIds(selectedItems);
+    const amenity_ids = buildAmenityIds(selectedItems);
+    const locKey = getSelectedLocationKey(selectedItems);
+    const address = locKey ? locKey.slice("location:".length) : locationMeta.address || "";
+
+    if (budget === null) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Budget required",
+        text: "Please choose a budget first.",
+        confirmButtonColor: MAIN_ORANGE,
+      });
+      return;
+    }
+
+    if (!address && (locationMeta?.lat == null || locationMeta?.lng == null)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Location required",
+        text: "Please choose your location first.",
+        confirmButtonColor: MAIN_ORANGE,
+      });
+      return;
+    }
+
+    if (!amenity_ids.length) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Amenity required",
+        text: "Please choose at least one amenity.",
+        confirmButtonColor: MAIN_ORANGE,
+      });
+      return;
+    }
+
+    if (!equipment_ids.length) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Equipment required",
+        text: "Please choose at least one equipment option.",
+        confirmButtonColor: MAIN_ORANGE,
+      });
+      return;
+    }
+
     try {
       setSavingPhase(true);
       setRankingPhase(false);
       setProgress(8);
 
-      const budget = buildBudget(selectedItems);
-      if (budget !== null) {
-        setProgress(22);
-        await saveUserPreferences({ budget });
-      }
+      setProgress(22);
+      await saveUserPreferences({ budget });
 
-      const equipment_ids = buildEquipmentIds(selectedItems);
       setProgress(42);
       await savePreferredEquipments(equipment_ids);
 
-      const amenity_ids = buildAmenityIds(selectedItems);
       setProgress(62);
       await savePreferredAmenities(amenity_ids);
 
-      const locKey = getSelectedLocationKey(selectedItems);
-      const address = locKey ? locKey.slice("location:".length) : locationMeta.address || "";
       if (address || (locationMeta?.lat != null && locationMeta?.lng != null)) {
         setProgress(78);
         await saveUserProfileLocation({
@@ -626,11 +666,36 @@ export default function OwnerGymsPage() {
         },
       });
     } catch (e) {
-      console.error("❌ Apply failed:", e);
+      console.error("Apply failed:", e);
+
       setSavingPhase(false);
       setRankingPhase(false);
       setProgress(0);
-      alert(`Failed to save:\n${e?.response?.data?.message || e.message}`);
+
+      const apiMessage =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        e?.message ||
+        "Something went wrong while saving your preferences.";
+
+      let friendlyMessage = apiMessage;
+
+      if (/amenity/i.test(apiMessage)) {
+        friendlyMessage = "Please choose at least one amenity.";
+      } else if (/equipment/i.test(apiMessage)) {
+        friendlyMessage = "Please choose at least one equipment option.";
+      } else if (/budget/i.test(apiMessage)) {
+        friendlyMessage = "Please choose your budget first.";
+      } else if (/location|address|latitude|longitude/i.test(apiMessage)) {
+        friendlyMessage = "Please choose your location first.";
+      }
+
+      await Swal.fire({
+        icon: "error",
+        title: "Could not save preferences",
+        text: friendlyMessage,
+        confirmButtonColor: MAIN_ORANGE,
+      });
     }
   };
 
@@ -701,7 +766,7 @@ export default function OwnerGymsPage() {
       address: suggestion.display_name,
       lat: suggestion.lat,
       lon: suggestion.lon,
-    }); 
+    });
   };
 
   const searchLocation = async () => {
@@ -730,7 +795,12 @@ export default function OwnerGymsPage() {
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      Swal.fire({
+        icon: "warning",
+        title: "Geolocation unavailable",
+        text: "Geolocation is not supported by your browser.",
+        confirmButtonColor: MAIN_ORANGE,
+      });
       return;
     }
 
@@ -759,7 +829,12 @@ export default function OwnerGymsPage() {
           });
       },
       (error) => {
-        alert("Unable to get your location. Please enter manually.");
+        Swal.fire({
+          icon: "warning",
+          title: "Location not available",
+          text: "Unable to get your location. Please enter it manually.",
+          confirmButtonColor: MAIN_ORANGE,
+        });
         console.error(error);
       }
     );

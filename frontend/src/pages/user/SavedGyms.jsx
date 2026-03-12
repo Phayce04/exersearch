@@ -169,14 +169,15 @@ export default function SavedGyms() {
                   Start exploring and tap <b>Save</b> to keep gyms here.
                 </div>
 
-                <div className="empty-actions">
-                  <Link className="btn-solid" to="/home/gym-results">
-                    Back to Results
-                  </Link>
-                  <Link className="btn-outline" to="/home/find-gyms">
-                    Update Preferences
-                  </Link>
-                </div>
+<div className="empty-actions">
+  <Link className="btn-solid" to="/home/gyms">
+     Gyms List
+  </Link>
+
+  <Link className="btn-outline" to="/home/find-gyms">
+    Find Gyms for You
+  </Link>
+</div>
               </div>
             </div>
           ) : (

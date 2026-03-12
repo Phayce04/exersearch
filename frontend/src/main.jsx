@@ -6,16 +6,19 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import App from "./App.jsx";
 import { AuthProvider } from "./authcon.jsx";
 import { ThemeProvider } from "./pages/user/ThemeContext.jsx";
+import { loadAppSettings } from "./utils/appSettings";
+
+loadAppSettings();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <BrowserRouter>
-        <ThemeProvider> 
+        <ThemeProvider>
           <AuthProvider>
             <App />
           </AuthProvider>
-        </ThemeProvider> 
+        </ThemeProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
   </React.StrictMode>
