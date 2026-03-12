@@ -7,7 +7,7 @@ use Knuckles\Scribe\Extracting\Strategies;
 use function Knuckles\Scribe\Config\configureStrategy;
 
 return [
-'title' => 'ExerSearch API',
+    'title' => 'ExerSearch API',
 
     'description' => 'Official API documentation for ExerSearch.',
 
@@ -17,8 +17,8 @@ Welcome to the ExerSearch API documentation.
 This documentation provides complete details on how to interact with the ExerSearch backend, including authentication, gym listings, recommendations, and admin endpoints.
 INTRO,
 
-    // Base URL shown in docs
-    'base_url' => 'https://exersearch.test',
+    // Use Railway/production APP_URL automatically
+    'base_url' => env('APP_URL', 'https://api.exersearch.online'),
 
     // Only document api/v1 routes
     'routes' => [
@@ -31,12 +31,11 @@ INTRO,
     ],
 
     /**
-     * Use external Stoplight Elements UI (cleaner like FastAPI/Swagger).
-     * /docs will render the UI, and it will pull the OpenAPI spec from /docs.openapi
+     * Use external Stoplight Elements UI.
+     * /docs renders the UI, and it fetches the OpenAPI spec from /docs.openapi
      */
     'type' => 'external_laravel',
 
-    // For external mode, "elements" is the intended theme.
     'theme' => 'elements',
 
     'static' => [
@@ -50,14 +49,10 @@ INTRO,
         'middleware' => [],
     ],
 
-    // Settings for external docs UI (Stoplight Elements)
     'external' => [
         'html_attributes' => [
-            // Where the UI fetches your OpenAPI spec from
             'apiDescriptionUrl' => '/docs.openapi',
-            // Nice client-side routing
             'router' => 'hash',
-            // Responsive layout
             'layout' => 'responsive',
         ],
     ],
@@ -69,13 +64,11 @@ INTRO,
         'csrf_url' => '/sanctum/csrf-cookie',
     ],
 
-    // Sanctum Bearer authentication
     'auth' => [
         'enabled' => true,
         'default' => false,
         'in' => AuthIn::BEARER->value,
         'name' => 'Authorization',
-        // Optional: put a real token in .env as SCRIBE_AUTH_KEY if you want response calls for protected endpoints
         'use_value' => env('SCRIBE_AUTH_KEY'),
         'placeholder' => 'Bearer {YOUR_TOKEN}',
         'extra_info' => 'Use a Sanctum token in the Authorization header: <b>Bearer &lt;token&gt;</b>.',
@@ -93,7 +86,6 @@ INTRO,
 
     'openapi' => [
         'enabled' => true,
-        // You can switch to 3.1.0 if you want
         'version' => '3.0.3',
         'overrides' => [],
         'generators' => [],
@@ -136,7 +128,6 @@ INTRO,
         'responses' => configureStrategy(
             Defaults::RESPONSES_STRATEGIES,
             Strategies\Responses\ResponseCalls::withSettings(
-                // Keep this conservative; you can expand later.
                 only: ['GET *'],
                 config: [
                     'app.debug' => false,
