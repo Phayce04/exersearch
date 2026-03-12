@@ -23,10 +23,88 @@ import {
   Camera,
   SlidersHorizontal,
   ImageUp,
+  Clock3,
+  HeartPulse,
+  Salad,
+  Flame,
 } from "lucide-react";
 
 const FALLBACK_AVATAR = "/arellano.png";
 const MAIN = "#d23f0b";
+
+const GOAL_OPTIONS = [
+  { value: "", label: "Select goal" },
+  { value: "weight loss", label: "Weight Loss" },
+  { value: "muscle gain", label: "Muscle Gain" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "endurance", label: "Endurance" },
+  { value: "general fitness", label: "General Fitness" },
+];
+
+const ACTIVITY_LEVEL_OPTIONS = [
+  { value: "", label: "Select activity level" },
+  { value: "sedentary", label: "Sedentary" },
+  { value: "light", label: "Light" },
+  { value: "moderate", label: "Moderate" },
+  { value: "active", label: "Active" },
+  { value: "very active", label: "Very Active" },
+];
+
+const PLAN_TYPE_OPTIONS = [
+  { value: "", label: "Select plan type" },
+  { value: "daily", label: "Daily" },
+  { value: "monthly", label: "Monthly" },
+];
+
+const WORKOUT_TIME_OPTIONS = [
+  { value: "", label: "Select workout time" },
+  { value: "morning", label: "Morning" },
+  { value: "afternoon", label: "Afternoon" },
+  { value: "evening", label: "Evening" },
+];
+
+const WORKOUT_LEVEL_OPTIONS = [
+  { value: "", label: "Select workout level" },
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
+];
+
+const WORKOUT_PLACE_OPTIONS = [
+  { value: "", label: "Select workout place" },
+  { value: "home", label: "Home" },
+  { value: "gym", label: "Gym" },
+  { value: "both", label: "Both" },
+];
+
+const PREFERRED_STYLE_OPTIONS = [
+  { value: "", label: "Select preferred style" },
+  { value: "strength", label: "Strength" },
+  { value: "hypertrophy", label: "Hypertrophy" },
+  { value: "endurance", label: "Endurance" },
+  { value: "hiit", label: "HIIT" },
+  { value: "mixed", label: "Mixed" },
+];
+
+const DIETARY_OPTIONS = [
+  "halal",
+  "vegetarian",
+  "vegan",
+  "pescatarian",
+  "low-carb",
+  "gluten-free",
+  "dairy-free",
+  "nut-free",
+];
+
+const INJURY_OPTIONS = [
+  "knee",
+  "back",
+  "shoulder",
+  "ankle",
+  "wrist",
+  "neck",
+];
 
 function toNumOrNull(v) {
   if (v === "" || v == null) return null;
@@ -38,18 +116,35 @@ function asArray(x) {
   return Array.isArray(x) ? x : [];
 }
 
+function prettifyLabel(value) {
+  if (!value) return "—";
+  return String(value)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
 function pickPrefPayload(prefResData) {
   const root = prefResData?.preferences ?? prefResData?.data ?? prefResData ?? {};
-  const goal = root?.goal ?? root?.Goal ?? "";
-  const activity_level =
-    root?.activity_level ??
-    root?.activityLevel ??
-    root?.activity ??
-    root?.ActivityLevel ??
-    "";
-  const budget =
-    root?.budget ?? root?.monthly_budget ?? root?.budget_monthly ?? root?.Budget ?? "";
-  return { goal, activity_level, budget };
+
+  return {
+    goal: root?.goal ?? "",
+    activity_level:
+      root?.activity_level ??
+      root?.activityLevel ??
+      root?.activity ??
+      "",
+    budget: root?.budget ?? "",
+    plan_type: root?.plan_type ?? "",
+    workout_days: root?.workout_days ?? "",
+    workout_time: root?.workout_time ?? "",
+    food_budget: root?.food_budget ?? "",
+    workout_level: root?.workout_level ?? "",
+    session_minutes: root?.session_minutes ?? "",
+    workout_place: root?.workout_place ?? "",
+    preferred_style: root?.preferred_style ?? "",
+    dietary_restrictions: asArray(root?.dietary_restrictions),
+    injuries: asArray(root?.injuries),
+  };
 }
 
 function absoluteUrlMaybe(pathOrUrl) {
@@ -61,6 +156,40 @@ function absoluteUrlMaybe(pathOrUrl) {
   const base = String(api.defaults.baseURL || "").replace(/\/api\/v1\/?$/, "");
   const path = s.startsWith("/") ? s : `/${s}`;
   return `${base}${path}`;
+}
+
+function MultiToggleChips({ options, selectedValues, onToggle }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "0.5rem",
+        flexWrap: "wrap",
+      }}
+    >
+      {options.map((opt) => {
+        const active = selectedValues.includes(opt);
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onToggle(opt)}
+            style={{
+              border: `1px solid ${active ? "var(--orange)" : "var(--stroke)"}`,
+              background: active ? "rgba(210, 63, 11, 0.12)" : "var(--card)",
+              color: active ? "var(--orange)" : "var(--text)",
+              borderRadius: "999px",
+              padding: "0.5rem 0.85rem",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            {prettifyLabel(opt)}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function PrefModal({
@@ -92,8 +221,10 @@ function PrefModal({
         kind === "equipment"
           ? new Set(prev.selectedEquipmentIds)
           : new Set(prev.selectedAmenityIds);
+
       if (next.has(n)) next.delete(n);
       else next.add(n);
+
       return {
         ...prev,
         ...(kind === "equipment"
@@ -103,14 +234,31 @@ function PrefModal({
     });
   };
 
+  const toggleArrayItem = (field, value) => {
+    setPrefForm((prev) => {
+      const current = asArray(prev[field]);
+      const exists = current.includes(value);
+      return {
+        ...prev,
+        [field]: exists
+          ? current.filter((x) => x !== value)
+          : [...current, value],
+      };
+    });
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-box"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "980px" }}
+      >
         <div className="modal-head">
           <div>
             <div className="modal-title">Edit Preferences</div>
             <div className="modal-subtitle">
-              Goal · Activity · Budget · Equipment · Amenities
+              Fitness, meal, workout, equipment, and amenity preferences
             </div>
           </div>
           <button
@@ -136,39 +284,210 @@ function PrefModal({
             </div>
           ) : (
             <>
-              <div className="modal-section-label">Main Preferences</div>
+              <div className="modal-section-label">Main Fitness Preferences</div>
               <div className="modal-2col">
                 <div>
                   <div className="modal-field-label">Goal</div>
-                  <input
+                  <select
                     className="modal-input"
                     value={prefForm.goal}
                     onChange={(e) =>
                       setPrefForm((p) => ({ ...p, goal: e.target.value }))
                     }
-                    placeholder="e.g. Build Muscle"
-                  />
+                  >
+                    {GOAL_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
                 <div>
                   <div className="modal-field-label">Activity Level</div>
-                  <input
+                  <select
                     className="modal-input"
                     value={prefForm.activity_level}
                     onChange={(e) =>
                       setPrefForm((p) => ({ ...p, activity_level: e.target.value }))
                     }
-                    placeholder="e.g. Moderate"
-                  />
+                  >
+                    {ACTIVITY_LEVEL_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <div className="modal-field-label">Monthly Budget (₱)</div>
+
+                <div>
+                  <div className="modal-field-label">Budget (₱)</div>
                   <input
                     className="modal-input"
+                    type="number"
                     value={prefForm.budget}
                     onChange={(e) =>
                       setPrefForm((p) => ({ ...p, budget: e.target.value }))
                     }
                     placeholder="e.g. 2500"
+                  />
+                </div>
+
+                <div>
+                  <div className="modal-field-label">Food Budget (₱)</div>
+                  <input
+                    className="modal-input"
+                    type="number"
+                    value={prefForm.food_budget}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({ ...p, food_budget: e.target.value }))
+                    }
+                    placeholder="e.g. 3000"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-section-label">Workout Preferences</div>
+              <div className="modal-2col">
+                <div>
+                  <div className="modal-field-label">Plan Type</div>
+                  <select
+                    className="modal-input"
+                    value={prefForm.plan_type}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({ ...p, plan_type: e.target.value }))
+                    }
+                  >
+                    {PLAN_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="modal-field-label">Workout Days</div>
+                  <input
+                    className="modal-input"
+                    type="number"
+                    min="1"
+                    max="7"
+                    value={prefForm.workout_days}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({ ...p, workout_days: e.target.value }))
+                    }
+                    placeholder="1 to 7"
+                  />
+                </div>
+
+                <div>
+                  <div className="modal-field-label">Workout Time</div>
+                  <select
+                    className="modal-input"
+                    value={prefForm.workout_time}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({ ...p, workout_time: e.target.value }))
+                    }
+                  >
+                    {WORKOUT_TIME_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="modal-field-label">Workout Level</div>
+                  <select
+                    className="modal-input"
+                    value={prefForm.workout_level}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({ ...p, workout_level: e.target.value }))
+                    }
+                  >
+                    {WORKOUT_LEVEL_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="modal-field-label">Session Minutes</div>
+                  <input
+                    className="modal-input"
+                    type="number"
+                    min="10"
+                    max="240"
+                    value={prefForm.session_minutes}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({
+                        ...p,
+                        session_minutes: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. 60"
+                  />
+                </div>
+
+                <div>
+                  <div className="modal-field-label">Workout Place</div>
+                  <select
+                    className="modal-input"
+                    value={prefForm.workout_place}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({ ...p, workout_place: e.target.value }))
+                    }
+                  >
+                    {WORKOUT_PLACE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <div className="modal-field-label">Preferred Style</div>
+                  <select
+                    className="modal-input"
+                    value={prefForm.preferred_style}
+                    onChange={(e) =>
+                      setPrefForm((p) => ({
+                        ...p,
+                        preferred_style: e.target.value,
+                      }))
+                    }
+                  >
+                    {PREFERRED_STYLE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="modal-section-label">Meal Preferences</div>
+              <div style={{ display: "grid", gap: "1rem" }}>
+                <div>
+                  <div className="modal-field-label">Dietary Restrictions</div>
+                  <MultiToggleChips
+                    options={DIETARY_OPTIONS}
+                    selectedValues={asArray(prefForm.dietary_restrictions)}
+                    onToggle={(value) => toggleArrayItem("dietary_restrictions", value)}
+                  />
+                </div>
+
+                <div>
+                  <div className="modal-field-label">Injuries / Limitations</div>
+                  <MultiToggleChips
+                    options={INJURY_OPTIONS}
+                    selectedValues={asArray(prefForm.injuries)}
+                    onToggle={(value) => toggleArrayItem("injuries", value)}
                   />
                 </div>
               </div>
@@ -262,6 +581,7 @@ export default function Profile() {
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [prefModalOpen, setPrefModalOpen] = useState(false);
+  const [showAllPreferences, setShowAllPreferences] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -280,6 +600,7 @@ export default function Profile() {
     address: "",
     latitude: "",
     longitude: "",
+    gender: "",
     profile_photo_url: "",
     created_at: "",
     updated_at: "",
@@ -292,6 +613,16 @@ export default function Profile() {
     goal: "",
     activity_level: "",
     budget: "",
+    plan_type: "",
+    workout_days: "",
+    workout_time: "",
+    food_budget: "",
+    workout_level: "",
+    session_minutes: "",
+    workout_place: "",
+    preferred_style: "",
+    dietary_restrictions: [],
+    injuries: [],
     preferred_equipments: [],
     preferred_amenities: [],
   });
@@ -299,6 +630,16 @@ export default function Profile() {
     goal: "",
     activity_level: "",
     budget: "",
+    plan_type: "",
+    workout_days: "",
+    workout_time: "",
+    food_budget: "",
+    workout_level: "",
+    session_minutes: "",
+    workout_place: "",
+    preferred_style: "",
+    dietary_restrictions: [],
+    injuries: [],
     selectedEquipmentIds: new Set(),
     selectedAmenityIds: new Set(),
   });
@@ -340,6 +681,7 @@ export default function Profile() {
           address: p?.address ?? "",
           latitude: p?.latitude ?? "",
           longitude: p?.longitude ?? "",
+          gender: p?.gender ?? "",
           profile_photo_url: p?.profile_photo_url ?? "",
           created_at: p?.created_at ? String(p.created_at).slice(0, 10) : "",
           updated_at: p?.updated_at ? String(p.updated_at).slice(0, 10) : "",
@@ -392,7 +734,7 @@ export default function Profile() {
           api.get("/amenities"),
         ]);
 
-        const { goal, activity_level, budget } = pickPrefPayload(prefRes.data);
+        const basePref = pickPrefPayload(prefRes.data);
 
         const preferredEquipments =
           eqPickRes.data?.preferred_equipments ??
@@ -409,9 +751,7 @@ export default function Profile() {
         const allAm = allAmRes.data?.data ?? allAmRes.data ?? [];
 
         const view = {
-          goal: goal ?? "",
-          activity_level: activity_level ?? "",
-          budget: budget ?? "",
+          ...basePref,
           preferred_equipments: asArray(preferredEquipments),
           preferred_amenities: asArray(preferredAmenities),
         };
@@ -435,9 +775,7 @@ export default function Profile() {
         setEquipments(asArray(allEq));
         setAmenities(asArray(allAm));
         setPrefForm({
-          goal: view.goal || "",
-          activity_level: view.activity_level || "",
-          budget: view.budget ?? "",
+          ...basePref,
           selectedEquipmentIds,
           selectedAmenityIds,
         });
@@ -580,6 +918,7 @@ export default function Profile() {
         address: formData.address || null,
         latitude: toNumOrNull(formData.latitude),
         longitude: toNumOrNull(formData.longitude),
+        gender: formData.gender || null,
       };
 
       const res = await api.put("/user/profile", payload);
@@ -612,7 +951,22 @@ export default function Profile() {
       await api.post("/user/preferences", {
         goal: prefForm.goal || null,
         activity_level: prefForm.activity_level || null,
-        budget: prefForm.budget === "" ? null : prefForm.budget,
+        budget: prefForm.budget === "" ? null : toNumOrNull(prefForm.budget),
+        plan_type: prefForm.plan_type || null,
+        workout_days:
+          prefForm.workout_days === "" ? null : toNumOrNull(prefForm.workout_days),
+        workout_time: prefForm.workout_time || null,
+        food_budget:
+          prefForm.food_budget === "" ? null : toNumOrNull(prefForm.food_budget),
+        workout_level: prefForm.workout_level || null,
+        session_minutes:
+          prefForm.session_minutes === ""
+            ? null
+            : toNumOrNull(prefForm.session_minutes),
+        workout_place: prefForm.workout_place || null,
+        preferred_style: prefForm.preferred_style || null,
+        dietary_restrictions: asArray(prefForm.dietary_restrictions),
+        injuries: asArray(prefForm.injuries),
       });
 
       const equipment_ids = Array.from(prefForm.selectedEquipmentIds)
@@ -704,13 +1058,6 @@ export default function Profile() {
 
             <h2 className="user-name">{userData.name || "—"}</h2>
             <p className="user-email">{userData.email || "—"}</p>
-
-            <div className="role-pill">
-              <span className="role-pip" />
-              {userData.role
-                ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1)
-                : "User"}
-            </div>
 
             <div className="sidebar-actions">
               <button
@@ -850,6 +1197,22 @@ export default function Profile() {
                   </div>
                   <div className="field-group">
                     <label className="field-label">
+                      <User size={12} /> Gender
+                    </label>
+                    <select
+                      className="field-input"
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">
                       <MapPin size={12} /> Latitude
                     </label>
                     <input
@@ -859,6 +1222,19 @@ export default function Profile() {
                       value={formData.latitude}
                       onChange={handleInputChange}
                       placeholder="e.g. 14.5764"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">
+                      <MapPin size={12} /> Longitude
+                    </label>
+                    <input
+                      className="field-input"
+                      name="longitude"
+                      type="number"
+                      value={formData.longitude}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 121.0851"
                     />
                   </div>
                   <div className="field-group span-full">
@@ -871,19 +1247,6 @@ export default function Profile() {
                       value={formData.address}
                       onChange={handleInputChange}
                       placeholder="e.g. Pasig City, Metro Manila"
-                    />
-                  </div>
-                  <div className="field-group span-full">
-                    <label className="field-label">
-                      <MapPin size={12} /> Longitude
-                    </label>
-                    <input
-                      className="field-input"
-                      name="longitude"
-                      type="number"
-                      value={formData.longitude}
-                      onChange={handleInputChange}
-                      placeholder="e.g. 121.0851"
                     />
                   </div>
                   <div className="form-actions">
@@ -956,9 +1319,9 @@ export default function Profile() {
                     </div>
                     <div className="info-tile">
                       <div className="tile-label">
-                        <Activity size={11} /> Role
+                        <User size={11} /> Gender
                       </div>
-                      <div className="tile-value">{userData.role || "—"}</div>
+                      <div className="tile-value">{prettifyLabel(userData.gender)}</div>
                     </div>
                     <div className="info-tile span-full">
                       <div className="tile-label">
@@ -973,7 +1336,9 @@ export default function Profile() {
               <div className="p-card">
                 <div className="card-head">
                   <span className="card-head-title">Fitness Preferences</span>
-                  <span className="card-head-tag">Personalized</span>
+                  <span className="card-head-tag">
+                    {showAllPreferences ? "Expanded View" : "Compact View"}
+                  </span>
                 </div>
                 <div className="card-body">
                   {prefLoading ? (
@@ -987,52 +1352,181 @@ export default function Profile() {
                       Fetching preferences…
                     </div>
                   ) : (
-                    <div className="pref-grid">
-                      <div className="info-tile">
-                        <div className="tile-label">
-                          <Target size={11} /> Goal
+                    <>
+                      <div className="pref-grid">
+                        <div className="info-tile">
+                          <div className="tile-label">
+                            <Target size={11} /> Goal
+                          </div>
+                          <div className="tile-value">{prettifyLabel(prefView.goal)}</div>
                         </div>
-                        <div className="tile-value">{prefView.goal || "—"}</div>
+
+                        <div className="info-tile">
+                          <div className="tile-label">
+                            <Activity size={11} /> Activity Level
+                          </div>
+                          <div className="tile-value">
+                            {prettifyLabel(prefView.activity_level)}
+                          </div>
+                        </div>
+
+                        <div className="info-tile">
+                          <div className="tile-label">
+                            <Flame size={11} /> Workout Level
+                          </div>
+                          <div className="tile-value">
+                            {prettifyLabel(prefView.workout_level)}
+                          </div>
+                        </div>
+
+                        <div className="info-tile">
+                          <div className="tile-label">
+                            <Building2 size={11} /> Workout Place
+                          </div>
+                          <div className="tile-value">
+                            {prettifyLabel(prefView.workout_place)}
+                          </div>
+                        </div>
+
+                        <div className="info-tile">
+                          <div className="tile-label">
+                            <Target size={11} /> Preferred Style
+                          </div>
+                          <div className="tile-value">
+                            {prettifyLabel(prefView.preferred_style)}
+                          </div>
+                        </div>
+
+                        <div className="info-tile">
+                          <div className="tile-label">
+                            <Salad size={11} /> Dietary Restrictions
+                          </div>
+                          <div className="tile-value">
+                            {prefView.dietary_restrictions.length
+                              ? `${prefView.dietary_restrictions.length} selected`
+                              : "—"}
+                          </div>
+                        </div>
+
+                        {showAllPreferences && (
+                          <>
+                            <div className="info-tile">
+                              <div className="tile-label">
+                                <Wallet size={11} /> Budget
+                              </div>
+                              <div className="tile-value">
+                                {prefView.budget === "" || prefView.budget == null
+                                  ? "—"
+                                  : `₱${Number(prefView.budget).toLocaleString()}`}
+                              </div>
+                            </div>
+
+                            <div className="info-tile">
+                              <div className="tile-label">
+                                <Salad size={11} /> Food Budget
+                              </div>
+                              <div className="tile-value">
+                                {prefView.food_budget === "" || prefView.food_budget == null
+                                  ? "—"
+                                  : `₱${Number(prefView.food_budget).toLocaleString()}`}
+                              </div>
+                            </div>
+
+                            <div className="info-tile">
+                              <div className="tile-label">
+                                <Calendar size={11} /> Plan Type
+                              </div>
+                              <div className="tile-value">
+                                {prettifyLabel(prefView.plan_type)}
+                              </div>
+                            </div>
+
+                            <div className="info-tile">
+                              <div className="tile-label">
+                                <Dumbbell size={11} /> Workout Days
+                              </div>
+                              <div className="tile-value">
+                                {prefView.workout_days ? `${prefView.workout_days} days` : "—"}
+                              </div>
+                            </div>
+
+                            <div className="info-tile">
+                              <div className="tile-label">
+                                <Clock3 size={11} /> Workout Time
+                              </div>
+                              <div className="tile-value">
+                                {prettifyLabel(prefView.workout_time)}
+                              </div>
+                            </div>
+
+                            <div className="info-tile">
+                              <div className="tile-label">
+                                <Clock3 size={11} /> Session Minutes
+                              </div>
+                              <div className="tile-value">
+                                {prefView.session_minutes
+                                  ? `${prefView.session_minutes} mins`
+                                  : "—"}
+                              </div>
+                            </div>
+
+                            <div className="info-tile span-full">
+                              <div className="tile-label">
+                                <HeartPulse size={11} /> Injuries / Limitations
+                              </div>
+                              <div className="tile-value">
+                                {prefView.injuries.length
+                                  ? prefView.injuries
+                                      .map((x) => prettifyLabel(x))
+                                      .join(", ")
+                                  : "—"}
+                              </div>
+                            </div>
+
+                            <div className="info-tile span-full">
+                              <div className="tile-label">
+                                <Dumbbell size={11} /> Preferred Equipment
+                              </div>
+                              <div
+                                className="tile-value"
+                                style={{ fontSize: "0.9rem", fontWeight: 600 }}
+                              >
+                                {prefEquipText}
+                              </div>
+                            </div>
+
+                            <div className="info-tile span-full">
+                              <div className="tile-label">
+                                <Building2 size={11} /> Preferred Amenities
+                              </div>
+                              <div
+                                className="tile-value"
+                                style={{ fontSize: "0.9rem", fontWeight: 600 }}
+                              >
+                                {prefAmenText}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <div className="info-tile">
-                        <div className="tile-label">
-                          <Activity size={11} /> Activity Level
-                        </div>
-                        <div className="tile-value">{prefView.activity_level || "—"}</div>
-                      </div>
-                      <div className="info-tile">
-                        <div className="tile-label">
-                          <Wallet size={11} /> Budget
-                        </div>
-                        <div className="tile-value">
-                          {prefView.budget === "" || prefView.budget == null
-                            ? "—"
-                            : `₱${Number(prefView.budget).toLocaleString()}`}
-                        </div>
-                      </div>
-                      <div className="info-tile span-full">
-                        <div className="tile-label">
-                          <Dumbbell size={11} /> Preferred Equipment
-                        </div>
-                        <div
-                          className="tile-value"
-                          style={{ fontSize: "0.9rem", fontWeight: 600 }}
+
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          display: "flex",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => setShowAllPreferences((prev) => !prev)}
+                          style={{ width: "auto", padding: "0.7rem 1.15rem" }}
                         >
-                          {prefEquipText}
-                        </div>
+                          {showAllPreferences ? "Show Less" : "Show More"}
+                        </button>
                       </div>
-                      <div className="info-tile span-full">
-                        <div className="tile-label">
-                          <Building2 size={11} /> Preferred Amenities
-                        </div>
-                        <div
-                          className="tile-value"
-                          style={{ fontSize: "0.9rem", fontWeight: 600 }}
-                        >
-                          {prefAmenText}
-                        </div>
-                      </div>
-                    </div>
+                    </>
                   )}
                 </div>
               </div>

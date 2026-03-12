@@ -32,6 +32,7 @@ use App\Http\Controllers\AdminProfileController;
 use App\Http\Controllers\AdminAppSettingsController;
 use App\Http\Controllers\AppSettingsPublicController;
 use App\Http\Controllers\SavedGymController;
+use App\Http\Controllers\Api\GeoController;
 
 use App\Http\Controllers\AdminAdminController;
 use App\Http\Controllers\UserController;
@@ -72,6 +73,8 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\ChatController;
 
 Route::prefix('v1')->group(function () {
+    Route::get('/geo/search', [GeoController::class, 'search']);
+Route::get('/geo/reverse', [GeoController::class, 'reverse']);
     Route::get('/mail-test', function () {
         set_time_limit(120);
 

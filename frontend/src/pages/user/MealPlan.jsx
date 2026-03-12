@@ -33,7 +33,6 @@ import {
 import { buildPlannerDefaults } from "../../utils/mealPlannerMapper";
 
 const DIETARY = [
-  { id: "none", label: "No Restrictions" },
   { id: "halal", label: "Halal" },
   { id: "vegetarian", label: "Vegetarian" },
   { id: "vegan", label: "Vegan" },
@@ -62,6 +61,25 @@ const MEAL_ICONS = {
   dinner: <Utensils size={18} />,
   snack: <Zap size={18} />,
 };
+
+function normalizeDietaryValue(value) {
+  const v = String(value || "").trim().toLowerCase();
+
+  if (!v) return null;
+  if (v === "gluten") return "gluten-free";
+  if (v === "gluten free") return "gluten-free";
+  if (v === "low carb") return "low-carb";
+
+  return v;
+}
+
+function normalizeDietaryArray(value) {
+  if (!value) return [];
+
+  const arr = Array.isArray(value) ? value : [value];
+
+  return [...new Set(arr.map(normalizeDietaryValue).filter(Boolean))];
+}
 
 function Sunrise({ size = 18 }) {
   return (
@@ -636,7 +654,7 @@ export default function MealPlanGenerator() {
   const [form, setForm] = useState({
     budget: 300,
     calories: 2000,
-    dietary: "none",
+    dietary: [],
     days: 1,
     preset_id: null,
   });
@@ -647,7 +665,7 @@ export default function MealPlanGenerator() {
     meal_type: "breakfast",
     budget: 150,
     calories: 500,
-    dietary: "none",
+    dietary: [],
     preset_id: null,
   });
   const [singleMacros, setSingleMacros] = useState({ protein: 30, carbs: 60, fats: 15 });
@@ -681,6 +699,28 @@ export default function MealPlanGenerator() {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const setS = (k, v) => setSingleForm((f) => ({ ...f, [k]: v }));
 
+  const toggleDietary = (value) => {
+    setForm((prev) => {
+      const current = Array.isArray(prev.dietary) ? prev.dietary : [];
+      const exists = current.includes(value);
+      return {
+        ...prev,
+        dietary: exists ? current.filter((x) => x !== value) : [...current, value],
+      };
+    });
+  };
+
+  const toggleSingleDietary = (value) => {
+    setSingleForm((prev) => {
+      const current = Array.isArray(prev.dietary) ? prev.dietary : [];
+      const exists = current.includes(value);
+      return {
+        ...prev,
+        dietary: exists ? current.filter((x) => x !== value) : [...current, value],
+      };
+    });
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -707,16 +747,21 @@ export default function MealPlanGenerator() {
           presets: presetRows,
         });
 
+        const savedDietary = normalizeDietaryArray(
+          resolvedPreference?.dietary_restrictions ?? defaults?.dietary
+        );
+
         setForm((prev) => ({
           ...prev,
           ...defaults,
+          dietary: savedDietary,
         }));
 
         setSingleForm((prev) => ({
           ...prev,
           budget: Math.max(50, Math.round((defaults.budget || 300) / 2)),
           calories: Math.max(300, Math.round((defaults.calories || 2000) / 4)),
-          dietary: defaults.dietary || "none",
+          dietary: savedDietary,
           preset_id: defaults.preset_id ?? null,
         }));
 
@@ -770,7 +815,7 @@ export default function MealPlanGenerator() {
         total_calories: form.calories,
         budget: form.budget,
         meal_types: ["breakfast", "lunch", "dinner", "snack"],
-        diet_tags: form.dietary === "none" ? [] : [form.dietary],
+        diet_tags: Array.isArray(form.dietary) ? form.dietary : [],
       };
 
       if (form.preset_id) body.preset_id = form.preset_id;
@@ -801,7 +846,7 @@ export default function MealPlanGenerator() {
         total_calories: singleForm.calories,
         budget: singleForm.budget,
         meal_types: [singleForm.meal_type],
-        diet_tags: singleForm.dietary === "none" ? [] : [singleForm.dietary],
+        diet_tags: Array.isArray(singleForm.dietary) ? singleForm.dietary : [],
       };
 
       if (singleForm.preset_id) body.preset_id = singleForm.preset_id;
@@ -1574,19 +1619,25 @@ export default function MealPlanGenerator() {
               <div className="mp-card__head">
                 <div className="mp-card__head-left">
                   <span className="mp-card__num">05</span>
-                  <p className="mp-card__title">Dietary Restrictions</p>
+                  <div>
+                    <p className="mp-card__title">Dietary Restrictions</p>
+                    <p className="mp-card__sub">You can select more than one</p>
+                  </div>
                 </div>
               </div>
               <div className="mp-chips-wrap">
-                {DIETARY.map((d) => (
-                  <button
-                    key={d.id}
-                    className={`mp-chip ${singleForm.dietary === d.id ? "mp-chip--active" : ""}`}
-                    onClick={() => setS("dietary", d.id)}
-                  >
-                    {d.label}
-                  </button>
-                ))}
+                {DIETARY.map((d) => {
+                  const active = singleForm.dietary.includes(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      className={`mp-chip ${active ? "mp-chip--active" : ""}`}
+                      onClick={() => toggleSingleDietary(d.id)}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1812,19 +1863,25 @@ export default function MealPlanGenerator() {
             <div className="mp-card__head">
               <div className="mp-card__head-left">
                 <span className="mp-card__num">04</span>
-                <p className="mp-card__title">Dietary Restrictions</p>
+                <div>
+                  <p className="mp-card__title">Dietary Restrictions</p>
+                  <p className="mp-card__sub">You can select more than one</p>
+                </div>
               </div>
             </div>
             <div className="mp-chips-wrap">
-              {DIETARY.map((d) => (
-                <button
-                  key={d.id}
-                  className={`mp-chip ${form.dietary === d.id ? "mp-chip--active" : ""}`}
-                  onClick={() => set("dietary", d.id)}
-                >
-                  {d.label}
-                </button>
-              ))}
+              {DIETARY.map((d) => {
+                const active = form.dietary.includes(d.id);
+                return (
+                  <button
+                    key={d.id}
+                    className={`mp-chip ${active ? "mp-chip--active" : ""}`}
+                    onClick={() => toggleDietary(d.id)}
+                  >
+                    {d.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

@@ -21,7 +21,7 @@ import {
   Weight,
   Cog,
   Target,
-  Scan,
+  ShieldAlert,
   Sunrise,
   Sun,
   Moon,
@@ -36,8 +36,6 @@ import {
   Home,
   Building2,
   Layers,
-  ShieldAlert,
-  BadgeAlert,
 } from "lucide-react";
 import "./Onboardingstyle.css";
 
@@ -448,12 +446,14 @@ export default function Onboarding() {
     }
 
     try {
-      const response = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(
-          query
-        )}&limit=5&lon=${pasigCenter.lng}&lat=${pasigCenter.lat}`
-      );
-      const data = await response.json();
+      const { data } = await api.get("/geo/search", {
+        params: {
+          q: query,
+          limit: 5,
+          lon: pasigCenter.lng,
+          lat: pasigCenter.lat,
+        },
+      });
 
       const suggestions = (data.features || [])
         .map((feature) => {
@@ -592,37 +592,45 @@ export default function Onboarding() {
     setLocationSuggestions([]);
   };
 
-  const reverseGeocode = async (lat, lon) => {
-    try {
-      const res = await fetch(
-        `https://photon.komoot.io/reverse?lon=${lon}&lat=${lat}`
-      );
-      const data = await res.json();
-      const place = data.features?.[0]?.properties;
-      if (!place) return null;
-      const locationName = `${place.name || ""}, ${
-        place.city || place.county || ""
-      }`.replace(/^, |, $/g, "");
-      return locationName || null;
-    } catch (e) {
-      console.error("Reverse geocode error:", e);
-      return null;
-    }
-  };
+const reverseGeocode = async (lat, lon) => {
+  try {
+    const { data } = await api.get("/geo/reverse", {
+      params: { lat, lon },
+    });
+
+    const place = data.features?.[0]?.properties;
+    if (!place) return null;
+
+    const locationName = `${place.name || ""}, ${
+      place.city || place.county || ""
+    }`.replace(/^, |, $/g, "");
+
+    return locationName || null;
+  } catch {
+    return null;
+  }
+};
 
   const requestCurrentLocation = async () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
+await Swal.fire({
+  icon: "warning",
+  title: "Location unavailable",
+  text: "Geolocation is not supported by your browser.",
+  confirmButtonColor: "#d97706",
+});      return;
     }
 
     try {
       if (navigator.permissions?.query) {
         const p = await navigator.permissions.query({ name: "geolocation" });
         if (p.state === "denied") {
-          alert(
-            "Location permission is blocked in your browser settings. Please enable it and try again."
-          );
+await Swal.fire({
+  icon: "warning",
+  title: "Permission blocked",
+  text: "Location permission is blocked in your browser settings. Please enable it and try again.",
+  confirmButtonColor: "#d97706",
+});
           return;
         }
       }
@@ -642,11 +650,17 @@ export default function Onboarding() {
           longitude,
         }));
 
-        if (!name) {
-          alert(
-            "We got your coordinates, but couldn't detect a readable address. You can still continue because the map pin was saved."
-          );
-        }
+if (!name) {
+  await Swal.fire({
+    icon: "info",
+    title: "Coordinates saved",
+    text: "We got your coordinates, but couldn't detect a readable address. You can still continue because the map pin was saved.",
+    confirmButtonText: "OK",
+    confirmButtonColor: "#d97706",
+    background: "#111827",
+    color: "#ffffff",
+  });
+}
 
         setShowSuggestions(false);
         setLocationSuggestions([]);
@@ -657,12 +671,19 @@ export default function Onboarding() {
         console.error("Geolocation error:", error);
 
         if (error.code === error.PERMISSION_DENIED) {
-          alert(
-            "Location access denied. Please allow location access when prompted, then try again."
-          );
+Swal.fire({
+  icon: "warning",
+  title: "Location denied",
+  text: "Location access denied. Please allow location access when prompted, then try again.",
+  confirmButtonColor: "#d97706",
+});
         } else {
-          alert("Could not get your location. Please type it manually.");
-        }
+Swal.fire({
+  icon: "error",
+  title: "Location failed",
+  text: "Could not get your location. Please type it manually.",
+  confirmButtonColor: "#d97706",
+});        }
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
@@ -670,21 +691,27 @@ export default function Onboarding() {
 
   const geocodeIfMissing = async () => {
     if (!formData.location) return { latitude: null, longitude: null };
+
     if (formData.latitude != null && formData.longitude != null) {
       return { latitude: formData.latitude, longitude: formData.longitude };
     }
 
     try {
-      const res = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(
-          formData.location
-        )}&limit=1&lon=${pasigCenter.lng}&lat=${pasigCenter.lat}`
-      );
-      const data = await res.json();
+      const { data } = await api.get("/geo/search", {
+        params: {
+          q: formData.location,
+          limit: 1,
+          lon: pasigCenter.lng,
+          lat: pasigCenter.lat,
+        },
+      });
+
       const coords = data.features?.[0]?.geometry?.coordinates;
+
       if (Array.isArray(coords) && coords.length === 2) {
         return { latitude: coords[1], longitude: coords[0] };
       }
+
       return { latitude: null, longitude: null };
     } catch (e) {
       console.error("Geocode error:", e);
@@ -745,11 +772,9 @@ export default function Onboarding() {
       if (heightUnit === "cm") {
         if (formData.height === "") return "";
       } else {
-        if (
-          formData.heightFeet === "" &&
-          formData.heightInches === ""
-        )
+        if (formData.heightFeet === "" && formData.heightInches === "") {
           return "";
+        }
       }
 
       return numberInRange(formData.height, HEIGHT_MIN, HEIGHT_MAX)
@@ -959,12 +984,15 @@ export default function Onboarding() {
     setMapSearchError("");
 
     try {
-      const res = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(
-          q
-        )}&limit=1&lon=${pasigCenter.lng}&lat=${pasigCenter.lat}`
-      );
-      const data = await res.json();
+      const { data } = await api.get("/geo/search", {
+        params: {
+          q,
+          limit: 1,
+          lon: pasigCenter.lng,
+          lat: pasigCenter.lat,
+        },
+      });
+
       const feature = data.features?.[0];
       const coords = feature?.geometry?.coordinates;
       const props = feature?.properties;
