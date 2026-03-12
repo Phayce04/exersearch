@@ -14,44 +14,74 @@ class GymInteractionController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'gym_id' => ['required', 'integer'],
+            'gym_id' => ['nullable', 'integer'],
             'event' => ['required', 'string', 'max:30'],
             'source' => ['nullable', 'string', 'max:30'],
             'session_id' => ['nullable', 'string', 'max:64'],
             'meta' => ['nullable'],
         ]);
 
-        $allowed = ['view', 'click', 'save', 'contact', 'visit', 'subscribe'];
+        $allowed = [
+            'view',
+            'click',
+            'save',
+            'contact',
+            'visit',
+            'subscribe',
+            'login',
+            'signup',
+            'google_login',
+            'logout',
+        ];
+
         if (!in_array($validated['event'], $allowed, true)) {
-            return response()->json(['message' => 'Invalid event'], 422);
+            return response()->json([
+                'message' => 'Invalid event',
+            ], 422);
         }
 
-        $gym = Gym::where('gym_id', (int) $validated['gym_id'])
-            ->where('status', 'approved')
-            ->first();
+        $gymId = $validated['gym_id'] ?? null;
 
-        if (!$gym) return response()->json(['message' => 'Gym not found'], 404);
+        // Only check gym if gym_id was provided
+        if ($gymId !== null) {
+            $gym = Gym::where('gym_id', (int) $gymId)
+                ->where('status', 'approved')
+                ->first();
+
+            if (!$gym) {
+                return response()->json([
+                    'message' => 'Gym not found',
+                ], 404);
+            }
+        }
 
         $sessionId = $validated['session_id'] ?? null;
-        if (!$user && !$sessionId) {
-            $sessionId = Str::uuid()->toString();
+
+        // Create guest/session identifier if none exists
+        if (!$sessionId) {
+            $sessionId = (string) Str::uuid();
         }
 
         $meta = $validated['meta'] ?? null;
-        if (is_array($meta) || is_object($meta)) $meta = json_encode($meta);
 
-        DB::table('gym_interactions')->insert([
+        // Keep JSONB valid
+        if (is_array($meta) || is_object($meta)) {
+            $meta = json_encode($meta);
+        }
+
+        $interactionId = DB::table('gym_interactions')->insertGetId([
             'user_id' => $user?->user_id,
-            'gym_id' => (int) $validated['gym_id'],
+            'gym_id' => $gymId,
             'event' => $validated['event'],
             'source' => $validated['source'] ?? null,
             'session_id' => $sessionId,
             'meta' => $meta,
             'created_at' => now(),
-        ]);
+        ], 'interaction_id');
 
         return response()->json([
             'message' => 'Logged',
+            'interaction_id' => $interactionId,
             'session_id' => $sessionId,
         ], 201);
     }
@@ -67,7 +97,10 @@ class GymInteractionController extends Controller
         $source = trim((string) $request->query('source', ''));
         $days = (int) $request->query('days', 30);
 
-        if (!in_array($days, [1, 7, 30, 90, 365], true)) $days = 30;
+        if (!in_array($days, [1, 7, 30, 90, 365], true)) {
+            $days = 30;
+        }
+
         $from = now()->subDays($days);
 
         $query = DB::table('gym_interactions as gi')
@@ -75,6 +108,7 @@ class GymInteractionController extends Controller
             ->leftJoin('users as u', 'u.user_id', '=', 'gi.user_id')
             ->where('gi.created_at', '>=', $from)
             ->select([
+                'gi.interaction_id',
                 'gi.gym_id',
                 'gi.user_id',
                 'gi.event',
@@ -82,18 +116,11 @@ class GymInteractionController extends Controller
                 'gi.session_id',
                 'gi.meta',
                 'gi.created_at',
-
                 'g.name as gym_name',
-
-                // ✅ your users table has "name"
                 'u.name as user_name',
                 'u.email as user_email',
-
-                // ✅ unique-ish key (since gym_interactions has no id)
-                DB::raw("CONCAT(gi.gym_id,'|',COALESCE(gi.user_id::text,''),'|',COALESCE(gi.session_id,''),'|',gi.event,'|',gi.created_at::text) as row_key"),
-            ])
-            ->orderByDesc('gi.created_at')
-            ->limit($limit);
+                DB::raw('gi.interaction_id::text as row_key'),
+            ]);
 
         if ($event !== '' && $event !== 'All') {
             $query->where('gi.event', $event);
@@ -104,18 +131,24 @@ class GymInteractionController extends Controller
         }
 
         if ($q !== '') {
-            $like = '%' . str_replace('%', '\\%', $q) . '%';
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+
             $query->where(function ($w) use ($like) {
                 $w->where('gi.session_id', 'ilike', $like)
                     ->orWhere('gi.event', 'ilike', $like)
                     ->orWhere('gi.source', 'ilike', $like)
-                    ->orWhere('gi.meta', 'ilike', $like)
+                    ->orWhereRaw('CAST(gi.meta AS TEXT) ILIKE ?', [$like])
                     ->orWhere('g.name', 'ilike', $like)
                     ->orWhere('u.name', 'ilike', $like)
                     ->orWhere('u.email', 'ilike', $like);
             });
         }
 
-        return response()->json($query->get(), 200);
+        $rows = $query
+            ->orderByDesc('gi.created_at')
+            ->limit($limit)
+            ->get();
+
+        return response()->json($rows, 200);
     }
 }
