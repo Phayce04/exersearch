@@ -92,12 +92,12 @@ const QUOTES = [
 ];
 
 const GYM_PINS = [
-  { x:52, y:38, name:"IronForge Manila",  city:"BGC",         price:"₱1,200", match:98 },
-  { x:34, y:28, name:"GrindHouse QC",    city:"Quezon City", price:"₱700",   match:91 },
-  { x:61, y:55, name:"PeakForm Studio",  city:"Makati",      price:"₱900",   match:94 },
-  { x:22, y:62, name:"LiftLab Pasig",    city:"Pasig",       price:"₱850",   match:88 },
-  { x:70, y:22, name:"Core & Co.",       city:"BGC",         price:"₱1,400", match:85 },
-  { x:44, y:68, name:"Apex Fitness",     city:"Parañaque",   price:"₱750",   match:87 },
+  { x:52, y:38, name:"IronForge Manila", price:"₱1,200", match:98 },
+  { x:34, y:28, name:"GrindHouse QC", price:"₱700",   match:91 },
+  { x:61, y:55, name:"PeakForm Studio", price:"₱900",   match:94 },
+  { x:22, y:62, name:"LiftLab Pasig", price:"₱850",   match:88 },
+  { x:70, y:22, name:"Core & Co.", price:"₱1,400", match:85 },
+  { x:44, y:68, name:"Apex Fitness", price:"₱750",   match:87 },
 ];
 
 const FAQS = [

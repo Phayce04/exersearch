@@ -91,7 +91,7 @@ export default function Chatbot() {
     if (!window.confirm("Clear all chat history? This cannot be undone.")) return;
     try {
       const token = localStorage.getItem("auth_token") || localStorage.getItem("token");
-      if (token) await api.delete("/api/v1/chat/clear");
+      if (token) await api.delete("/chat/clear");
       const freshMessages = [{
         role: "assistant",
         content: "Chat cleared! Ready to start fresh. What can I help you with?",
@@ -120,9 +120,9 @@ export default function Chatbot() {
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const { data } = await api.post("/api/v1/chat", { message: userMessage, conversation });
+      const { data } = await api.post("/chat", { message: userMessage, conversation });
 
-      if (data?.success && data?.message) {
+      if (data?.success && data?.message) { 
         const aiMessage = { role: "assistant", content: data.message, timestamp: new Date().toISOString() };
         const finalMessages = [...updatedMessages, aiMessage];
         setMessages(finalMessages);
@@ -186,7 +186,7 @@ export default function Chatbot() {
               <div className="eb-header-info">
                 <div className="eb-name">ExerBot</div>
                 <div className={`eb-status ${isLoading ? "typing" : ""}`}>
-                  <span className="eb-status-dot" />
+                 
                   {isLoading ? "Thinking..." : "AI Fitness Assistant"}
                 </div>
               </div>
