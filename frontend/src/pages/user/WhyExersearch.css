@@ -4,32 +4,27 @@
    TOKENS
 ══════════════════════════════════════════ */
 :root {
-  /* Orange palette */
   --or: #ff5a16;
   --or-md: #fc4a00;
   --or-dk: #ab3200;
   --or-dim: rgba(255, 90, 22, 0.10);
   --or-ring: rgba(255, 90, 22, 0.25);
 
-  /* Dark palette */
   --blk: #181718;
   --blk-2: #101820;
   --blk-3: #0d141b;
 
-  /* Ink/text colors */
   --ink: #1a1714;
   --ink-2: #3a3530;
   --ink-3: #4a6080;
   --ink-4: #7a90a8;
 
-  /* Light palette */
   --cream: #f6f8fa;
   --warm-50: #f1f4f8;
   --warm-100: #ebf0f5;
   --surface: #ffffff;
   --border: #e6ddd6;
 
-  /* Font */
   --fh: 'Montserrat', sans-serif;
 }
 
@@ -53,7 +48,6 @@
   padding: 0 2.5rem;
 }
 
-/* Shared eyebrow */
 .wy-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -76,7 +70,6 @@
   border-color: var(--or-ring);
 }
 
-/* Section header */
 .wy-sec-hdr {
   text-align: center;
   margin-bottom: 4rem;
@@ -96,7 +89,9 @@
   color: var(--or);
 }
 
-/* Shared buttons */
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
 .wy-btn {
   display: inline-flex;
   align-items: center;
@@ -125,24 +120,24 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(255, 90, 22, 0.38);
 }
-.wy-btn--or:active {
-  background: var(--or-dk);
-}
+.wy-btn--or:active { background: var(--or-dk); }
 
+/* FIX: ghost button — themed so it works on both dark hero and light hero */
 .wy-btn--ghost {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.75);
-  border: 1.5px solid rgba(255,255,255,0.16);
+  background: var(--lnd-bg-accent);
+  color: var(--lnd-text-secondary);
+  border: 1.5px solid var(--lnd-border);
 }
 .wy-btn--ghost:hover {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border-color: rgba(255,255,255,0.28);
+  background: var(--lnd-bg-tertiary);
+  color: var(--lnd-text-primary);
+  border-color: var(--lnd-text-muted);
 }
 
 .wy-btn--white {
-  background: #fff;
-  color: var(--lnd-bg-primary, var(--blk));
+  background: var(--or);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(255, 90, 22, 0.30);
 }
 .wy-btn--white:hover {
   background: var(--or);
@@ -152,12 +147,12 @@
 
 .wy-btn--outline-white {
   background: transparent;
-  color: rgba(255,255,255,0.75);
-  border: 1.5px solid rgba(255,255,255,0.25);
+  color: var(--lnd-text-secondary);
+  border: 1.5px solid var(--lnd-border);
 }
 .wy-btn--outline-white:hover {
-  border-color: rgba(255,255,255,0.6);
-  color: #fff;
+  border-color: var(--lnd-text-primary);
+  color: var(--lnd-text-primary);
 }
 
 /* ══════════════════════════════════════════
@@ -192,19 +187,17 @@
   top: -200px;
   right: -100px;
   background: radial-gradient(circle, rgba(255, 90, 22, 0.18) 0%, transparent 70%);
-  transform: translate(
-    calc(var(--mx, 0) * 20px),
-    calc(var(--my, 0) * 20px)
-  );
+  transform: translate(calc(var(--mx, 0) * 20px), calc(var(--my, 0) * 20px));
   transition: transform 0.8s ease;
 }
 
+/* FIX: orb--2 was hardcoded near-black, now theme-aware */
 .wy-hero__orb--2 {
   width: 400px;
   height: 400px;
   bottom: -100px;
   left: 0;
-  background: radial-gradient(circle, rgba(24, 23, 24, 0.9) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--lnd-bg-secondary, rgba(24,23,24,0.9)) 0%, transparent 70%);
 }
 
 .wy-hero__grid {
@@ -245,7 +238,7 @@
 
 .wy-hero__sub {
   font-size: 0.95rem;
-  color: var(--lnd-text-muted, rgba(255,255,255,0.45));
+  color: var(--lnd-text-secondary, rgba(255,255,255,0.45));
   line-height: 1.75;
   font-weight: 400;
   max-width: 480px;
@@ -260,7 +253,6 @@
   flex-wrap: wrap;
 }
 
-/* Right side */
 .wy-hero__right {
   display: flex;
   flex-direction: column;
@@ -291,9 +283,7 @@
   transition: background 0.2s;
 }
 
-.wy-stat:hover {
-  background: rgba(255, 90, 22, 0.08);
-}
+.wy-stat:hover { background: rgba(255, 90, 22, 0.08); }
 
 @keyframes statIn {
   from { opacity: 0; transform: translateY(12px); }
@@ -368,18 +358,12 @@
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 10px,
-    rgba(0,0,0,0.04) 10px,
-    rgba(0,0,0,0.04) 11px
+    -45deg, transparent, transparent 10px,
+    rgba(0,0,0,0.04) 10px, rgba(0,0,0,0.04) 11px
   );
 }
 
-.wy-intro__inner {
-  position: relative;
-  z-index: 1;
-}
+.wy-intro__inner { position: relative; z-index: 1; }
 
 .wy-intro__text {
   font-size: clamp(1.25rem, 2.5vw, 2rem);
@@ -426,35 +410,26 @@
   position: relative;
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.55s ease var(--delay), transform 0.55s ease var(--delay),
-              background 0.2s;
+  transition:
+    opacity 0.55s ease var(--delay),
+    transform 0.55s ease var(--delay),
+    background 0.3s ease;
   cursor: default;
 }
 
-.wy-pillar--in {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.wy-pillar:hover {
-  background: rgba(255, 90, 22, 0.06);
-}
+.wy-pillar--in { opacity: 1; transform: translateY(0); }
+.wy-pillar:hover { background: rgba(255, 90, 22, 0.06); }
 
 .wy-pillar__bar {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   height: 2px;
   background: var(--or);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;
 }
-
-.wy-pillar:hover .wy-pillar__bar {
-  transform: scaleX(1);
-}
+.wy-pillar:hover .wy-pillar__bar { transform: scaleX(1); }
 
 .wy-pillar__top {
   display: flex;
@@ -496,7 +471,6 @@
   margin-bottom: 1.25rem;
   transition: background 0.2s, box-shadow 0.2s;
 }
-
 .wy-pillar:hover .wy-pillar__ico {
   background: var(--or);
   color: #fff;
@@ -546,11 +520,7 @@
   margin-bottom: 1.5rem;
   transition: color 0.3s ease;
 }
-
-.wy-split__title em {
-  font-style: italic;
-  color: var(--or);
-}
+.wy-split__title em { font-style: italic; color: var(--or); }
 
 .wy-split__body {
   font-size: 0.9rem;
@@ -561,7 +531,6 @@
   transition: color 0.3s ease;
 }
 
-/* VS cards */
 .wy-split__visual {
   display: flex;
   flex-direction: column;
@@ -601,25 +570,26 @@
   display: block;
 }
 
+/* "Other apps" card — uses theme vars, readable in both modes */
 .wy-split__card--a {
   background: var(--lnd-bg-tertiary, var(--warm-50));
   border: 1.5px solid var(--lnd-border, var(--warm-100));
   transition: background 0.3s ease, border-color 0.3s ease;
 }
-
 .wy-split__card--a .wy-split__card-label { color: var(--lnd-text-tertiary, var(--ink-3)); }
 .wy-split__card--a p { color: var(--lnd-text-tertiary, var(--ink-3)); }
 .wy-split__card--a p::before { background: var(--lnd-text-muted, var(--ink-4)); }
 
+/* FIX: "ExerSearch" card — was hardcoded white text, now theme-aware */
 .wy-split__card--b {
-  background: var(--lnd-bg-primary, var(--blk));
+  background: var(--lnd-bg-accent, var(--blk));
   border: 1.5px solid rgba(255, 90, 22, 0.25);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 0 0 1px rgba(255, 90, 22, 0.1);
-  transition: background 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 0 0 1px rgba(255, 90, 22, 0.1);
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
-
 .wy-split__card--b .wy-split__card-label { color: var(--or); }
-.wy-split__card--b p { color: rgba(255,255,255,0.75); }
+/* FIX: was rgba(255,255,255,0.75) — invisible in light mode */
+.wy-split__card--b p { color: var(--lnd-text-primary); }
 .wy-split__card--b p::before { background: var(--or); }
 
 /* ══════════════════════════════════════════
@@ -642,10 +612,11 @@
   transition: background 0.3s ease, border-color 0.3s ease;
 }
 
+/* FIX: was hardcoded dark bg — now uses theme so it's readable in light mode */
 .wy-compare__head {
   display: grid;
   grid-template-columns: 1fr 120px 120px;
-  background: var(--lnd-bg-primary, var(--blk));
+  background: var(--lnd-bg-tertiary, var(--blk));
   padding: 1.125rem 1.75rem;
   border-bottom: 1px solid var(--lnd-border, rgba(255,255,255,0.06));
   transition: background 0.3s ease, border-color 0.3s ease;
@@ -656,14 +627,13 @@
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lnd-text-muted, rgba(255,255,255,0.35));
+  /* FIX: was hardcoded rgba white — invisible in light mode */
+  color: var(--lnd-text-muted);
   text-align: center;
   transition: color 0.3s ease;
 }
 
-.wy-compare__col-hd--us {
-  color: var(--or);
-}
+.wy-compare__col-hd--us { color: var(--or); }
 
 .wy-compare__row {
   display: grid;
@@ -675,7 +645,6 @@
   animation-delay: var(--delay);
   transition: background 0.15s, border-color 0.3s ease;
 }
-
 .wy-compare__row:last-child { border-bottom: none; }
 .wy-compare__row:hover { background: var(--lnd-bg-tertiary, var(--warm-50)); }
 
@@ -696,11 +665,7 @@
 
 .wy-compare__cell.yes { color: #16a34a; }
 .wy-compare__cell.no  { color: #dc2626; opacity: 0.5; }
-
-.wy-compare__cell--us.yes {
-  color: var(--or);
-  font-size: 1.1rem;
-}
+.wy-compare__cell--us.yes { color: var(--or); font-size: 1.1rem; }
 
 @keyframes rowIn {
   from { opacity: 0; transform: translateX(-8px); }
@@ -738,15 +703,14 @@
   gap: 8px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--lnd-text-muted, rgba(255,255,255,0.35));
+  color: var(--lnd-text-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 0 2.5rem;
-  border-right: 1px solid var(--lnd-border, rgba(255,255,255,0.06));
+  border-right: 1px solid var(--lnd-border);
   white-space: nowrap;
   transition: color 0.3s ease, border-color 0.3s ease;
 }
-
 .wy-marquee__item svg { color: var(--or); }
 
 @keyframes marquee {
@@ -790,10 +754,12 @@
   letter-spacing: 0.02em;
 }
 
+/* FIX: active tab was hardcoded bg-primary + white text
+   In light mode bg-primary = white → white text invisible */
 .wy-tab-btn.active {
-  background: var(--lnd-bg-primary, var(--blk));
+  background: var(--or);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  box-shadow: 0 2px 8px rgba(255, 90, 22, 0.30);
 }
 
 .wy-tab-content {
@@ -823,7 +789,6 @@
   border: 1.5px solid var(--lnd-border, var(--border));
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s, background 0.3s ease;
 }
-
 .wy-tab-item:hover {
   border-color: var(--or-ring);
   transform: translateY(-3px);
@@ -888,11 +853,9 @@
 .wy-cta::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 600px;
-  height: 300px;
+  width: 600px; height: 300px;
   background: radial-gradient(ellipse, rgba(255, 90, 22, 0.14) 0%, transparent 70%);
   pointer-events: none;
 }
@@ -915,11 +878,7 @@
   margin-bottom: 2.5rem;
   transition: color 0.3s ease;
 }
-
-.wy-cta__title em {
-  font-style: italic;
-  color: var(--or);
-}
+.wy-cta__title em { font-style: italic; color: var(--or); }
 
 .wy-cta__actions {
   display: flex;
@@ -937,11 +896,7 @@
 }
 
 @media (max-width: 900px) {
-  .wy-hero__inner {
-    grid-template-columns: 1fr;
-    gap: 3rem;
-    padding-top: 3rem;
-  }
+  .wy-hero__inner { grid-template-columns: 1fr; gap: 3rem; padding-top: 3rem; }
   .wy-hero__h1 { font-size: clamp(2.5rem, 8vw, 4rem); }
   .wy-split__inner { grid-template-columns: 1fr; gap: 3rem; }
   .wy-tab-panel { grid-template-columns: 1fr; }
@@ -957,11 +912,11 @@
 
 @media (max-width: 560px) {
   .wy-wrap { padding: 0 1.25rem; }
-  .wy-pillars { padding: 4rem 0; }
-  .wy-split   { padding: 4rem 0; }
-  .wy-compare { padding: 4rem 0; }
+  .wy-pillars   { padding: 4rem 0; }
+  .wy-split     { padding: 4rem 0; }
+  .wy-compare   { padding: 4rem 0; }
   .wy-tabs-section { padding: 4rem 0; }
-  .wy-cta     { padding: 4rem 0; }
+  .wy-cta       { padding: 4rem 0; }
   .wy-hero__actions { flex-direction: column; align-items: flex-start; }
   .wy-btn { width: 100%; justify-content: center; }
   .wy-stat-grid { grid-template-columns: 1fr 1fr; }
