@@ -1,10 +1,13 @@
-// src/components/header/HeaderUser.jsx
+// src/components/header/Header-user.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "./HeaderUser.css";
 import fallbackLogo from "../../assets/exersearchlogo.png";
 import { useAuth } from "../../authcon";
+import { useTheme } from "./ThemeContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
+  Search,
+  X,
   Flame,
   Utensils,
   Bell,
@@ -18,10 +21,8 @@ import {
   Settings,
   Sun,
   Moon,
-  X
 } from "lucide-react";
 import { api } from "../../utils/apiClient";
-import { useTheme } from "../../pages/user/ThemeContext";
 
 import {
   listNotifications,
@@ -86,6 +87,7 @@ function iconForNotifType(type) {
 
 export default function HeaderUser() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -95,11 +97,9 @@ export default function HeaderUser() {
   const profileRef = useRef(null);
 
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // USE THEME CONTEXT
-  const { isDark, toggleTheme } = useTheme();
 
   const [me, setMe] = useState(null);
   const [meLoading, setMeLoading] = useState(false);
@@ -350,17 +350,44 @@ export default function HeaderUser() {
           />
         </div>
 
+        <div className="uhd-header__search-wrap">
+          <Search size={14} className="uhd-header__search-icon" />
+          <input
+            className="uhd-header__search-input"
+            type="text"
+            placeholder="Search gyms, areas, tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="uhd-header__search-clear" type="button" onClick={() => setSearchQuery("")}>
+              <X size={12} />
+            </button>
+          )}
+        </div>
 
         <div className="uhd-header__actions">
-          <Link to="/home/workout" className="uhd-chip uhd-chip--fire" onClick={() => setMobileMenuOpen(false)}>
+          <Link 
+            to="/home/workout" 
+            className={`uhd-chip uhd-chip--fire ${location.pathname.includes('/workout') ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
             <Flame size={12} /> Workout Plan
           </Link>
 
-          <Link to="/home/find-gyms" className="uhd-chip uhd-chip--find" onClick={() => setMobileMenuOpen(false)}>
+          <Link 
+            to="/home/find-gyms" 
+            className={`uhd-chip uhd-chip--find ${location.pathname.includes('/find-gyms') ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
             <Dumbbell size={12} /> Find Gyms
           </Link>
 
-          <Link to="/home/meal-plan" className="uhd-chip uhd-chip--meal" onClick={() => setMobileMenuOpen(false)}>
+          <Link 
+            to="/home/meal-plan" 
+            className={`uhd-chip uhd-chip--meal ${location.pathname.includes('/meal-plan') ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(false)}
+          >
             <Utensils size={12} /> Meal Plan
           </Link>
 
