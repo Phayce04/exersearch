@@ -46,9 +46,6 @@ import {
   BookOpen,
   Phone,
   Mail,
-  Instagram,
-  Facebook,
-  Twitter,
   ChevronDown,
   Gift,
   UserCircle,
@@ -1773,30 +1770,7 @@ export default function Home() {
               </div>
             </Link>
 
-            <div className="uhv-support-card uhv-support-card--social">
-              <p className="uhv-support-card__label">Follow Us</p>
-              <div className="uhv-social-row">
-                <a
-                  href={support.instagram || "#"}
-                  className="uhv-social-btn uhv-social-btn--ig"
-                  target={support.instagram ? "_blank" : undefined}
-                  rel={support.instagram ? "noreferrer" : undefined}
-                >
-                  <Instagram size={16} />
-                </a>
-                <a
-                  href={support.facebook || "#"}
-                  className="uhv-social-btn uhv-social-btn--fb"
-                  target={support.facebook ? "_blank" : undefined}
-                  rel={support.facebook ? "noreferrer" : undefined}
-                >
-                  <Facebook size={16} />
-                </a>
-                <a href={"#"} className="uhv-social-btn uhv-social-btn--tw">
-                  <Twitter size={16} />
-                </a>
-              </div>
-            </div>
+            
           </div>
         </section>
       </div>
