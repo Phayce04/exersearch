@@ -249,6 +249,17 @@ export default function OwnerGymsPage() {
   const grouped = useMemo(() => groupEquipmentsByTypeAndMuscle(equipments), [equipments]);
 
   useEffect(() => {
+    if (!isModalOpen) return;
+    if (sections[currentStep] !== "Location") return;
+
+    const t = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 250);
+
+    return () => clearTimeout(t);
+  }, [isModalOpen, currentStep]);
+
+  useEffect(() => {
     const mountEl = mountRef.current;
     if (!mountEl) return;
 
