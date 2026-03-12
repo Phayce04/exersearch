@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Send, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -16,10 +17,10 @@ function pickName(g) {
   return safeStr(g?.gym_name || g?.name || g?.title || "").trim() || `Gym #${pickId(g) || "—"}`;
 }
 
-export default function GymInquiryModal({
+function GymInquiryModalInner({
   gym,
   onClose,
-  onSend, // (gymId:number, question:string) => Promise<void>
+  onSend,
   sending = false,
 }) {
   const [question, setQuestion] = useState("");
@@ -28,7 +29,12 @@ export default function GymInquiryModal({
 
   useEffect(() => {
     const t = setTimeout(() => taRef.current?.focus(), 50);
-    return () => clearTimeout(t);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      clearTimeout(t);
+      document.body.style.overflow = "";
+    };
   }, []);
 
   const gymId = pickId(gym);
@@ -49,8 +55,8 @@ export default function GymInquiryModal({
   };
 
   return (
-    <div className="gi-overlay" onMouseDown={onClose} role="dialog" aria-modal="true">
-      <div className="gi-card" onMouseDown={(e) => e.stopPropagation()}>
+    <div className="gi-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="gi-card" onClick={(e) => e.stopPropagation()}>
         <div className="gi-head">
           <div className="gi-titleWrap">
             <div className="gi-title">Inquire Now</div>
@@ -59,9 +65,7 @@ export default function GymInquiryModal({
             </div>
           </div>
 
-          {/* ✅ Right side header icons */}
           <div style={{ display: "flex", gap: 8 }}>
-            {/* Go to inquiries page */}
             <button
               type="button"
               className="gi-iconBtn"
@@ -76,7 +80,6 @@ export default function GymInquiryModal({
               <MessageSquare size={18} />
             </button>
 
-            {/* Close */}
             <button
               type="button"
               className="gi-x"
@@ -142,4 +145,8 @@ export default function GymInquiryModal({
       </div>
     </div>
   );
+}
+
+export default function GymInquiryModal(props) {
+  return createPortal(<GymInquiryModalInner {...props} />, document.body);
 }

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Footer from "../user/Footer";
 import "./ViewStats.css";
 import {
   ChevronLeft,
@@ -242,7 +241,6 @@ export default function ViewStats() {
           <p className="loading-text">Crunching the numbers...</p>
           <span className="loading-subtext">Analyzing your gym&apos;s performance</span>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -254,7 +252,6 @@ export default function ViewStats() {
           <AlertCircle size={48} />
           <p>Unable to load analytics</p>
         </div>
-        <Footer />
       </div>
     );
   }

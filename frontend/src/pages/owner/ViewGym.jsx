@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Header from "./Header2";
-import Footer from "../user/Footer";
 import "./ViewGym.css";
 import {
   MapPin,
@@ -388,7 +387,6 @@ const refreshRecentMembers = async () => {
           <div className="vg-spinner"></div>
           Loading gym management...
         </div>
-        <Footer />
       </div>
     );
   }
@@ -405,7 +403,6 @@ const refreshRecentMembers = async () => {
             </button>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }

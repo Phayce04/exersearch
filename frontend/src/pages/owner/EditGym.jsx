@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "./Header2";
-import Footer from "../user/Footer";
 import "./EditGym.css";
 import {
   Save,
@@ -700,7 +699,6 @@ export default function EditGym() {
           <div className="eg-spinner"></div>
           <p>Loading gym details...</p>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -1504,7 +1502,6 @@ export default function EditGym() {
         </div>
       </div>
 
-      <Footer />
     </div>
   );
 }
