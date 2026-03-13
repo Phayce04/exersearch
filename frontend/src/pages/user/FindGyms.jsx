@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+
 import * as THREE from "three";
 import { gsap } from "gsap";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
@@ -30,6 +31,13 @@ import {
   savePreferredAmenities,
   saveUserProfileLocation,
 } from "../../utils/findGymsApi";
+
+import { 
+  MapPin,          
+  Menu,            
+  X,                
+  MoreHorizontal    
+} from "lucide-react";
 
 const RESULTS_ROUTE = "/home/gym-results";
 const MAIN_ORANGE = "#ff8c00";
@@ -125,6 +133,7 @@ export default function OwnerGymsPage() {
   const [savingPhase, setSavingPhase] = useState(false);
   const [rankingPhase, setRankingPhase] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showMobileSelections, setShowMobileSelections] = useState(false);
 
   const sections = ["Location", "Budget", "Amenities", "Gym Types", "Machines", "Free Weights"];
 
@@ -524,12 +533,18 @@ export default function OwnerGymsPage() {
   };
 
   const nextStep = () => {
-    if (currentStep < sections.length - 1) setCurrentStep((s) => s + 1);
-  };
+      if (currentStep < sections.length - 1) {
+        setCurrentStep((s) => s + 1);
+        setShowMobileSelections(false);
+      }
+    };
 
-  const prevStep = () => {
-    if (currentStep > 0) setCurrentStep((s) => s - 1);
-  };
+    const prevStep = () => {
+      if (currentStep > 0) {
+        setCurrentStep((s) => s - 1);
+        setShowMobileSelections(false);
+      }
+    };
 
   const addSelected = (key) => {
     if (key.startsWith("location:")) {
@@ -920,7 +935,7 @@ export default function OwnerGymsPage() {
                           openEquipPreview(e);
                         }}
                       >
-                        ⋯
+                        <MoreHorizontal size={18} />
                       </button>
                     </div>
 
@@ -991,13 +1006,13 @@ export default function OwnerGymsPage() {
             )}
           </div>
 
-          <button
-            className="fg-location-btn fg-location-btn--full"
-            onClick={getCurrentLocation}
-            disabled={savingPhase || rankingPhase}
-          >
-            📍 Use My Current Location
-          </button>
+         <button
+              className="fg-location-btn fg-location-btn--full"
+              onClick={getCurrentLocation}
+              disabled={savingPhase || rankingPhase}
+            >
+              <MapPin size={16} /> Use My Current Location
+            </button>
 
           <div className={`fg-map-wrap ${savingPhase || rankingPhase ? "is-disabled" : ""}`}>
             <MapContainer key={mapKey} center={mapCenter} zoom={16} className="fg-map-container">
@@ -1157,67 +1172,119 @@ export default function OwnerGymsPage() {
         <div className="fg-modal-bg" onClick={closeModal}>
           <div className="fg-modal" onClick={(e) => e.stopPropagation()}>
             <div className="fg-modal-header">
-              <h2>{sections[currentStep]}</h2>
-              <button className="fg-modal-close" onClick={closeModal} disabled={showOverlay}>
-                ✖
-              </button>
-            </div>
-
-            <div className="fg-modal-content">
-              <div className="fg-left-panel">{renderLeftPanel()}</div>
-
-              <div className="fg-right-panel">
-                <h3>Selected Preferences</h3>
-
-                <div className="fg-selected-list">
-                  {Object.keys(selectedItems).length === 0 ? (
-                    <p className="fg-empty-message">No items selected yet</p>
-                  ) : (
-                    Object.keys(selectedItems).map((key, index) => (
-                      <div key={index} className="fg-selected-item">
-                        <span>{prettySelectedLabel(key)}</span>
-                        <button
-                          className="fg-remove-btn"
-                          onClick={() => !(savingPhase || rankingPhase) && removeSelected(key)}
-                          disabled={showOverlay}
-                        >
-                          ✖
-                        </button>
-                      </div>
-                    ))
-                  )}
+              <div className="fg-modal-header-top">
+                <div className="fg-modal-title-group">
+                  <h2>{sections[currentStep]}</h2>
+                  <span className="fg-step-badge">{currentStep + 1} of {sections.length}</span>
+                  <button
+                      className="fg-selections-toggle"
+                      onClick={() => setShowMobileSelections(v => !v)}
+                    >
+                      <Menu size={18} />
+                      {Object.keys(selectedItems).length > 0 && (
+                        <span className="fg-selections-badge">
+                          {Object.keys(selectedItems).length}
+                        </span>
+                      )}
+                    </button>
                 </div>
-              </div>
-            </div>
-
-            <div className="fg-modal-footer">
-              <button className="fg-nav-btn" onClick={prevStep} disabled={currentStep === 0 || showOverlay}>
-                <span className="arrow left"></span>
+                <button className="fg-modal-close" onClick={closeModal} disabled={showOverlay}>
+                <X size={20} />
               </button>
-
-              <div className="fg-step-indicator">
-                Step {currentStep + 1} of {sections.length}
               </div>
 
-              {!isLastStep ? (
-                <button className="fg-nav-btn" onClick={nextStep} disabled={showOverlay}>
-                  <span className="arrow right"></span>
+              <div className="fg-modal-nav">
+                <button
+                  className="fg-nav-btn"
+                  onClick={prevStep}
+                  disabled={currentStep === 0 || showOverlay}
+                >
+                  <span className="arrow left" />
                 </button>
-              ) : (
-                <button className="fg-apply-btn fg-apply-btn--compact" onClick={handleApply} disabled={showOverlay}>
-                  {savingPhase ? "SAVING..." : rankingPhase ? "RANKING..." : "APPLY"}
-                </button>
-              )}
-            </div>
 
+                <div className="fg-progress-track">
+                  {sections.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`fg-progress-seg ${
+                        idx < currentStep ? "is-done" : idx === currentStep ? "is-active" : ""
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {!isLastStep ? (
+                  <button
+                    className="fg-nav-btn"
+                    onClick={nextStep}
+                    disabled={showOverlay}
+                  >
+                    <span className="arrow right" />
+                  </button>
+                ) : (
+                  <button
+                    className="fg-apply-btn fg-apply-btn--compact"
+                    onClick={handleApply}
+                    disabled={showOverlay}
+                  >
+                    {savingPhase ? "Saving..." : rankingPhase ? "Ranking..." : "Apply"}
+                  </button>
+                )}
+              </div>
+            </div>
+          <div className="fg-modal-content">
+  <div className="fg-left-panel">
+    {showMobileSelections && window.innerWidth <= 768 ? (
+      <div>
+        <h3 style={{fontSize:"10px",fontWeight:900,letterSpacing:"2px",textTransform:"uppercase",color:"var(--brand)",marginBottom:"14px"}}>Selected Preferences</h3>
+        {Object.keys(selectedItems).length === 0 ? (
+          <p className="fg-empty-message">No items selected yet</p>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+            {Object.keys(selectedItems).map((key, index) => (
+              <div key={index} className="fg-selected-item">
+                <span>{prettySelectedLabel(key)}</span>
+                <button className="fg-remove-btn" onClick={() => !(savingPhase || rankingPhase) && removeSelected(key)} disabled={showOverlay}>
+  <X size={14} />
+</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : renderLeftPanel()}
+  </div>
+
+  <div className="fg-right-panel">
+    <h3>Selected Preferences</h3>
+    <div className="fg-selected-list">
+      {Object.keys(selectedItems).length === 0 ? (
+        <p className="fg-empty-message">No items selected yet</p>
+      ) : (
+        Object.keys(selectedItems).map((key, index) => (
+          <div key={index} className="fg-selected-item">
+            <span>{prettySelectedLabel(key)}</span>
+           <button
+          className="fg-remove-btn"
+          onClick={() => !(savingPhase || rankingPhase) && removeSelected(key)}
+          disabled={showOverlay}
+        >
+          <X size={14} />
+        </button>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+</div>
             {previewEquip && !showOverlay && (
               <div className="fg-equip-preview-bg" onClick={closeEquipPreview}>
                 <div className="fg-equip-preview" onClick={(e) => e.stopPropagation()}>
                   <div className="fg-equip-preview-head">
                     <div className="fg-equip-preview-title">{previewEquip.name}</div>
-                    <button className="fg-equip-preview-close" onClick={closeEquipPreview}>
-                      ✖
-                    </button>
+                   <button className="fg-equip-preview-close" onClick={closeEquipPreview}>
+              <X size={20} />
+            </button>
                   </div>
 
                   {previewEquip.image_url ? (

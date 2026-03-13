@@ -896,3 +896,57 @@
     right: -4rem;
   }
 }
+
+/*active state 3 iconzzz*/
+/* ══════════════════════════════════════
+   ACTIVE STATE FOR CHIPS - ADD THIS TO YOUR HeaderUser.css
+══════════════════════════════════════ */
+
+/* Fire chip active state */
+.uhd-chip--fire.active {
+  background: #ea580c !important;
+  color: white !important;
+  border-color: #ea580c !important;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
+  font-weight: 900;
+}
+
+/* Find chip active state */
+.uhd-chip--find.active {
+  background: #2563eb !important;
+  color: white !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  font-weight: 900;
+}
+
+/* Meal chip active state */
+.uhd-chip--meal.active {
+  background: #16a34a !important;
+  color: white !important;
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+  font-weight: 900;
+}
+
+/* Dark mode active states */
+:root[data-theme="dark"] .uhd-chip--fire.active {
+  background: #ea580c !important;
+  color: #fff !important;
+  border-color: #ea580c !important;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.3);
+}
+
+:root[data-theme="dark"] .uhd-chip--find.active {
+  background: #2563eb !important;
+  color: #fff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+:root[data-theme="dark"] .uhd-chip--meal.active {
+  background: #16a34a !important;
+  color: #fff !important;
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.3);
+}
