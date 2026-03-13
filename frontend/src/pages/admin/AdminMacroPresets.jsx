@@ -30,8 +30,18 @@ const ACTIVE_OPTIONS = [
   { label: "Inactive", value: "0" },
 ];
 
+function normalizeRows(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.rows)) return data.rows;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+}
+
 export default function AdminMacroPresets() {
-  const { theme } = useOutletContext();
+  const outlet = useOutletContext() || {};
+  const theme = outlet.theme || "light";
+
   const t = adminThemes[theme]?.app || adminThemes.light.app;
   const isDark = theme === "dark";
 
@@ -73,22 +83,27 @@ export default function AdminMacroPresets() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  useEffect(() => setPage(1), [q, active]);
+  useEffect(() => {
+    setPage(1);
+  }, [q, active]);
 
   const reload = async () => {
     setError("");
     setLoadingRows(true);
+
     try {
       if (!isAdmin) {
         setRows([]);
         return;
       }
+
       const data = await getAdminMacroPresets({
         limit: 5000,
         q: q.trim() || undefined,
         active: active !== "All" ? active : undefined,
       });
-      setRows(Array.isArray(data) ? data : []);
+
+      setRows(normalizeRows(data));
     } catch (e) {
       setError(e.message || "Failed to load macro presets.");
       setRows([]);
@@ -103,10 +118,7 @@ export default function AdminMacroPresets() {
   }, [isAdmin]);
 
   const searched = useMemo(() => {
-    return globalSearch(rows || [], q, [
-      (r) => r.id,
-      (r) => r.name,
-    ]);
+    return globalSearch(rows || [], q, [(r) => r.id, (r) => r.name]);
   }, [rows, q]);
 
   const filtered = useMemo(() => {
@@ -133,6 +145,7 @@ export default function AdminMacroPresets() {
   };
 
   const sorted = useMemo(() => sortRows(filtered, sort, getValue), [filtered, sort]);
+
   const { totalPages, safePage, pageRows, left, right } = useMemo(
     () => paginate(sorted, page, pageSize),
     [sorted, page]
@@ -175,16 +188,17 @@ export default function AdminMacroPresets() {
     setCalcErr("");
     setCalcCalories("2000");
     setForm({
-      name: r.name ?? "",
-      protein_percent: String(r.protein_percent ?? ""),
-      carbs_percent: String(r.carbs_percent ?? ""),
-      fats_percent: String(r.fats_percent ?? ""),
-      is_active: !!r.is_active,
+      name: r?.name ?? "",
+      protein_percent: String(r?.protein_percent ?? ""),
+      carbs_percent: String(r?.carbs_percent ?? ""),
+      fats_percent: String(r?.fats_percent ?? ""),
+      is_active: !!r?.is_active,
     });
     setModalOpen(true);
   };
 
   const openEdit = (r) => {
+    if (!r) return;
     setFormErr("");
     setMode("edit");
     setActiveRow(r);
@@ -192,11 +206,11 @@ export default function AdminMacroPresets() {
     setCalcErr("");
     setCalcCalories("2000");
     setForm({
-      name: r.name ?? "",
-      protein_percent: String(r.protein_percent ?? ""),
-      carbs_percent: String(r.carbs_percent ?? ""),
-      fats_percent: String(r.fats_percent ?? ""),
-      is_active: !!r.is_active,
+      name: r?.name ?? "",
+      protein_percent: String(r?.protein_percent ?? ""),
+      carbs_percent: String(r?.carbs_percent ?? ""),
+      fats_percent: String(r?.fats_percent ?? ""),
+      is_active: !!r?.is_active,
     });
     setModalOpen(true);
   };
@@ -209,13 +223,15 @@ export default function AdminMacroPresets() {
 
   const doDelete = async () => {
     if (!activeRow) return;
+
     setDelBusy(true);
     setFormErr("");
+
     try {
       await deleteMacroPreset(activeRow.id);
       setDelOpen(false);
       setModalOpen(false);
-      reload();
+      await reload();
     } catch (e) {
       setFormErr(e.message || "Delete failed.");
     } finally {
@@ -224,17 +240,26 @@ export default function AdminMacroPresets() {
   };
 
   const doToggle = async (r) => {
+    if (!r?.id) return;
+
     setFormErr("");
+
     try {
       await toggleMacroPreset(r.id);
-      reload();
+      await reload();
     } catch (e) {
       setFormErr(e.message || "Toggle failed.");
     }
   };
 
   const canEdit = isAdmin && (mode === "add" || mode === "edit");
-  const modalTitle = mode === "add" ? "Add Macro Preset" : mode === "edit" ? "Edit Macro Preset" : "View Macro Preset";
+
+  const modalTitle =
+    mode === "add"
+      ? "Add Macro Preset"
+      : mode === "edit"
+      ? "Edit Macro Preset"
+      : "View Macro Preset";
 
   const save = async () => {
     if (!form) return;
@@ -262,6 +287,7 @@ export default function AdminMacroPresets() {
 
     setBusy(true);
     setFormErr("");
+
     try {
       const payload = {
         name,
@@ -274,12 +300,12 @@ export default function AdminMacroPresets() {
       if (mode === "add") {
         await createMacroPreset(payload);
       } else if (mode === "edit") {
-        if (!activeRow) throw new Error("No preset selected.");
+        if (!activeRow?.id) throw new Error("No preset selected.");
         await updateMacroPreset(activeRow.id, payload);
       }
 
       setModalOpen(false);
-      reload();
+      await reload();
     } catch (e) {
       setFormErr(e.message || "Save failed.");
     } finally {
@@ -304,7 +330,7 @@ export default function AdminMacroPresets() {
 
     try {
       const res = await calculateMacroPreset(activeRow.id, cals);
-      setCalcResult(res?.data || null);
+      setCalcResult(res?.data || res || null);
     } catch (e) {
       setCalcErr(e.message || "Calculation failed.");
     }
@@ -349,7 +375,11 @@ export default function AdminMacroPresets() {
                 <span className="ae-searchIcon">⌕</span>
               </div>
 
-              <select value={active} onChange={(e) => setActive(e.target.value)} className="ae-select">
+              <select
+                value={active}
+                onChange={(e) => setActive(e.target.value)}
+                className="ae-select"
+              >
                 {ACTIVE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -366,19 +396,34 @@ export default function AdminMacroPresets() {
               <table className="ae-table">
                 <thead>
                   <tr>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "name"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "name"))}
+                    >
                       Name{sortIndicator(sort, "name")}
                     </th>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "protein"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "protein"))}
+                    >
                       Protein %{sortIndicator(sort, "protein")}
                     </th>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "carbs"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "carbs"))}
+                    >
                       Carbs %{sortIndicator(sort, "carbs")}
                     </th>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "fats"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "fats"))}
+                    >
                       Fats %{sortIndicator(sort, "fats")}
                     </th>
-                    <th className="ae-th ae-thClickable" onClick={() => setSort((p) => toggleSort(p, "active"))}>
+                    <th
+                      className="ae-th ae-thClickable"
+                      onClick={() => setSort((p) => toggleSort(p, "active"))}
+                    >
                       Active{sortIndicator(sort, "active")}
                     </th>
                     <th className="ae-th ae-thRight" />
@@ -426,6 +471,7 @@ export default function AdminMacroPresets() {
                                 <IconBtn title="Edit" className="ae-iconBtn" onClick={() => openEdit(r)}>
                                   ✎
                                 </IconBtn>
+
                                 <IconBtn
                                   title={r.is_active ? "Deactivate" : "Activate"}
                                   className="ae-iconBtn"
@@ -433,7 +479,12 @@ export default function AdminMacroPresets() {
                                 >
                                   ⏻
                                 </IconBtn>
-                                <IconBtn title="Delete" className="ae-iconBtnDanger" onClick={() => askDelete(r)}>
+
+                                <IconBtn
+                                  title="Delete"
+                                  className="ae-iconBtnDanger"
+                                  onClick={() => askDelete(r)}
+                                >
                                   🗑
                                 </IconBtn>
                               </>
@@ -518,14 +569,15 @@ export default function AdminMacroPresets() {
                 onChange={(v) => setForm((p) => ({ ...p, fats_percent: v }))}
               />
 
-              {/* uneditable in view */}
               <label className="ae-field ae-fieldFull">
                 <div className="ae-fieldLabel">Active</div>
                 <select
                   value={form.is_active ? "1" : "0"}
                   disabled={!canEdit}
                   className={`ae-select ${!canEdit ? "ae-fieldInputDisabled" : ""}`}
-                  onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.value === "1" }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, is_active: e.target.value === "1" }))
+                  }
                   style={{ height: 42 }}
                 >
                   <option value="1">Yes</option>
@@ -533,7 +585,6 @@ export default function AdminMacroPresets() {
                 </select>
               </label>
 
-              {/* Calculator (view/edit only if saved) */}
               {mode !== "add" ? (
                 <div className="ae-field ae-fieldFull">
                   <div className="ae-fieldLabel">Calculator (grams)</div>
@@ -544,7 +595,6 @@ export default function AdminMacroPresets() {
                       onChange={(e) => setCalcCalories(e.target.value)}
                       className="ae-fieldInput"
                       style={{ maxWidth: 180 }}
-                      disabled={false}
                       placeholder="Calories"
                     />
                     <button className="ae-btn ae-btnSecondary" onClick={runCalc}>
@@ -556,11 +606,22 @@ export default function AdminMacroPresets() {
 
                   {calcResult?.macros ? (
                     <div className="ae-alert ae-alertNeutral" style={{ marginTop: 10 }}>
-                      <div className="ae-alertTitle">For {calcResult.total_calories} calories</div>
+                      <div className="ae-alertTitle">
+                        For {calcResult.total_calories} calories
+                      </div>
                       <div className="ae-mutedTiny">
-                        Protein: <b className="ae-strongText">{calcResult.macros.protein.grams}g</b> •
-                        Carbs: <b className="ae-strongText">{calcResult.macros.carbs.grams}g</b> •
-                        Fats: <b className="ae-strongText">{calcResult.macros.fats.grams}g</b>
+                        Protein:{" "}
+                        <b className="ae-strongText">
+                          {calcResult.macros.protein?.grams ?? 0}g
+                        </b>{" "}
+                        • Carbs:{" "}
+                        <b className="ae-strongText">
+                          {calcResult.macros.carbs?.grams ?? 0}g
+                        </b>{" "}
+                        • Fats:{" "}
+                        <b className="ae-strongText">
+                          {calcResult.macros.fats?.grams ?? 0}g
+                        </b>
                       </div>
                     </div>
                   ) : null}
@@ -572,15 +633,24 @@ export default function AdminMacroPresets() {
               {mode === "view" ? (
                 isAdmin ? (
                   <>
-                    <button className="ae-btn ae-btnSecondary" onClick={() => askDelete(activeRow)}>
+                    <button
+                      className="ae-btn ae-btnSecondary"
+                      onClick={() => askDelete(activeRow)}
+                    >
                       Delete
                     </button>
-                    <button className="ae-btn ae-btnPrimary" onClick={() => setMode("edit")}>
+                    <button
+                      className="ae-btn ae-btnPrimary"
+                      onClick={() => openEdit(activeRow)}
+                    >
                       Edit
                     </button>
                   </>
                 ) : (
-                  <button className="ae-btn ae-btnSecondary" onClick={() => setModalOpen(false)}>
+                  <button
+                    className="ae-btn ae-btnSecondary"
+                    onClick={() => setModalOpen(false)}
+                  >
                     Close
                   </button>
                 )
@@ -590,8 +660,13 @@ export default function AdminMacroPresets() {
                     className="ae-btn ae-btnSecondary"
                     onClick={() => {
                       setFormErr("");
-                      if (mode === "add") setModalOpen(false);
-                      else setMode("view");
+                      if (mode === "add") {
+                        setModalOpen(false);
+                      } else if (activeRow) {
+                        openView(activeRow);
+                      } else {
+                        setModalOpen(false);
+                      }
                     }}
                     disabled={busy}
                   >
@@ -619,7 +694,8 @@ export default function AdminMacroPresets() {
               <div className="ae-confirmHeaderText">
                 <div className="ae-confirmTitle">Delete preset?</div>
                 <div className="ae-mutedTiny">
-                  This will permanently remove <b className="ae-strongText">{activeRow.name}</b>. This can’t be undone.
+                  This will permanently remove{" "}
+                  <b className="ae-strongText">{activeRow.name}</b>. This can’t be undone.
                 </div>
               </div>
 
@@ -631,7 +707,11 @@ export default function AdminMacroPresets() {
             {formErr ? <div className="ae-alert ae-alertError">{formErr}</div> : null}
 
             <div className="ae-confirmActions">
-              <button className="ae-btn ae-btnSecondary" onClick={() => setDelOpen(false)} disabled={delBusy}>
+              <button
+                className="ae-btn ae-btnSecondary"
+                onClick={() => setDelOpen(false)}
+                disabled={delBusy}
+              >
                 Keep it
               </button>
 

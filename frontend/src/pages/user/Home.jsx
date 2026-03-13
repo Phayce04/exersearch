@@ -180,9 +180,9 @@ function activityColor(ev) {
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour >= 0 && hour < 12) return 'Good morning';
-  if (hour >= 12 && hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour >= 0 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 function membershipCountFromUser(u) {
@@ -961,7 +961,7 @@ export default function Home() {
         html:
           '<div class="gm-pin"><div class="gm-pin__bubble"><span>&#8369;' +
           (gym.price ?? 0) +
-          "</span></div><div class=\"gm-pin__tip\"></div></div>",
+          '</span></div><div class="gm-pin__tip"></div></div>',
         iconSize: [72, 44],
         iconAnchor: [36, 44],
       });
@@ -1059,13 +1059,13 @@ export default function Home() {
     },
     {
       id: 3,
-      badge: "REWARDS",
-      title: "Earn Rewards as You Train",
-      desc: "Complete goals and collect perks from participating gyms.",
-      cta: "Learn More",
+      badge: "GYMS",
+      title: "View All Gyms",
+      desc: "Browse the complete list of gyms available on ExerSearch.",
+      cta: "View All Gyms",
       bg: "linear-gradient(135deg,#0a2d18,#0d6e35,#10b981)",
       accent: "#34d399",
-      link: "/home/rewards",
+      link: "/home/gyms",
     },
   ];
 
@@ -1093,7 +1093,7 @@ export default function Home() {
   const discoveryTips = [
     { id: 1, icon: Dumbbell, title: "Best Match Gyms", message: "See gyms perfectly matched to your goals", color: "#3b82f6", bg: "#eff6ff", link: "/home/find-gyms" },
     { id: 2, icon: Flame, title: "Workout Plan", message: "Track and follow your weekly training plan", color: "#f97316", bg: "#fff7ed", link: "/home/workout" },
-    { id: 3, icon: UtensilsCrossed, title: "Meal Plan", message: "Fuel your training with smart nutrition", color: "#10b981", bg: "#ecfdf5", link: "/home/meal-plan" },
+    { id: 3, icon: MapPin, title: "View All Gyms", message: "Browse the complete gym directory", color: "#10b981", bg: "#ecfdf5", link: "/home/gyms" },
     { id: 4, icon: Heart, title: "Saved Gyms", message: "View gyms you've bookmarked", color: "#ef4444", bg: "#fef2f2", link: "/home/saved-gyms" },
   ];
 
@@ -1144,7 +1144,10 @@ export default function Home() {
       <section className="uhv-hero">
         <div className="uhv-hero__inner">
           <div className="uhv-hero__left">
-            <p className="uhv-hero__greet">{getGreeting()}, {userName} <Dumbbell size={14} style={{ color: 'var(--red)', verticalAlign: 'middle' }} /></p>
+            <p className="uhv-hero__greet">
+              {getGreeting()}, {userName}{" "}
+              <Dumbbell size={14} style={{ color: "var(--red)", verticalAlign: "middle" }} />
+            </p>
             <h1 className="uhv-hero__h1">
               Find Your
               <br />
@@ -1564,6 +1567,12 @@ export default function Home() {
           </main>
         </div>
 
+<div className="uhv-view-all-wrap">
+  <Link to="/home/gyms" className="uhv-view-all-btn">
+    <span>View All Gyms</span>
+    <ChevronRight size={14} />
+  </Link>
+</div>
         <section className="uhv-section">
           <div className="uhv-section__hdr">
             <div>
@@ -1757,7 +1766,7 @@ export default function Home() {
               </div>
             </a>
 
-            <a href={`tel:${support.contactPhone}`} className="uhv-support-card">
+            <div className="uhv-support-card">
               <div className="uhv-support-card__icon" style={{ background: "#ecfdf5", color: "#10b981" }}>
                 <Phone size={20} />
               </div>
@@ -1765,19 +1774,17 @@ export default function Home() {
                 <p className="uhv-support-card__label">Call Us</p>
                 <p className="uhv-support-card__val">{support.contactPhone}</p>
               </div>
-            </a>
+            </div>
 
-            <Link to="/home/help" className="uhv-support-card">
+            <Link to="/how-it-works" className="uhv-support-card">
               <div className="uhv-support-card__icon" style={{ background: "#f5f3ff", color: "#8b5cf6" }}>
                 <BookOpen size={20} />
               </div>
               <div>
-                <p className="uhv-support-card__label">Help Center</p>
-                <p className="uhv-support-card__val">Browse articles &amp; guides</p>
+                <p className="uhv-support-card__label">How It Works</p>
+                <p className="uhv-support-card__val">Learn how ExerSearch works</p>
               </div>
             </Link>
-
-            
           </div>
         </section>
       </div>

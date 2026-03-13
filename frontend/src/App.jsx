@@ -79,39 +79,45 @@ import AdminMacroPresets from "./pages/admin/AdminMacroPresets";
 import AdminMeals from "./pages/admin/AdminMeals";
 
 import { getUserRole } from "./utils/auth";
+import RequireUser from "./utils/RequireUser";
 import Trial from "./trial";
 
 import "leaflet/dist/leaflet.css";
 
 function RoleLanding() {
   const r = getUserRole();
+
+  if (r === "guest") return <Navigate to="/home" replace />;
   if (r === "user") return <Navigate to="/home" replace />;
   if (r === "owner") return <Navigate to="/owner/home" replace />;
-  if (r === "superadmin" || r === "admin")
+  if (r === "superadmin" || r === "admin") {
     return <Navigate to="/admin/dashboard" replace />;
+  }
+
   return <Index />;
 }
 
 function App() {
-
-    const { pathname } = useLocation();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-   const showChatbot = 
-  !pathname.startsWith("/owner") && 
-  !pathname.startsWith("/admin") && 
-  !pathname.startsWith("/login") &&
-  !pathname.startsWith("/verify-email") &&
-  !pathname.startsWith("/onboarding") &&
-  !pathname.startsWith("/maintenance");
+  const showChatbot =
+    !pathname.startsWith("/owner") &&
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/verify-email") &&
+    !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/maintenance");
+
   return (
     <ThemeProvider>
       {showChatbot && <Chatbot />}
+
       <Routes>
-                <Route path="/trial" element={<Trial />} />
+        <Route path="/trial" element={<Trial />} />
 
         {/* ─── PUBLIC ROUTES (with theme support) ─── */}
         <Route path="/about-us" element={<AboutUs />} />
@@ -130,26 +136,105 @@ function App() {
         <Route path="/become-an-owner" element={<BecomeOwner />} />
         <Route path="/owner-application" element={<OwnerApplication />} />
 
-        <Route path="meal-plan" element={<MealPlanGenerator />} />
         <Route path="/chatbot" element={<Chatbot />} />
         <Route path="/404" element={<NotFound />} />
 
-        {/* ─── USER ROUTES (UserLayout handles widget) ─── */}
-        <Route path="/home/*" element={<UserLayout />}>
+        {/* ─── USER ROUTES ─── */}
+        <Route path="/home/*" element={<UserLayout skipAuth={true} />}>
+          {/* guest/public allowed */}
           <Route index element={<UserHome />} />
-          <Route path="becomeowner" element={<BecomeOwner />} />
-          <Route path="applyowner" element={<OwnerApplication />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="find-gyms" element={<FindGyms />} />
-          <Route path="gym/:id" element={<GymDetails />} />
           <Route path="gyms" element={<AllGym />} />
-          <Route path="meal-plan" element={<MealPlanGenerator />} />
-          <Route path="memberships" element={<Memberships />} />
-          <Route path="gym-results" element={<GymResultMatching />} />
-          <Route path="saved-gyms" element={<SavedGyms />} />
-          <Route path="workout" element={<WorkoutWeek />} />
-          <Route path="workout/day/:id" element={<WorkoutDayDetails />} />
-          <Route path="inquiries" element={<GymInquiryHistory />} />
+          <Route path="gym/:id" element={<GymDetails />} />
+
+          {/* logged-in real user only */}
+          <Route
+            path="becomeowner"
+            element={
+              <RequireUser>
+                <BecomeOwner />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="applyowner"
+            element={
+              <RequireUser>
+                <OwnerApplication />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <RequireUser>
+                <Profile />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="find-gyms"
+            element={
+              <RequireUser>
+                <FindGyms />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="meal-plan"
+            element={
+              <RequireUser>
+                <MealPlanGenerator />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="memberships"
+            element={
+              <RequireUser>
+                <Memberships />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="gym-results"
+            element={
+              <RequireUser>
+                <GymResultMatching />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="saved-gyms"
+            element={
+              <RequireUser>
+                <SavedGyms />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="workout"
+            element={
+              <RequireUser>
+                <WorkoutWeek />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="workout/day/:id"
+            element={
+              <RequireUser>
+                <WorkoutDayDetails />
+              </RequireUser>
+            }
+          />
+          <Route
+            path="inquiries"
+            element={
+              <RequireUser>
+                <GymInquiryHistory />
+              </RequireUser>
+            }
+          />
         </Route>
 
         {/* ─── OWNER ROUTES (no theme toggle) ─── */}

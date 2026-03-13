@@ -140,7 +140,7 @@ function LeftPanel({ view }) {
   );
 }
 
-function LoginView({ onSwitch, onSubmit, loading, error, googleNode }) {
+function LoginView({ onSwitch, onSubmit, onGuest, loading, error, googleNode }) {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [show, setShow] = useState(false);
@@ -233,6 +233,16 @@ function LoginView({ onSwitch, onSubmit, loading, error, googleNode }) {
           ) : (
             "Sign in to ExerSearch"
           )}
+        </button>
+
+        <button
+          className="auth-vbtn auth-vbtn--ghost"
+          type="button"
+          onClick={onGuest}
+          disabled={loading}
+          style={{ marginTop: 12, width: "100%", justifyContent: "center" }}
+        >
+          Continue as Guest
         </button>
       </form>
     </div>
@@ -699,14 +709,28 @@ export default function Auth() {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
     setUser(null);
     setAuthToken(null);
     go("login");
   };
 
+  const handleGuest = () => {
+    localStorage.removeItem("token");
+    localStorage.setItem("role", "guest");
+    setUser(null);
+    setAuthToken(null);
+    setError("");
+    navigate("/home");
+  };
+
   const finalizeAuth = async (token) => {
     const me = await fetchMe(token);
     setUser(me);
+
+    if (me?.role) {
+      localStorage.setItem("role", me.role);
+    }
 
     if (!me?.email_verified_at) {
       setError("");
@@ -857,6 +881,7 @@ export default function Auth() {
       }
 
       localStorage.removeItem("token");
+      localStorage.removeItem("role");
       setUser(null);
       setAuthToken(null);
       go("login");
@@ -893,6 +918,7 @@ export default function Auth() {
               <LoginView
                 onSwitch={() => go("signup")}
                 onSubmit={handleLogin}
+                onGuest={handleGuest}
                 loading={loading}
                 error={error}
                 googleNode={googleNode}

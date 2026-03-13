@@ -1870,9 +1870,61 @@ body[data-theme="light"] .uhv-app .uhv-hero {
   .uhv-header__search-wrap { display: none; }
   .uhv-chip { display: none; }
 }
+.uhv-view-all-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px 0 30px;
+}
 
+.uhv-view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff6a1a 0%, #ff5a16 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.98rem;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(210, 63, 11, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.uhv-view-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(210, 63, 11, 0.34);
+  filter: brightness(1.03);
+}
+
+.uhv-view-all-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 20px rgba(210, 63, 11, 0.24);
+}
+
+.uhv-view-all-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.uhv-view-all-btn:hover svg {
+  transform: translateX(2px);
+}
 /* global overflow guard */
 html, body {
-  overflow-x: hidden;
   max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden;
+  }
 }
