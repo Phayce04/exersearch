@@ -5,6 +5,8 @@ namespace App\Services;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 class DatabaseBackupService
@@ -18,7 +20,7 @@ class DatabaseBackupService
 
         $railwayVolume = (string) env('RAILWAY_VOLUME_MOUNT_PATH', '');
         if (trim($railwayVolume) !== '') {
-            return rtrim($railwayVolume, '/\\') . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . 'db';
+            return rtrim($railwayVolume, '/\\') . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . 'db';
         }
 
         return storage_path('app/backups/db');
@@ -49,27 +51,37 @@ class DatabaseBackupService
         $c = config('database.connections.pgsql', []);
 
         return [
-            'host' => $c['host'] ?? env('DB_HOST', env('PGHOST', '127.0.0.1')),
+            'host' => (string) ($c['host'] ?? env('DB_HOST', env('PGHOST', '127.0.0.1'))),
             'port' => (string) ($c['port'] ?? env('DB_PORT', env('PGPORT', '5432'))),
-            'database' => $c['database'] ?? env('DB_DATABASE', env('PGDATABASE')),
-            'username' => $c['username'] ?? env('DB_USERNAME', env('PGUSER')),
-            'password' => $c['password'] ?? env('DB_PASSWORD', env('PGPASSWORD')),
+            'database' => (string) ($c['database'] ?? env('DB_DATABASE', env('PGDATABASE', ''))),
+            'username' => (string) ($c['username'] ?? env('DB_USERNAME', env('PGUSER', ''))),
+            'password' => (string) ($c['password'] ?? env('DB_PASSWORD', env('PGPASSWORD', ''))),
         ];
     }
 
     private function binary(string $envKey, string $fallback): string
     {
-        $p = trim((string) env($envKey, $fallback), "\"' ");
+        $configured = trim((string) env($envKey, ''), "\"' ");
 
-        if ($p === '') {
-            $p = $fallback;
+        if ($configured !== '') {
+            if (!is_file($configured)) {
+                throw new \RuntimeException("Binary not found at {$envKey}={$configured}");
+            }
+
+            return $configured;
         }
 
-        if ($p !== $fallback && !is_file($p)) {
-            throw new \RuntimeException("Binary not found at {$envKey}={$p}");
+        $finder = new ExecutableFinder();
+        $found = $finder->find($fallback);
+
+        if (!$found) {
+            throw new \RuntimeException(
+                "Required executable [{$fallback}] was not found in PATH. " .
+                "Set {$envKey} to the full binary path or install PostgreSQL client tools."
+            );
         }
 
-        return $p;
+        return $found;
     }
 
     private function defaultSchema(): string
@@ -91,6 +103,22 @@ class DatabaseBackupService
     private function absoluteBackupPath(string $filename): string
     {
         return $this->backupBasePath() . DIRECTORY_SEPARATOR . $filename;
+    }
+
+    private function requiredConnection(array $c): array
+    {
+        if (
+            trim($c['host']) === '' ||
+            trim($c['port']) === '' ||
+            trim($c['database']) === '' ||
+            trim($c['username']) === ''
+        ) {
+            throw new \RuntimeException(
+                'Database config missing. Required values: host, port, database, username.'
+            );
+        }
+
+        return $c;
     }
 
     // ---------- TABLE LISTING ----------
@@ -166,7 +194,6 @@ class DatabaseBackupService
 
         $dir = $this->backupBasePath();
         $files = glob($dir . DIRECTORY_SEPARATOR . '*') ?: [];
-
         $out = [];
 
         foreach ($files as $path) {
@@ -229,19 +256,15 @@ class DatabaseBackupService
         $filename = "backup_{$slug}_{$stamp}_{$rand}.{$ext}";
         $absolutePath = $this->absoluteBackupPath($filename);
 
-        $c = $this->conn();
-        if (!$c['database'] || !$c['username']) {
-            throw new \RuntimeException('Database config missing (DB_DATABASE/DB_USERNAME).');
-        }
-
+        $c = $this->requiredConnection($this->conn());
         $pgDump = $this->binary('PG_DUMP_PATH', 'pg_dump');
 
         $args = [
             $pgDump,
-            '-h', (string) $c['host'],
-            '-p', (string) $c['port'],
-            '-U', (string) $c['username'],
-            '-d', (string) $c['database'],
+            '-h', $c['host'],
+            '-p', $c['port'],
+            '-U', $c['username'],
+            '-d', $c['database'],
         ];
 
         if ($tableQualified) {
@@ -249,28 +272,30 @@ class DatabaseBackupService
             $args[] = $tableQualified;
         }
 
-        if ($format === 'plain') {
-            $args[] = '-Fp';
-        } else {
-            $args[] = '-Fc';
-        }
-
+        $args[] = $format === 'plain' ? '-Fp' : '-Fc';
         $args[] = '-f';
         $args[] = $absolutePath;
 
-        $process = new Process($args, null, ['PGPASSWORD' => (string) $c['password']]);
-        $process->setTimeout((int) Config::get('dbbackup.timeout_seconds', 600));
-        $process->run();
+        $process = new Process($args, null, [
+            'PGPASSWORD' => $c['password'],
+            'PATH' => getenv('PATH') ?: '',
+        ]);
 
-        if (!$process->isSuccessful()) {
+        $process->setTimeout((int) Config::get('dbbackup.timeout_seconds', 600));
+
+        try {
+            $process->mustRun();
+        } catch (ProcessFailedException $e) {
             if (is_file($absolutePath)) {
                 @unlink($absolutePath);
             }
 
-            $err = trim((string) $process->getErrorOutput());
-            $out = trim((string) $process->getOutput());
+            $stderr = trim($process->getErrorOutput());
+            $stdout = trim($process->getOutput());
 
-            throw new \RuntimeException('pg_dump failed: ' . ($err !== '' ? $err : $out));
+            throw new \RuntimeException(
+                'pg_dump failed: ' . ($stderr !== '' ? $stderr : ($stdout !== '' ? $stdout : $e->getMessage()))
+            );
         }
 
         return [
@@ -351,10 +376,7 @@ class DatabaseBackupService
 
     private function restoreFromAbsolutePath(string $absolutePath, ?string $forcedExt = null): array
     {
-        $c = $this->conn();
-        if (!$c['database'] || !$c['username']) {
-            throw new \RuntimeException('Database config missing (DB_DATABASE/DB_USERNAME).');
-        }
+        $c = $this->requiredConnection($this->conn());
 
         $ext = $forcedExt ?: strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
         if (!in_array($ext, ['dump', 'sql'], true)) {
@@ -366,11 +388,9 @@ class DatabaseBackupService
             Config::get('dbbackup.timeout_seconds', 600)
         );
 
-        if ($ext === 'dump') {
-            return $this->runPgRestore($absolutePath, $c, $timeout);
-        }
-
-        return $this->runPsqlRestore($absolutePath, $c, $timeout);
+        return $ext === 'dump'
+            ? $this->runPgRestore($absolutePath, $c, $timeout)
+            : $this->runPsqlRestore($absolutePath, $c, $timeout);
     }
 
     private function runPgRestore(string $file, array $c, int $timeout): array
@@ -379,10 +399,10 @@ class DatabaseBackupService
 
         $args = [
             $pgRestore,
-            '-h', (string) $c['host'],
-            '-p', (string) $c['port'],
-            '-U', (string) $c['username'],
-            '-d', (string) $c['database'],
+            '-h', $c['host'],
+            '-p', $c['port'],
+            '-U', $c['username'],
+            '-d', $c['database'],
             '--clean',
             '--if-exists',
             '--no-owner',
@@ -401,14 +421,21 @@ class DatabaseBackupService
 
         $args[] = $file;
 
-        $process = new Process($args, null, ['PGPASSWORD' => (string) $c['password']]);
+        $process = new Process($args, null, [
+            'PGPASSWORD' => $c['password'],
+            'PATH' => getenv('PATH') ?: '',
+        ]);
         $process->setTimeout($timeout);
-        $process->run();
 
-        if (!$process->isSuccessful()) {
-            $err = trim((string) $process->getErrorOutput());
-            $out = trim((string) $process->getOutput());
-            throw new \RuntimeException('pg_restore failed: ' . ($err !== '' ? $err : $out));
+        try {
+            $process->mustRun();
+        } catch (ProcessFailedException $e) {
+            $stderr = trim($process->getErrorOutput());
+            $stdout = trim($process->getOutput());
+
+            throw new \RuntimeException(
+                'pg_restore failed: ' . ($stderr !== '' ? $stderr : ($stdout !== '' ? $stdout : $e->getMessage()))
+            );
         }
 
         return [
@@ -424,10 +451,10 @@ class DatabaseBackupService
 
         $args = [
             $psql,
-            '-h', (string) $c['host'],
-            '-p', (string) $c['port'],
-            '-U', (string) $c['username'],
-            '-d', (string) $c['database'],
+            '-h', $c['host'],
+            '-p', $c['port'],
+            '-U', $c['username'],
+            '-d', $c['database'],
             '-v', 'ON_ERROR_STOP=1',
         ];
 
@@ -444,14 +471,21 @@ class DatabaseBackupService
         $args[] = '-f';
         $args[] = $file;
 
-        $process = new Process($args, null, ['PGPASSWORD' => (string) $c['password']]);
+        $process = new Process($args, null, [
+            'PGPASSWORD' => $c['password'],
+            'PATH' => getenv('PATH') ?: '',
+        ]);
         $process->setTimeout($timeout);
-        $process->run();
 
-        if (!$process->isSuccessful()) {
-            $err = trim((string) $process->getErrorOutput());
-            $out = trim((string) $process->getOutput());
-            throw new \RuntimeException('psql restore failed: ' . ($err !== '' ? $err : $out));
+        try {
+            $process->mustRun();
+        } catch (ProcessFailedException $e) {
+            $stderr = trim($process->getErrorOutput());
+            $stdout = trim($process->getOutput());
+
+            throw new \RuntimeException(
+                'psql restore failed: ' . ($stderr !== '' ? $stderr : ($stdout !== '' ? $stdout : $e->getMessage()))
+            );
         }
 
         return [
