@@ -80,7 +80,6 @@ import AdminMeals from "./pages/admin/AdminMeals";
 
 import { getUserRole } from "./utils/auth";
 import RequireUser from "./utils/RequireUser";
-import Trial from "./trial";
 
 import "leaflet/dist/leaflet.css";
 
@@ -117,7 +116,6 @@ function App() {
       {showChatbot && <Chatbot />}
 
       <Routes>
-        <Route path="/trial" element={<Trial />} />
 
         {/* ─── PUBLIC ROUTES (with theme support) ─── */}
         <Route path="/about-us" element={<AboutUs />} />
