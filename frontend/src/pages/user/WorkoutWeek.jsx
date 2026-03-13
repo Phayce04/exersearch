@@ -9,7 +9,6 @@ import "./../owner/OwnerGymsPage.scss";
 import {
   generateUserWorkoutPlan,
   getUserWorkoutPlan,
-  getUserWorkoutPlans,
   getUserPreferences,
   saveUserPreferences,
   getUserPreferredEquipments,
@@ -82,13 +81,6 @@ function safeNum(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-function getFirstPlanFromCollection(payload) {
-  if (Array.isArray(payload)) return payload[0] || null;
-  if (Array.isArray(payload?.data)) return payload.data[0] || null;
-  if (Array.isArray(payload?.items)) return payload.items[0] || null;
-  return null;
-}
-
 export default function WorkoutWeek() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,7 +91,6 @@ export default function WorkoutWeek() {
 
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(false);
-  const [bootstrapping, setBootstrapping] = useState(true);
   const [error, setError] = useState("");
 
   const [enter, setEnter] = useState(false);
@@ -122,8 +113,9 @@ export default function WorkoutWeek() {
   const [equipmentOptions, setEquipmentOptions] = useState([]);
   const [preferredEquipmentIds, setPreferredEquipmentIds] = useState([]);
 
-  const [showLanding, setShowLanding] = useState(false);
-  const [contentReady, setContentReady] = useState(false);
+  const initialLastPlanId = loadLastPlanId();
+  const [showLanding, setShowLanding] = useState(!initialLastPlanId);
+  const [contentReady, setContentReady] = useState(!!initialLastPlanId);
   const [landingAction, setLandingAction] = useState(null);
 
   const [transitioningToContent, setTransitioningToContent] = useState(false);
@@ -151,6 +143,14 @@ export default function WorkoutWeek() {
   useEffect(() => {
     const t = setTimeout(() => setEnter(true), 40);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const last = loadLastPlanId();
+    if (last && !activePlanId) {
+      setActivePlanId(last);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const weekDays = useMemo(() => {
@@ -189,9 +189,8 @@ export default function WorkoutWeek() {
     setLoadingGenerate(true);
 
     try {
-      console.log("[WorkoutWeek] Generate payload:", overrides);
-
-      const newPlan = await generateUserWorkoutPlan(overrides);
+      const res = await generateUserWorkoutPlan(overrides);
+      const newPlan = res?.data || null;
 
       if (!newPlan?.user_plan_id) {
         throw new Error("Generate succeeded but plan data is missing.");
@@ -205,20 +204,10 @@ export default function WorkoutWeek() {
       saveLastPlanId(newPlan.user_plan_id);
 
       console.log("[WorkoutWeek] Generated plan:", newPlan);
-      return newPlan;
     } catch (e) {
-      console.error("[WorkoutWeek] Generate error full:", e);
-      console.error("[WorkoutWeek] Generate error status:", e?.response?.status);
-      console.error("[WorkoutWeek] Generate error data:", e?.response?.data);
-
+      console.error("[WorkoutWeek] Generate error:", e);
       setHasExistingPlan(false);
-      setError(
-        e?.response?.data?.message ||
-          e?.response?.data?.error ||
-          e?.message ||
-          "Failed to generate plan."
-      );
-      throw e;
+      setError(e?.response?.data?.message || e?.message || "Failed to generate plan.");
     } finally {
       setLoadingGenerate(false);
     }
@@ -228,32 +217,33 @@ export default function WorkoutWeek() {
     if (!id) {
       setHasExistingPlan(false);
       setPlan(null);
-      return null;
+      return;
     }
 
     setError("");
     setLoadingPlan(true);
 
     try {
-      const loaded = await getUserWorkoutPlan(id);
+      const res = await getUserWorkoutPlan(id);
+      const loaded = res?.data || null;
 
       if (!loaded?.user_plan_id) {
         setHasExistingPlan(false);
         setPlan(null);
         clearLastPlanId();
         setActivePlanId(null);
-        return null;
+        setShowLanding(true);
+        setContentReady(false);
+        return;
       }
 
       setPlan(loaded);
-      setActivePlanId(loaded.user_plan_id);
       setHasExistingPlan(true);
       setShowLanding(false);
       setContentReady(true);
       saveLastPlanId(loaded.user_plan_id);
 
       console.log("[WorkoutWeek] Loaded plan:", loaded);
-      return loaded;
     } catch (e) {
       console.error("[WorkoutWeek] Load plan error:", e);
 
@@ -264,7 +254,9 @@ export default function WorkoutWeek() {
         setActivePlanId(null);
         setHasExistingPlan(false);
         setPlan(null);
-        setError("Saved workout plan was not found.");
+        setShowLanding(true);
+        setContentReady(false);
+        setError("Your previous workout plan was not found. Please build a new one.");
       } else {
         setHasExistingPlan(false);
         setPlan(null);
@@ -274,106 +266,15 @@ export default function WorkoutWeek() {
       }
 
       console.warn("[WorkoutWeek] No existing plan found.");
-      throw e;
     } finally {
       setLoadingPlan(false);
     }
   }
 
   useEffect(() => {
-    let alive = true;
-
-    async function bootstrapPlan() {
-      setBootstrapping(true);
-      setError("");
-
-      try {
-        const lastId = loadLastPlanId();
-
-        if (lastId) {
-          try {
-            const loaded = await getUserWorkoutPlan(lastId);
-
-            if (alive && loaded?.user_plan_id) {
-              setPlan(loaded);
-              setActivePlanId(loaded.user_plan_id);
-              setHasExistingPlan(true);
-              saveLastPlanId(loaded.user_plan_id);
-              setShowLanding(false);
-              setContentReady(true);
-              return;
-            }
-          } catch (e) {
-            if (e?.response?.status === 404) {
-              clearLastPlanId();
-            } else {
-              console.error("[WorkoutWeek] Bootstrap load failed:", e);
-            }
-          }
-        }
-
-        try {
-          const plansRes = await getUserWorkoutPlans({ per_page: 1 });
-          const latest = getFirstPlanFromCollection(plansRes);
-
-          if (alive && latest?.user_plan_id) {
-            const loaded = await getUserWorkoutPlan(latest.user_plan_id);
-
-            if (loaded?.user_plan_id) {
-              setPlan(loaded);
-              setActivePlanId(loaded.user_plan_id);
-              setHasExistingPlan(true);
-              saveLastPlanId(loaded.user_plan_id);
-              setShowLanding(false);
-              setContentReady(true);
-              return;
-            }
-          }
-        } catch (e) {
-          console.error("[WorkoutWeek] Bootstrap latest-plan lookup failed:", e);
-        }
-
-        try {
-          const newPlan = await generateUserWorkoutPlan({});
-
-          if (alive && newPlan?.user_plan_id) {
-            setPlan(newPlan);
-            setActivePlanId(newPlan.user_plan_id);
-            setHasExistingPlan(true);
-            saveLastPlanId(newPlan.user_plan_id);
-            setShowLanding(false);
-            setContentReady(true);
-            return;
-          }
-
-          throw new Error("Generated plan is missing user_plan_id.");
-        } catch (e) {
-          console.error("[WorkoutWeek] Bootstrap generate failed:", e);
-
-          if (!alive) return;
-
-          setPlan(null);
-          setActivePlanId(null);
-          setHasExistingPlan(false);
-          setShowLanding(true);
-          setContentReady(false);
-          setError(
-            e?.response?.data?.message ||
-              e?.message ||
-              "Could not load or generate a workout plan."
-          );
-        }
-      } finally {
-        if (alive) setBootstrapping(false);
-      }
-    }
-
-    bootstrapPlan();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+    if (activePlanId) handleLoadPlan(activePlanId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePlanId]);
 
   async function openRecalibrate() {
     setShowPrefs(true);
@@ -387,10 +288,10 @@ export default function WorkoutWeek() {
         getEquipments({ per_page: 2000 }),
       ]);
 
-      const p = prefRes || null;
-      const preferredEquipments = prefEqRes || [];
+      const p = prefRes?.data || null;
+      const preferredEquipments = prefEqRes?.data || [];
 
-      const eqPayload = eqRes || [];
+      const eqPayload = eqRes?.data ?? eqRes ?? [];
       const allEquipments = Array.isArray(eqPayload)
         ? eqPayload
         : Array.isArray(eqPayload?.data)
@@ -745,7 +646,7 @@ export default function WorkoutWeek() {
   }, [showLanding]);
 
   const animateIntoContent = async (action = "generate") => {
-    if (loadingGenerate || loadingPlan || transitioningToContent || bootstrapping) return;
+    if (loadingGenerate || loadingPlan || transitioningToContent) return;
 
     setLandingAction(action);
     setTransitioningToContent(true);
@@ -760,9 +661,7 @@ export default function WorkoutWeek() {
       if (action === "generate") {
         await handleGenerate({});
       } else if (action === "view" && activePlanId) {
-        try {
-          await handleLoadPlan(activePlanId);
-        } catch {}
+        await handleLoadPlan(activePlanId);
       }
     };
 
@@ -773,7 +672,7 @@ export default function WorkoutWeek() {
 
       await runContentAction();
 
-      if (plan || hasExistingPlan || activePlanId) {
+      if (action === "generate" || plan || hasExistingPlan || activePlanId) {
         setShowLanding(false);
         setContentReady(true);
       }
@@ -840,7 +739,7 @@ export default function WorkoutWeek() {
 
     await runContentAction();
 
-    if (plan || hasExistingPlan || activePlanId) {
+    if (action === "generate" || plan || hasExistingPlan || activePlanId) {
       setShowLanding(false);
       setContentReady(true);
     }
@@ -878,18 +777,14 @@ export default function WorkoutWeek() {
   };
 
   const hasPlan = !!plan;
-  const canViewSavedPlan = !!activePlanId || hasExistingPlan;
+  const canViewSavedPlan = hasExistingPlan && !!activePlanId;
 
   return (
     <div
       className={`ww ${enter ? "content-enter-active" : "content-enter"}`}
       style={{ "--brand": BRAND }}
     >
-      {bootstrapping ? (
-        <section className="ww-loading-screen">
-          <div className="ww-loading-screen-inner">Preparing your workout plan...</div>
-        </section>
-      ) : showLanding ? (
+      {showLanding ? (
         <div className="find-gyms-page">
           <div className="star-intro-root">
             <div className="three-mount" ref={mountRef} />
@@ -1373,7 +1268,7 @@ function PreferencesModal({
                   </button>
                 </div>
 
-                <div className="ww-muted" style={{ marginTop: 8 }}>
+                <div className="ww-muted" style={{ color: "#6b7280", marginTop: 8 }}>
                   Example: If you add “Back”, exercises with primary muscle “back” will be
                   filtered out during generation.
                 </div>
