@@ -9,8 +9,7 @@ class UserWorkoutPlan extends Model
     protected $table = 'user_workout_plans';
     protected $primaryKey = 'user_plan_id';
 
-    public $timestamps = false; // ✅ IMPORTANT if table has no created_at/updated_at
-
+    public $timestamps = false; 
     protected $fillable = [
         'user_id',
         'template_id',

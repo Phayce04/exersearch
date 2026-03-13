@@ -9,6 +9,7 @@ import "./../owner/OwnerGymsPage.scss";
 import {
   generateUserWorkoutPlan,
   getUserWorkoutPlan,
+  getUserWorkoutPlans,
   getUserPreferences,
   saveUserPreferences,
   getUserPreferredEquipments,
@@ -59,6 +60,10 @@ function saveLastPlanId(id) {
   localStorage.setItem(LAST_PLAN_ID_KEY, String(n));
 }
 
+function clearLastPlanId() {
+  localStorage.removeItem(LAST_PLAN_ID_KEY);
+}
+
 function prettyLabel(s = "") {
   return String(s)
     .trim()
@@ -77,6 +82,13 @@ function safeNum(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+function getFirstPlanFromCollection(payload) {
+  if (Array.isArray(payload)) return payload[0] || null;
+  if (Array.isArray(payload?.data)) return payload.data[0] || null;
+  if (Array.isArray(payload?.items)) return payload.items[0] || null;
+  return null;
+}
+
 export default function WorkoutWeek() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -87,6 +99,7 @@ export default function WorkoutWeek() {
 
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [error, setError] = useState("");
 
   const [enter, setEnter] = useState(false);
@@ -109,8 +122,8 @@ export default function WorkoutWeek() {
   const [equipmentOptions, setEquipmentOptions] = useState([]);
   const [preferredEquipmentIds, setPreferredEquipmentIds] = useState([]);
 
-  const [showLanding, setShowLanding] = useState(!loadLastPlanId());
-  const [contentReady, setContentReady] = useState(!!loadLastPlanId());
+  const [showLanding, setShowLanding] = useState(false);
+  const [contentReady, setContentReady] = useState(false);
   const [landingAction, setLandingAction] = useState(null);
 
   const [transitioningToContent, setTransitioningToContent] = useState(false);
@@ -138,14 +151,6 @@ export default function WorkoutWeek() {
   useEffect(() => {
     const t = setTimeout(() => setEnter(true), 40);
     return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    const last = loadLastPlanId();
-    if (last && !activePlanId) {
-      setActivePlanId(last);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const weekDays = useMemo(() => {
@@ -184,8 +189,9 @@ export default function WorkoutWeek() {
     setLoadingGenerate(true);
 
     try {
-      const res = await generateUserWorkoutPlan(overrides);
-      const newPlan = res?.data || null;
+      console.log("[WorkoutWeek] Generate payload:", overrides);
+
+      const newPlan = await generateUserWorkoutPlan(overrides);
 
       if (!newPlan?.user_plan_id) {
         throw new Error("Generate succeeded but plan data is missing.");
@@ -194,13 +200,25 @@ export default function WorkoutWeek() {
       setPlan(newPlan);
       setActivePlanId(newPlan.user_plan_id);
       setHasExistingPlan(true);
+      setShowLanding(false);
+      setContentReady(true);
       saveLastPlanId(newPlan.user_plan_id);
 
       console.log("[WorkoutWeek] Generated plan:", newPlan);
+      return newPlan;
     } catch (e) {
-      console.error("[WorkoutWeek] Generate error:", e);
+      console.error("[WorkoutWeek] Generate error full:", e);
+      console.error("[WorkoutWeek] Generate error status:", e?.response?.status);
+      console.error("[WorkoutWeek] Generate error data:", e?.response?.data);
+
       setHasExistingPlan(false);
-      setError(e?.message || "Failed to generate plan.");
+      setError(
+        e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          e?.message ||
+          "Failed to generate plan."
+      );
+      throw e;
     } finally {
       setLoadingGenerate(false);
     }
@@ -210,41 +228,152 @@ export default function WorkoutWeek() {
     if (!id) {
       setHasExistingPlan(false);
       setPlan(null);
-      return;
+      return null;
     }
 
     setError("");
     setLoadingPlan(true);
 
     try {
-      const res = await getUserWorkoutPlan(id);
-      const loaded = res?.data || null;
+      const loaded = await getUserWorkoutPlan(id);
 
       if (!loaded?.user_plan_id) {
         setHasExistingPlan(false);
         setPlan(null);
-        return;
+        clearLastPlanId();
+        setActivePlanId(null);
+        return null;
       }
 
       setPlan(loaded);
+      setActivePlanId(loaded.user_plan_id);
       setHasExistingPlan(true);
+      setShowLanding(false);
+      setContentReady(true);
       saveLastPlanId(loaded.user_plan_id);
 
       console.log("[WorkoutWeek] Loaded plan:", loaded);
+      return loaded;
     } catch (e) {
       console.error("[WorkoutWeek] Load plan error:", e);
+
+      const status = e?.response?.status;
+
+      if (status === 404) {
+        clearLastPlanId();
+        setActivePlanId(null);
+        setHasExistingPlan(false);
+        setPlan(null);
+        setError("Saved workout plan was not found.");
+      } else {
+        setHasExistingPlan(false);
+        setPlan(null);
+        setError(
+          e?.response?.data?.message || e?.message || "Failed to load workout plan."
+        );
+      }
+
       console.warn("[WorkoutWeek] No existing plan found.");
-      setHasExistingPlan(false);
-      setPlan(null);
+      throw e;
     } finally {
       setLoadingPlan(false);
     }
   }
 
   useEffect(() => {
-    if (activePlanId) handleLoadPlan(activePlanId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePlanId]);
+    let alive = true;
+
+    async function bootstrapPlan() {
+      setBootstrapping(true);
+      setError("");
+
+      try {
+        const lastId = loadLastPlanId();
+
+        if (lastId) {
+          try {
+            const loaded = await getUserWorkoutPlan(lastId);
+
+            if (alive && loaded?.user_plan_id) {
+              setPlan(loaded);
+              setActivePlanId(loaded.user_plan_id);
+              setHasExistingPlan(true);
+              saveLastPlanId(loaded.user_plan_id);
+              setShowLanding(false);
+              setContentReady(true);
+              return;
+            }
+          } catch (e) {
+            if (e?.response?.status === 404) {
+              clearLastPlanId();
+            } else {
+              console.error("[WorkoutWeek] Bootstrap load failed:", e);
+            }
+          }
+        }
+
+        try {
+          const plansRes = await getUserWorkoutPlans({ per_page: 1 });
+          const latest = getFirstPlanFromCollection(plansRes);
+
+          if (alive && latest?.user_plan_id) {
+            const loaded = await getUserWorkoutPlan(latest.user_plan_id);
+
+            if (loaded?.user_plan_id) {
+              setPlan(loaded);
+              setActivePlanId(loaded.user_plan_id);
+              setHasExistingPlan(true);
+              saveLastPlanId(loaded.user_plan_id);
+              setShowLanding(false);
+              setContentReady(true);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("[WorkoutWeek] Bootstrap latest-plan lookup failed:", e);
+        }
+
+        try {
+          const newPlan = await generateUserWorkoutPlan({});
+
+          if (alive && newPlan?.user_plan_id) {
+            setPlan(newPlan);
+            setActivePlanId(newPlan.user_plan_id);
+            setHasExistingPlan(true);
+            saveLastPlanId(newPlan.user_plan_id);
+            setShowLanding(false);
+            setContentReady(true);
+            return;
+          }
+
+          throw new Error("Generated plan is missing user_plan_id.");
+        } catch (e) {
+          console.error("[WorkoutWeek] Bootstrap generate failed:", e);
+
+          if (!alive) return;
+
+          setPlan(null);
+          setActivePlanId(null);
+          setHasExistingPlan(false);
+          setShowLanding(true);
+          setContentReady(false);
+          setError(
+            e?.response?.data?.message ||
+              e?.message ||
+              "Could not load or generate a workout plan."
+          );
+        }
+      } finally {
+        if (alive) setBootstrapping(false);
+      }
+    }
+
+    bootstrapPlan();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function openRecalibrate() {
     setShowPrefs(true);
@@ -258,10 +387,10 @@ export default function WorkoutWeek() {
         getEquipments({ per_page: 2000 }),
       ]);
 
-      const p = prefRes?.data || null;
-      const preferredEquipments = prefEqRes?.data || [];
+      const p = prefRes || null;
+      const preferredEquipments = prefEqRes || [];
 
-      const eqPayload = eqRes?.data ?? eqRes ?? [];
+      const eqPayload = eqRes || [];
       const allEquipments = Array.isArray(eqPayload)
         ? eqPayload
         : Array.isArray(eqPayload?.data)
@@ -289,7 +418,9 @@ export default function WorkoutWeek() {
       setEquipmentOptions(allEquipments);
     } catch (e) {
       console.error("[WorkoutWeek] Pref load error:", e);
-      setPrefsError(e?.message || "Failed to load preferences.");
+      setPrefsError(
+        e?.response?.data?.message || e?.message || "Failed to load preferences."
+      );
     } finally {
       setPrefsLoading(false);
     }
@@ -327,7 +458,9 @@ export default function WorkoutWeek() {
       });
     } catch (e) {
       console.error("[WorkoutWeek] Save+Recalibrate error:", e);
-      setPrefsError(e?.message || "Failed to save preferences.");
+      setPrefsError(
+        e?.response?.data?.message || e?.message || "Failed to save preferences."
+      );
     } finally {
       setPrefsSaving(false);
     }
@@ -612,7 +745,7 @@ export default function WorkoutWeek() {
   }, [showLanding]);
 
   const animateIntoContent = async (action = "generate") => {
-    if (loadingGenerate || loadingPlan || transitioningToContent) return;
+    if (loadingGenerate || loadingPlan || transitioningToContent || bootstrapping) return;
 
     setLandingAction(action);
     setTransitioningToContent(true);
@@ -627,7 +760,9 @@ export default function WorkoutWeek() {
       if (action === "generate") {
         await handleGenerate({});
       } else if (action === "view" && activePlanId) {
-        await handleLoadPlan(activePlanId);
+        try {
+          await handleLoadPlan(activePlanId);
+        } catch {}
       }
     };
 
@@ -638,8 +773,10 @@ export default function WorkoutWeek() {
 
       await runContentAction();
 
-      setShowLanding(false);
-      setContentReady(true);
+      if (plan || hasExistingPlan || activePlanId) {
+        setShowLanding(false);
+        setContentReady(true);
+      }
 
       requestAnimationFrame(() => {
         if (pageRevealRef.current) {
@@ -703,8 +840,10 @@ export default function WorkoutWeek() {
 
     await runContentAction();
 
-    setShowLanding(false);
-    setContentReady(true);
+    if (plan || hasExistingPlan || activePlanId) {
+      setShowLanding(false);
+      setContentReady(true);
+    }
 
     requestAnimationFrame(() => {
       if (pageRevealRef.current) {
@@ -739,14 +878,18 @@ export default function WorkoutWeek() {
   };
 
   const hasPlan = !!plan;
-  const canViewSavedPlan = hasExistingPlan;
+  const canViewSavedPlan = !!activePlanId || hasExistingPlan;
 
   return (
     <div
       className={`ww ${enter ? "content-enter-active" : "content-enter"}`}
       style={{ "--brand": BRAND }}
     >
-      {showLanding ? (
+      {bootstrapping ? (
+        <section className="ww-loading-screen">
+          <div className="ww-loading-screen-inner">Preparing your workout plan...</div>
+        </section>
+      ) : showLanding ? (
         <div className="find-gyms-page">
           <div className="star-intro-root">
             <div className="three-mount" ref={mountRef} />
@@ -763,15 +906,16 @@ export default function WorkoutWeek() {
               }}
             />
 
-<div
-  className="intro-container"
-  ref={introRef}
-  style={{
-    zIndex: 10,
-    position: "relative",
-    marginTop: "-60px",
-  }}
->              <h2 className="fancy-text">Exersearch</h2>
+            <div
+              className="intro-container"
+              ref={introRef}
+              style={{
+                zIndex: 10,
+                position: "relative",
+                marginTop: "-60px",
+              }}
+            >
+              <h2 className="fancy-text">Exersearch</h2>
               <h1>
                 BUILD YOUR WORKOUT
                 <br />
@@ -916,9 +1060,7 @@ export default function WorkoutWeek() {
                   </div>
                 </section>
 
-                <footer className="ww-footer">
-      
-                </footer>
+                <footer className="ww-footer"></footer>
               </div>
             </>
           ) : (

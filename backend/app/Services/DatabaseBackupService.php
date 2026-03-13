@@ -1,31 +1,41 @@
 <?php
 
-// ✅ app/Services/DatabaseBackupService.php
 namespace App\Services;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 
 class DatabaseBackupService
 {
-    private function disk()
+    private function backupBasePath(): string
     {
-        return Storage::disk('local');
-    }
+        $custom = (string) env('DB_BACKUP_PATH', '');
+        if (trim($custom) !== '') {
+            return rtrim($custom, '/\\');
+        }
 
-    private function backupDir(): string
-    {
-        return (string) Config::get('dbbackup.dir', 'backups/db');
+        $railwayVolume = (string) env('RAILWAY_VOLUME_MOUNT_PATH', '');
+        if (trim($railwayVolume) !== '') {
+            return rtrim($railwayVolume, '/\\') . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . 'db';
+        }
+
+        return storage_path('app/backups/db');
     }
 
     private function ensureDir(): void
     {
-        $dir = $this->backupDir();
-        if (!$this->disk()->exists($dir)) {
-            $this->disk()->makeDirectory($dir);
+        $dir = $this->backupBasePath();
+
+        if (!is_dir($dir)) {
+            if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
+                throw new \RuntimeException("Failed to create backup directory: {$dir}");
+            }
+        }
+
+        if (!is_writable($dir)) {
+            throw new \RuntimeException("Backup directory is not writable: {$dir}");
         }
     }
 
@@ -37,22 +47,28 @@ class DatabaseBackupService
     private function conn(): array
     {
         $c = config('database.connections.pgsql', []);
+
         return [
-            'host' => $c['host'] ?? env('DB_HOST', '127.0.0.1'),
-            'port' => (string) ($c['port'] ?? env('DB_PORT', '5432')),
-            'database' => $c['database'] ?? env('DB_DATABASE'),
-            'username' => $c['username'] ?? env('DB_USERNAME'),
-            'password' => $c['password'] ?? env('DB_PASSWORD'),
+            'host' => $c['host'] ?? env('DB_HOST', env('PGHOST', '127.0.0.1')),
+            'port' => (string) ($c['port'] ?? env('DB_PORT', env('PGPORT', '5432'))),
+            'database' => $c['database'] ?? env('DB_DATABASE', env('PGDATABASE')),
+            'username' => $c['username'] ?? env('DB_USERNAME', env('PGUSER')),
+            'password' => $c['password'] ?? env('DB_PASSWORD', env('PGPASSWORD')),
         ];
     }
 
     private function binary(string $envKey, string $fallback): string
     {
-        $p = (string) env($envKey, $fallback);
-        $p = trim($p, "\"' ");
+        $p = trim((string) env($envKey, $fallback), "\"' ");
+
+        if ($p === '') {
+            $p = $fallback;
+        }
+
         if ($p !== $fallback && !is_file($p)) {
             throw new \RuntimeException("Binary not found at {$envKey}={$p}");
         }
+
         return $p;
     }
 
@@ -64,11 +80,20 @@ class DatabaseBackupService
     private function allowedSchemas(): array
     {
         $schemas = Config::get('dbbackup.allowed_schemas', ['public']);
-        if (!is_array($schemas) || count($schemas) === 0) return ['public'];
+
+        if (!is_array($schemas) || count($schemas) === 0) {
+            return ['public'];
+        }
+
         return array_values(array_unique(array_map('strval', $schemas)));
     }
 
-    // ---------- TABLE LISTING (optional, from earlier) ----------
+    private function absoluteBackupPath(string $filename): string
+    {
+        return $this->backupBasePath() . DIRECTORY_SEPARATOR . $filename;
+    }
+
+    // ---------- TABLE LISTING ----------
     public function listTables(): array
     {
         $schemas = $this->allowedSchemas();
@@ -89,7 +114,9 @@ class DatabaseBackupService
     private function parseQualifiedTable(string $input): array
     {
         $s = trim($input);
-        if ($s === '') throw new \InvalidArgumentException("Table is required.");
+        if ($s === '') {
+            throw new \InvalidArgumentException('Table is required.');
+        }
 
         if (str_contains($s, '.')) {
             [$schema, $table] = explode('.', $s, 2);
@@ -102,10 +129,11 @@ class DatabaseBackupService
         $table = trim($table);
 
         if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $schema)) {
-            throw new \InvalidArgumentException("Invalid schema name.");
+            throw new \InvalidArgumentException('Invalid schema name.');
         }
+
         if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $table)) {
-            throw new \InvalidArgumentException("Invalid table name.");
+            throw new \InvalidArgumentException('Invalid table name.');
         }
 
         return [$schema, $table];
@@ -114,7 +142,9 @@ class DatabaseBackupService
     private function tableExists(string $schema, string $table): bool
     {
         $schemas = $this->allowedSchemas();
-        if (!in_array($schema, $schemas, true)) return false;
+        if (!in_array($schema, $schemas, true)) {
+            return false;
+        }
 
         $row = DB::connection('pgsql')->selectOne(
             "select 1
@@ -134,26 +164,36 @@ class DatabaseBackupService
     {
         $this->ensureDir();
 
-        $dir = $this->backupDir();
-        $files = $this->disk()->files($dir);
+        $dir = $this->backupBasePath();
+        $files = glob($dir . DIRECTORY_SEPARATOR . '*') ?: [];
 
         $out = [];
+
         foreach ($files as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+
             $name = basename($path);
-            if (!$this->isSafeFilename($name)) continue;
+            if (!$this->isSafeFilename($name)) {
+                continue;
+            }
 
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['dump', 'sql'], true)) continue;
+            if (!in_array($ext, ['dump', 'sql'], true)) {
+                continue;
+            }
 
             $out[] = [
                 'name' => $name,
                 'type' => $ext === 'sql' ? 'sql' : 'dump',
-                'size_bytes' => $this->disk()->size($path),
-                'created_at' => date('c', $this->disk()->lastModified($path)),
+                'size_bytes' => @filesize($path) ?: 0,
+                'created_at' => date('c', @filemtime($path) ?: time()),
             ];
         }
 
         usort($out, fn ($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at']));
+
         return $out;
     }
 
@@ -163,7 +203,9 @@ class DatabaseBackupService
         $this->ensureDir();
 
         $type = strtolower(trim($type));
-        if (!in_array($type, ['dump', 'sql'], true)) $type = 'dump';
+        if (!in_array($type, ['dump', 'sql'], true)) {
+            $type = 'dump';
+        }
 
         $format = $type === 'sql' ? 'plain' : 'custom';
         $ext = $type === 'sql' ? 'sql' : 'dump';
@@ -185,14 +227,11 @@ class DatabaseBackupService
         $stamp = now()->format('Y-m-d_H-i-s');
         $rand = Str::lower(Str::random(6));
         $filename = "backup_{$slug}_{$stamp}_{$rand}.{$ext}";
-
-        $dir = $this->backupDir();
-        $relativePath = "{$dir}/{$filename}";
-        $absolutePath = $this->disk()->path($relativePath);
+        $absolutePath = $this->absoluteBackupPath($filename);
 
         $c = $this->conn();
         if (!$c['database'] || !$c['username']) {
-            throw new \RuntimeException("Database config missing (DB_DATABASE/DB_USERNAME).");
+            throw new \RuntimeException('Database config missing (DB_DATABASE/DB_USERNAME).');
         }
 
         $pgDump = $this->binary('PG_DUMP_PATH', 'pg_dump');
@@ -212,23 +251,26 @@ class DatabaseBackupService
 
         if ($format === 'plain') {
             $args[] = '-Fp';
-            $args[] = '-f';
-            $args[] = $absolutePath;
         } else {
             $args[] = '-Fc';
-            $args[] = '-f';
-            $args[] = $absolutePath;
         }
+
+        $args[] = '-f';
+        $args[] = $absolutePath;
 
         $process = new Process($args, null, ['PGPASSWORD' => (string) $c['password']]);
         $process->setTimeout((int) Config::get('dbbackup.timeout_seconds', 600));
         $process->run();
 
         if (!$process->isSuccessful()) {
-            if (is_file($absolutePath)) @unlink($absolutePath);
+            if (is_file($absolutePath)) {
+                @unlink($absolutePath);
+            }
+
             $err = trim((string) $process->getErrorOutput());
             $out = trim((string) $process->getOutput());
-            throw new \RuntimeException("pg_dump failed: " . ($err !== '' ? $err : $out));
+
+            throw new \RuntimeException('pg_dump failed: ' . ($err !== '' ? $err : $out));
         }
 
         return [
@@ -236,8 +278,8 @@ class DatabaseBackupService
             'type' => $type,
             'scope' => $tableQualified ? 'table' : 'database',
             'table' => $tableQualified,
-            'size_bytes' => $this->disk()->size($relativePath),
-            'created_at' => date('c', $this->disk()->lastModified($relativePath)),
+            'size_bytes' => @filesize($absolutePath) ?: 0,
+            'created_at' => date('c', @filemtime($absolutePath) ?: time()),
             'created_by' => $createdBy,
         ];
     }
@@ -246,114 +288,91 @@ class DatabaseBackupService
     public function downloadPath(string $name): string
     {
         if (!$this->isSafeFilename($name)) {
-            throw new \InvalidArgumentException("Invalid filename.");
+            throw new \InvalidArgumentException('Invalid filename.');
         }
 
         $this->ensureDir();
 
-        $relativePath = $this->backupDir() . '/' . $name;
-        if (!$this->disk()->exists($relativePath)) {
-            throw new \RuntimeException("Backup not found.");
+        $absolutePath = $this->absoluteBackupPath($name);
+
+        if (!is_file($absolutePath)) {
+            throw new \RuntimeException('Backup not found.');
         }
 
-        return $this->disk()->path($relativePath);
+        return $absolutePath;
     }
 
-    // =========================
-    // ✅ RESTORE IMPLEMENTATION
-    // =========================
-
-    /**
-     * Restore from an EXISTING server backup filename in backups dir.
-     * $confirm must match config phrase.
-     */
+    // ---------- RESTORE ----------
     public function restoreFromServerBackup(string $name, string $confirm): array
     {
         $phrase = (string) Config::get('dbbackup.restore_phrase', 'RESTORE DATABASE');
         if (trim($confirm) !== $phrase) {
-            throw new \InvalidArgumentException("Confirmation phrase mismatch.");
+            throw new \InvalidArgumentException('Confirmation phrase mismatch.');
         }
 
         if (!$this->isSafeFilename($name)) {
-            throw new \InvalidArgumentException("Invalid filename.");
+            throw new \InvalidArgumentException('Invalid filename.');
         }
 
         $this->ensureDir();
-        $relativePath = $this->backupDir() . '/' . $name;
 
-        if (!$this->disk()->exists($relativePath)) {
-            throw new \RuntimeException("Backup not found.");
+        $abs = $this->absoluteBackupPath($name);
+
+        if (!is_file($abs)) {
+            throw new \RuntimeException('Backup not found.');
         }
 
-        $abs = $this->disk()->path($relativePath);
         return $this->restoreFromAbsolutePath($abs);
     }
 
-    /**
-     * Restore from an uploaded file (stored temporarily on disk).
-     */
     public function restoreFromUploadedTempPath(string $tempAbsolutePath, string $originalName, string $confirm): array
     {
         $phrase = (string) Config::get('dbbackup.restore_phrase', 'RESTORE DATABASE');
         if (trim($confirm) !== $phrase) {
-            throw new \InvalidArgumentException("Confirmation phrase mismatch.");
+            throw new \InvalidArgumentException('Confirmation phrase mismatch.');
         }
 
         if (!is_file($tempAbsolutePath)) {
-            throw new \RuntimeException("Uploaded restore file not found.");
+            throw new \RuntimeException('Uploaded restore file not found.');
         }
 
-        // Use original extension for decision (and also guard on file itself)
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         if (!in_array($ext, ['dump', 'sql'], true)) {
-            throw new \InvalidArgumentException("Invalid backup type. Only .dump or .sql are allowed.");
+            throw new \InvalidArgumentException('Invalid backup type. Only .dump or .sql are allowed.');
         }
 
-        // (Optional) enforce max size
         $max = (int) Config::get('dbbackup.max_restore_bytes', 0);
         if ($max > 0 && filesize($tempAbsolutePath) > $max) {
-            throw new \RuntimeException("Restore file is too large.");
+            throw new \RuntimeException('Restore file is too large.');
         }
 
         return $this->restoreFromAbsolutePath($tempAbsolutePath, $ext);
     }
 
-    /**
-     * Restore dispatcher based on extension.
-     * - .dump => pg_restore
-     * - .sql  => psql
-     *
-     * ⚠️ This restores into the configured DB. For production, you might want extra guards.
-     */
     private function restoreFromAbsolutePath(string $absolutePath, ?string $forcedExt = null): array
     {
         $c = $this->conn();
         if (!$c['database'] || !$c['username']) {
-            throw new \RuntimeException("Database config missing (DB_DATABASE/DB_USERNAME).");
+            throw new \RuntimeException('Database config missing (DB_DATABASE/DB_USERNAME).');
         }
 
         $ext = $forcedExt ?: strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
         if (!in_array($ext, ['dump', 'sql'], true)) {
-            throw new \InvalidArgumentException("Unsupported restore file type.");
+            throw new \InvalidArgumentException('Unsupported restore file type.');
         }
 
-        $timeout = (int) Config::get('dbbackup.restore_timeout_seconds', Config::get('dbbackup.timeout_seconds', 600));
+        $timeout = (int) Config::get(
+            'dbbackup.restore_timeout_seconds',
+            Config::get('dbbackup.timeout_seconds', 600)
+        );
 
         if ($ext === 'dump') {
             return $this->runPgRestore($absolutePath, $c, $timeout);
         }
 
-        // sql
         return $this->runPsqlRestore($absolutePath, $c, $timeout);
     }
 
-    /**
-     * Restore a custom-format dump using pg_restore.
-     * Options:
-     * - --clean: drop objects before recreating (destructive)
-     * - --if-exists: only drop if exists
-     * - --no-owner / --no-privileges: avoid role issues
-     */
     private function runPgRestore(string $file, array $c, int $timeout): array
     {
         $pgRestore = $this->binary('PG_RESTORE_PATH', 'pg_restore');
@@ -364,19 +383,19 @@ class DatabaseBackupService
             '-p', (string) $c['port'],
             '-U', (string) $c['username'],
             '-d', (string) $c['database'],
-
             '--clean',
             '--if-exists',
             '--no-owner',
             '--no-privileges',
         ];
 
-        // optional extra args from config
         $extra = Config::get('dbbackup.pg_restore_extra_args', []);
         if (is_array($extra)) {
             foreach ($extra as $a) {
                 $a = trim((string) $a);
-                if ($a !== '') $args[] = $a;
+                if ($a !== '') {
+                    $args[] = $a;
+                }
             }
         }
 
@@ -389,7 +408,7 @@ class DatabaseBackupService
         if (!$process->isSuccessful()) {
             $err = trim((string) $process->getErrorOutput());
             $out = trim((string) $process->getOutput());
-            throw new \RuntimeException("pg_restore failed: " . ($err !== '' ? $err : $out));
+            throw new \RuntimeException('pg_restore failed: ' . ($err !== '' ? $err : $out));
         }
 
         return [
@@ -399,10 +418,6 @@ class DatabaseBackupService
         ];
     }
 
-    /**
-     * Restore a plain SQL file using psql.
-     * Uses -v ON_ERROR_STOP=1 so failures stop the restore.
-     */
     private function runPsqlRestore(string $file, array $c, int $timeout): array
     {
         $psql = $this->binary('PSQL_PATH', 'psql');
@@ -414,15 +429,20 @@ class DatabaseBackupService
             '-U', (string) $c['username'],
             '-d', (string) $c['database'],
             '-v', 'ON_ERROR_STOP=1',
-            '-f', $file,
         ];
 
         $extra = Config::get('dbbackup.psql_extra_args', []);
         if (is_array($extra)) {
-            // insert extra args before -f ideally, but safe either way
-            // We'll add them before -f:
-            // (If you need strict order, tell me and I’ll refactor.)
+            foreach ($extra as $a) {
+                $a = trim((string) $a);
+                if ($a !== '') {
+                    $args[] = $a;
+                }
+            }
         }
+
+        $args[] = '-f';
+        $args[] = $file;
 
         $process = new Process($args, null, ['PGPASSWORD' => (string) $c['password']]);
         $process->setTimeout($timeout);
@@ -431,7 +451,7 @@ class DatabaseBackupService
         if (!$process->isSuccessful()) {
             $err = trim((string) $process->getErrorOutput());
             $out = trim((string) $process->getOutput());
-            throw new \RuntimeException("psql restore failed: " . ($err !== '' ? $err : $out));
+            throw new \RuntimeException('psql restore failed: ' . ($err !== '' ? $err : $out));
         }
 
         return [
