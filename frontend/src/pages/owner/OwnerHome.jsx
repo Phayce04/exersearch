@@ -595,157 +595,6 @@ const currentSeason = useMemo(() => {
           </div>
         </div>
 
-{/* ══════════════════════════════════════════════════════
-    FITNESS INTELLIGENCE — paste in place of the 3 old sections
-══════════════════════════════════════════════════════ */}
-<section className="fi-wrap">
-
-  {/* ── header ── */}
-  <div className="fi-header">
-    <div className="fi-header__left">
-      <h2 className="fi-header__title">
-        <TrendingUp size={20} />
-        PH Fitness &amp; Wellness Hub
-      </h2>
-      <span className="fi-live-pill">
-        <span className="fi-live-dot" />
-        Live
-      </span>
-    </div>
-    <p className="fi-header__sub">News · Trends · Community — all in one place</p>
-  </div>
-
-  {/* ── ROW 1: NEWS full width landscape ── */}
-  <div className="fi-news-panel">
-    <div className="fi-col__head">
-      <span className="fi-col__label fi-col__label--news">
-        <TrendingUp size={14} />
-        Latest News
-      </span>
-    </div>
-
-    {newsLoading ? (
-      <div className="fi-news-grid">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="fi-nc fi-nc--skel">
-            <div className="fi-nc__img fi-nc__img--skel" />
-            <div className="fi-nc__body">
-              <div className="fi-skel-line" style={{ width: "80%" }} />
-              <div className="fi-skel-line" style={{ width: "50%", marginTop: 5 }} />
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : news.filter(a => Boolean(a.image)).length === 0 ? (
-      <p className="fi-empty">No news available right now.</p>
-    ) : (
-      <div className="fi-news-grid">
-        {news
-          .filter(a => Boolean(a.image))
-          .slice(0, 15)
-          .map((article, i) => (
-            <FiNewsCard key={i} article={article} />
-          ))}
-      </div>
-    )}
-  </div>
-
-  {/* ── ROW 2: TRENDS left | DISCUSSIONS right ── */}
-  <div className="fi-bottom-row">
-
-    {/* TRENDS */}
-    <div className="fi-col">
-      <div className="fi-col__head">
-        <span className="fi-col__label fi-col__label--trends">
-          <Flame size={14} />
-          Trending in PH
-        </span>
-        <span className="fi-season-tag">{currentSeason}</span>
-      </div>
-
-      {trendsLoading ? (
-        <div className="fi-trends-list">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="fi-tr fi-tr--skel">
-              <div className="fi-skel-line" style={{ width: "100%", height: 13 }} />
-            </div>
-          ))}
-        </div>
-      ) : trends.length === 0 ? (
-        <p className="fi-empty">No trends right now.</p>
-      ) : (
-        <div className="fi-trends-list">
-          {trends.map((t, i) => (
-            <div key={i} className="fi-tr">
-              <span className="fi-tr__rank">#{i + 1}</span>
-              <div className="fi-tr__mid">
-                <span className="fi-tr__kw">{t.keyword}</span>
-                <div className="fi-tr__track">
-                  <div
-                    className="fi-tr__bar"
-                    style={{
-                      width: `${maxTrendScore > 0
-                        ? Math.round((t.trend_score / maxTrendScore) * 100)
-                        : 0}%`
-                    }}
-                  />
-                </div>
-              </div>
-              <span className="fi-tr__score">{t.trend_score}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-
-    {/* DISCUSSIONS */}
-    <div className="fi-col">
-      <div className="fi-col__head">
-        <span className="fi-col__label fi-col__label--disc">
-          <MessageSquare size={14} />
-          Community Buzz
-        </span>
-        <span className="fi-reddit-tag">Reddit</span>
-      </div>
-
-      {discussionsLoading ? (
-        <div className="fi-disc-list">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} style={{ padding: "0.75rem 1.35rem" }}>
-              <div className="fi-skel-line" style={{ width: "100%", height: 13 }} />
-              <div className="fi-skel-line" style={{ width: "55%", height: 9, marginTop: 5 }} />
-            </div>
-          ))}
-        </div>
-      ) : discussions.length === 0 ? (
-        <p className="fi-empty">No discussions right now.</p>
-      ) : (
-        <div className="fi-disc-list">
-          {discussions.map((p, i) => (
-            <a key={i} href={p.url} target="_blank" rel="noreferrer" className="fi-dr">
-              <span className="fi-dr__num">{String(i + 1).padStart(2, "0")}</span>
-              <div className="fi-dr__body">
-                <p className="fi-dr__title">{p.title}</p>
-                <div className="fi-dr__meta">
-                  <span className="fi-dr__sub">{p.subreddit ?? "r/Fitness"}</span>
-                  {p.flair && <span className="fi-dr__flair">{p.flair}</span>}
-                  <span className="fi-dr__votes">&#9650; {p.upvotes?.toLocaleString()}</span>
-                  {p.comments != null && (
-                    <span className="fi-dr__cmts">
-                      <MessageSquare size={10} /> {p.comments}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <ExternalLink size={13} className="fi-dr__ext" />
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
-
-  </div>
-</section>
         {/* ── URGENT ACTIONS ── */}
         <div className="od-urgent-section">
           <div className="od-urgent-header">
@@ -1117,7 +966,154 @@ const currentSeason = useMemo(() => {
           </div>
         </div>
 
-        
+        <section className="fi-wrap">
+
+  {/* ── header ── */}
+  <div className="fi-header">
+    <div className="fi-header__left">
+      <h2 className="fi-header__title">
+        <TrendingUp size={20} />
+        PH Fitness &amp; Wellness Hub
+      </h2>
+      <span className="fi-live-pill">
+        <span className="fi-live-dot" />
+        Live
+      </span>
+    </div>
+    <p className="fi-header__sub">News · Trends · Community — all in one place</p>
+  </div>
+
+  {/* ── ROW 1: NEWS full width landscape ── */}
+  <div className="fi-news-panel">
+    <div className="fi-col__head">
+      <span className="fi-col__label fi-col__label--news">
+        <TrendingUp size={14} />
+        Latest News
+      </span>
+    </div>
+
+    {newsLoading ? (
+      <div className="fi-news-grid">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="fi-nc fi-nc--skel">
+            <div className="fi-nc__img fi-nc__img--skel" />
+            <div className="fi-nc__body">
+              <div className="fi-skel-line" style={{ width: "80%" }} />
+              <div className="fi-skel-line" style={{ width: "50%", marginTop: 5 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : news.filter(a => Boolean(a.image)).length === 0 ? (
+      <p className="fi-empty">No news available right now.</p>
+    ) : (
+      <div className="fi-news-grid">
+        {news
+          .filter(a => Boolean(a.image))
+          .slice(0, 15)
+          .map((article, i) => (
+            <FiNewsCard key={i} article={article} />
+          ))}
+      </div>
+    )}
+  </div>
+
+  {/* ── ROW 2: TRENDS left | DISCUSSIONS right ── */}
+  <div className="fi-bottom-row">
+
+    {/* TRENDS */}
+    <div className="fi-col">
+      <div className="fi-col__head">
+        <span className="fi-col__label fi-col__label--trends">
+          <Flame size={14} />
+          Trending in PH
+        </span>
+        <span className="fi-season-tag">{currentSeason}</span>
+      </div>
+
+      {trendsLoading ? (
+        <div className="fi-trends-list">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="fi-tr fi-tr--skel">
+              <div className="fi-skel-line" style={{ width: "100%", height: 13 }} />
+            </div>
+          ))}
+        </div>
+      ) : trends.length === 0 ? (
+        <p className="fi-empty">No trends right now.</p>
+      ) : (
+        <div className="fi-trends-list">
+          {trends.map((t, i) => (
+            <div key={i} className="fi-tr">
+              <span className="fi-tr__rank">#{i + 1}</span>
+              <div className="fi-tr__mid">
+                <span className="fi-tr__kw">{t.keyword}</span>
+                <div className="fi-tr__track">
+                  <div
+                    className="fi-tr__bar"
+                    style={{
+                      width: `${maxTrendScore > 0
+                        ? Math.round((t.trend_score / maxTrendScore) * 100)
+                        : 0}%`
+                    }}
+                  />
+                </div>
+              </div>
+              <span className="fi-tr__score">{t.trend_score}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* DISCUSSIONS */}
+    <div className="fi-col">
+      <div className="fi-col__head">
+        <span className="fi-col__label fi-col__label--disc">
+          <MessageSquare size={14} />
+          Community Buzz
+        </span>
+        <span className="fi-reddit-tag">Reddit</span>
+      </div>
+
+      {discussionsLoading ? (
+        <div className="fi-disc-list">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} style={{ padding: "0.75rem 1.35rem" }}>
+              <div className="fi-skel-line" style={{ width: "100%", height: 13 }} />
+              <div className="fi-skel-line" style={{ width: "55%", height: 9, marginTop: 5 }} />
+            </div>
+          ))}
+        </div>
+      ) : discussions.length === 0 ? (
+        <p className="fi-empty">No discussions right now.</p>
+      ) : (
+        <div className="fi-disc-list">
+          {discussions.map((p, i) => (
+            <a key={i} href={p.url} target="_blank" rel="noreferrer" className="fi-dr">
+              <span className="fi-dr__num">{String(i + 1).padStart(2, "0")}</span>
+              <div className="fi-dr__body">
+                <p className="fi-dr__title">{p.title}</p>
+                <div className="fi-dr__meta">
+                  <span className="fi-dr__sub">{p.subreddit ?? "r/Fitness"}</span>
+                  {p.flair && <span className="fi-dr__flair">{p.flair}</span>}
+                  <span className="fi-dr__votes">&#9650; {p.upvotes?.toLocaleString()}</span>
+                  {p.comments != null && (
+                    <span className="fi-dr__cmts">
+                      <MessageSquare size={10} /> {p.comments}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <ExternalLink size={13} className="fi-dr__ext" />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+
+  </div>
+</section>
 
       </div>
     </div>

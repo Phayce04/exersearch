@@ -28,7 +28,7 @@ import {
   getNotificationUrl,
 } from "../../utils/notificationApi";
 
-const FALLBACK_AVATAR = "https://i.pravatar.cc/60?img=12";
+const FALLBACK_AVATAR = "/defaulticon.png";
 const TOKEN_KEY = "token";
 const UI_MODE_KEY = "ui_mode";
 
