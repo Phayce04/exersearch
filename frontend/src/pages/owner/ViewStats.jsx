@@ -28,7 +28,6 @@ import {
   Inbox,
   BarChart3,
 } from "lucide-react";
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 import { loadViewStats } from "../../utils/viewStatsApi";
@@ -130,7 +129,6 @@ export default function ViewStats() {
 
   const timelineRef = useRef(null);
   const marketRef = useRef(null);
-  const exportRef = useRef(null);
 
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -245,47 +243,426 @@ export default function ViewStats() {
   };
 
   const handleDownloadPresentationPdf = async () => {
-    if (!exportRef.current || downloadingPdf) return;
+    if (downloadingPdf) return;
 
     try {
       setDownloadingPdf(true);
 
-      const canvas = await html2canvas(exportRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
-
-      const pdfWidth = 210;
-      const pdfHeight = 297;
-      const margin = 10;
-      const usableWidth = pdfWidth - margin * 2;
-
-      const imgWidth = usableWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = margin;
-
-      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-      heightLeft -= (pdfHeight - margin * 2);
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + margin;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-        heightLeft -= (pdfHeight - margin * 2);
-      }
+      const pageW = 210;
+      const pageH = 297;
+      const margin = 14;
+      const contentW = pageW - margin * 2;
 
       const safeGymName = String(stats?.gym_name || "gym-stats")
         .trim()
         .replace(/[^\w\s-]/g, "")
         .replace(/\s+/g, "-")
         .toLowerCase();
+
+      const colors = {
+        text: [16, 24, 32],
+        muted: [90, 90, 90],
+        light: [120, 120, 120],
+        orange: [252, 74, 0],
+        orangeDark: [171, 50, 0],
+        line: [235, 240, 245],
+        softFill: [248, 250, 252],
+        white: [255, 255, 255],
+      };
+
+      const setText = (rgb = colors.text) => pdf.setTextColor(...rgb);
+
+      const drawTitle = (title, subtitle) => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(22);
+        setText(colors.text);
+        pdf.text(String(title || "Gym Analytics"), margin, 22);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        setText(colors.muted);
+        pdf.text(String(subtitle || ""), margin, 29);
+
+        pdf.setDrawColor(...colors.line);
+        pdf.line(margin, 34, pageW - margin, 34);
+      };
+
+      const drawSectionTitle = (title, y) => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        setText(colors.orangeDark);
+        pdf.text(title, margin, y);
+        return y + 6;
+      };
+
+      const drawCard = (x, y, w, h, title, value, sub = "", fill = colors.white) => {
+        pdf.setFillColor(...fill);
+        pdf.setDrawColor(...colors.line);
+        pdf.roundedRect(x, y, w, h, 4, 4, "FD");
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        setText(colors.muted);
+        pdf.text(String(title), x + 4, y + 8);
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(18);
+        setText(colors.text);
+        pdf.text(String(value), x + 4, y + 18);
+
+        if (sub) {
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(9);
+          setText(colors.light);
+          pdf.text(String(sub), x + 4, y + 25);
+        }
+      };
+
+      const drawWrappedText = (
+        text,
+        x,
+        y,
+        maxWidth,
+        lineHeight = 5,
+        color = colors.muted,
+        fontSize = 10,
+        weight = "normal"
+      ) => {
+        pdf.setFont("helvetica", weight);
+        pdf.setFontSize(fontSize);
+        setText(color);
+        const lines = pdf.splitTextToSize(String(text || ""), maxWidth);
+        pdf.text(lines, x, y);
+        return y + lines.length * lineHeight;
+      };
+
+      const hasMeaningfulTimeline =
+        Array.isArray(timeline) && timeline.some((d) => safeNum(d?.[selectedMetric]) > 0);
+
+      const hasMeaningfulFunnel =
+        Array.isArray(funnel) && funnel.some((s) => safeNum(s?.count) > 0);
+
+      const hasMeaningfulEngagement =
+        Array.isArray(engagementByAction) && engagementByAction.some((r) => safeNum(r?.value) > 0);
+
+      const hasMeaningfulDemographics =
+        (Array.isArray(ageGroups) && ageGroups.some((g) => safeNum(g?.percentage) > 0)) ||
+        safeNum(stats?.demographics?.gender?.male) > 0 ||
+        safeNum(stats?.demographics?.gender?.female) > 0 ||
+        safeNum(stats?.demographics?.gender?.other) > 0;
+
+      const perf = stats?.performance_score || {};
+      const hero = stats?.hero_metrics || {};
+      const rangeText = rangeLabel(timeRange);
+
+      drawTitle(
+        stats?.gym_name || "Gym Analytics",
+        `${rangeText} • Updated ${stats?.last_updated || "recently"}`
+      );
+
+      let y = 45;
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(12);
+      setText(colors.orange);
+      pdf.text("Executive Summary", margin, y);
+      y += 8;
+
+      const summaryItems = executiveSummary.length
+        ? executiveSummary.slice(0, 4)
+        : [{ title: "No summary yet", message: "Insights will appear here once more analytics data becomes available." }];
+
+      summaryItems.forEach((item) => {
+        const itemMessageLines = pdf.splitTextToSize(String(item?.message || ""), contentW - 8);
+        const boxH = Math.max(18, 10 + itemMessageLines.length * 4.5);
+
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(...colors.line);
+        pdf.roundedRect(margin, y, contentW, boxH, 4, 4, "FD");
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        setText(colors.text);
+        pdf.text(String(item?.title || "Insight"), margin + 4, y + 7);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        setText(colors.muted);
+        pdf.text(itemMessageLines, margin + 4, y + 13);
+
+        y += boxH + 4;
+      });
+
+      y += 2;
+      y = drawSectionTitle("Overall Performance", y);
+
+      drawCard(margin, y, 42, 28, "Overall Score", `${perf?.overall ?? 0}`, "Out of 100", [255, 247, 242]);
+      drawCard(margin + 46, y, 34, 28, "Visibility", `${perf?.visibility ?? 0}`);
+      drawCard(margin + 84, y, 34, 28, "Engagement", `${perf?.engagement ?? 0}`);
+      drawCard(margin + 122, y, 34, 28, "Satisfaction", `${perf?.satisfaction ?? 0}`);
+      drawCard(margin + 160, y, 36, 28, "Growth", `${perf?.growth ?? 0}`);
+      y += 38;
+
+      y = drawSectionTitle("Key Metrics", y);
+
+      const heroEntries = Object.entries(hero);
+      const heroCardW = (contentW - 8) / 2;
+      const heroCardH = 26;
+
+      heroEntries.slice(0, 4).forEach(([key, data], i) => {
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const x = margin + col * (heroCardW + 8);
+        const yy = y + row * (heroCardH + 8);
+
+        const label =
+          key === "views" ? "Profile Views" :
+          key === "members" ? "Active Members" :
+          key === "engagement" ? "Engagement" :
+          key === "rating" ? "Average Rating" :
+          key;
+
+        const value =
+          key === "rating"
+            ? `${Number(data?.current || 0).toFixed(1)}/5.0`
+            : Number(data?.current || 0).toLocaleString();
+
+        const sub = `Change: ${Number(data?.change || 0) > 0 ? "+" : ""}${Number(data?.change || 0)}%`;
+
+        drawCard(x, yy, heroCardW, heroCardH, label, value, sub);
+      });
+
+      pdf.addPage();
+      drawTitle(stats?.gym_name || "Gym Analytics", `${rangeText} • Performance Details`);
+
+      y = 45;
+      y = drawSectionTitle("Performance Timeline", y);
+
+      if (hasMeaningfulTimeline) {
+        const chartX = margin;
+        const chartY = y + 2;
+        const chartW = contentW;
+        const chartH = 70;
+
+        pdf.setDrawColor(...colors.line);
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(chartX, chartY, chartW, chartH, 4, 4, "FD");
+
+        const visibleTimeline = timeline.slice(0, 12);
+        const values = visibleTimeline.map((d) => safeNum(d?.[selectedMetric]));
+        const maxVal = Math.max(...values, 1);
+        const barGap = 4;
+        const innerX = chartX + 8;
+        const innerY = chartY + 8;
+        const innerW = chartW - 16;
+        const innerH = chartH - 18;
+        const barW = (innerW - (visibleTimeline.length - 1) * barGap) / Math.max(visibleTimeline.length, 1);
+
+        visibleTimeline.forEach((day, i) => {
+          const v = safeNum(day?.[selectedMetric]);
+          const h = maxVal > 0 ? Math.max((v / maxVal) * innerH, v > 0 ? 3 : 1) : 1;
+          const bx = innerX + i * (barW + barGap);
+          const by = innerY + innerH - h;
+
+          pdf.setFillColor(...colors.orange);
+          pdf.roundedRect(bx, by, barW, h, 1.5, 1.5, "F");
+
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(7);
+          setText(colors.light);
+          pdf.text(fmtTimelineLabel(day?.date), bx, chartY + chartH - 3, { maxWidth: barW + 6 });
+        });
+
+        y = chartY + chartH + 12;
+      } else {
+        y = drawWrappedText("No significant timeline activity recorded for this selected range.", margin, y + 4, contentW);
+        y += 8;
+      }
+
+      y = drawSectionTitle("Conversion Funnel", y);
+
+      if (hasMeaningfulFunnel) {
+        funnel.forEach((stage) => {
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(10);
+          setText(colors.text);
+          pdf.text(`${stage?.stage || "Stage"}`, margin, y);
+
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(9);
+          setText(colors.muted);
+          pdf.text(`${stage?.count ?? 0} • ${stage?.percentage ?? 0}%`, pageW - margin, y, { align: "right" });
+
+          const trackY = y + 3;
+          pdf.setFillColor(...colors.line);
+          pdf.roundedRect(margin, trackY, contentW, 5, 2, 2, "F");
+
+          pdf.setFillColor(...colors.orangeDark);
+          pdf.roundedRect(margin, trackY, Math.max((contentW * safeNum(stage?.percentage)) / 100, 1), 5, 2, 2, "F");
+
+          y += 12;
+        });
+      } else {
+        y = drawWrappedText("No meaningful conversion funnel data is available yet for this selected range.", margin, y + 4, contentW);
+        y += 8;
+      }
+
+      y += 2;
+      y = drawSectionTitle("Engagement Analysis", y);
+
+      if (hasMeaningfulEngagement) {
+        const tableX = margin;
+        const tableY = y + 2;
+        const rowH = 10;
+        const col1 = 70;
+        const col2 = 36;
+        const col3 = 36;
+        const col4 = contentW - col1 - col2 - col3;
+
+        pdf.setFillColor(255, 247, 242);
+        pdf.setDrawColor(...colors.line);
+        pdf.rect(tableX, tableY, contentW, rowH, "FD");
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(9);
+        setText(colors.text);
+        pdf.text("Action", tableX + 3, tableY + 6.5);
+        pdf.text("Total", tableX + col1 + 3, tableY + 6.5);
+        pdf.text("Records", tableX + col1 + col2 + 3, tableY + 6.5);
+        pdf.text("Growth", tableX + col1 + col2 + col3 + 3, tableY + 6.5);
+
+        let rowY = tableY + rowH;
+
+        engagementByAction.slice(0, 6).forEach((row) => {
+          pdf.setFillColor(255, 255, 255);
+          pdf.setDrawColor(...colors.line);
+          pdf.rect(tableX, rowY, contentW, rowH, "FD");
+
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(9);
+          setText(colors.text);
+          pdf.text(String(row?.name || ""), tableX + 3, rowY + 6.5);
+          pdf.text(String(Number(row?.value || 0).toLocaleString()), tableX + col1 + 3, rowY + 6.5);
+          pdf.text(String(row?.members ?? 0), tableX + col1 + col2 + 3, rowY + 6.5);
+          pdf.text(`${row?.growth ?? 0}%`, tableX + col1 + col2 + col3 + 3, rowY + 6.5);
+
+          rowY += rowH;
+        });
+      } else {
+        drawWrappedText("No meaningful engagement data is available yet for this selected range.", margin, y + 4, contentW);
+      }
+
+      pdf.addPage();
+      drawTitle(stats?.gym_name || "Gym Analytics", `${rangeText} • Audience and Market`);
+
+      y = 45;
+      y = drawSectionTitle("Member Demographics", y);
+
+      if (hasMeaningfulDemographics) {
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(...colors.line);
+        pdf.roundedRect(margin, y, contentW / 2 - 4, 58, 4, 4, "FD");
+        pdf.roundedRect(margin + contentW / 2 + 4, y, contentW / 2 - 4, 58, 4, 4, "FD");
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        setText(colors.text);
+        pdf.text("Age Distribution", margin + 4, y + 8);
+        pdf.text("Gender Split", margin + contentW / 2 + 8, y + 8);
+
+        let ageY = y + 16;
+        ageGroups.slice(0, 6).forEach((group) => {
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(9);
+          setText(colors.text);
+          pdf.text(`${group?.range || "-"}`, margin + 4, ageY);
+          pdf.text(`${safeNum(group?.percentage)}%`, margin + contentW / 2 - 12, ageY, { align: "right" });
+          ageY += 8;
+        });
+
+        let genderY = y + 16;
+        const genders = [
+          ["Male", stats?.demographics?.gender?.male ?? 0],
+          ["Female", stats?.demographics?.gender?.female ?? 0],
+          ["Other", stats?.demographics?.gender?.other ?? 0],
+        ];
+
+        genders.forEach(([label, value]) => {
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(9);
+          setText(colors.text);
+          pdf.text(label, margin + contentW / 2 + 8, genderY);
+          pdf.text(String(value), pageW - margin - 6, genderY, { align: "right" });
+          genderY += 10;
+        });
+
+        y += 68;
+      } else {
+        y = drawWrappedText("No meaningful demographic data is available yet for this selected range.", margin, y + 4, contentW);
+        y += 10;
+      }
+
+      y = drawSectionTitle("Market Position", y);
+
+      if (!stats?.competitor_comparison) {
+        y = drawWrappedText(
+          "Market position comparison is not available yet. Once competitor analytics are available, this section will include your gym, area average, and top competitor comparison.",
+          margin,
+          y + 4,
+          contentW
+        );
+        y += 14;
+      } else {
+        const cmp = stats.competitor_comparison;
+        const cardW = (contentW - 8) / 3;
+
+        drawCard(
+          margin,
+          y,
+          cardW,
+          36,
+          "Your Gym",
+          `${Number(cmp?.your_gym?.rating || 0).toFixed(1)} ★`,
+          `Members: ${cmp?.your_gym?.members ?? 0}`
+        );
+        drawCard(
+          margin + cardW + 4,
+          y,
+          cardW,
+          36,
+          "Area Average",
+          `${Number(cmp?.area_average?.rating || 0).toFixed(1)} ★`,
+          `Members: ${cmp?.area_average?.members ?? 0}`
+        );
+        drawCard(
+          margin + (cardW + 4) * 2,
+          y,
+          cardW,
+          36,
+          "Top Competitor",
+          `${Number(cmp?.top_competitor?.rating || 0).toFixed(1)} ★`,
+          `Members: ${cmp?.top_competitor?.members ?? 0}`
+        );
+
+        y += 46;
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        setText(colors.muted);
+        pdf.text(`Your Monthly Price: ₱${cmp?.your_gym?.price ?? 0}`, margin, y);
+        pdf.text(`Area Average Price: ₱${cmp?.area_average?.price ?? 0}`, margin, y + 7);
+        pdf.text(`Top Competitor Price: ₱${cmp?.top_competitor?.price ?? 0}`, margin, y + 14);
+        y += 24;
+      }
+
+      y = drawSectionTitle("Presentation Note", y);
+      drawWrappedText(
+        "This PDF includes only the most important analytics sections for presentation and reporting use.",
+        margin,
+        y + 4,
+        contentW
+      );
 
       pdf.save(`${safeGymName}-presentation-${timeRange}.pdf`);
     } catch (e) {
@@ -356,7 +733,7 @@ export default function ViewStats() {
             </div>
             <button className="action-btn secondary" onClick={handleDownloadPresentationPdf} disabled={downloadingPdf}>
               <Download size={18} />
-              {downloadingPdf ? "Exporting..." : "Download PDF"}
+              {downloadingPdf ? "Exporting..." : "Download Presentation PDF"}
             </button>
             <button className="action-btn primary">
               <Share2 size={18} />
@@ -445,6 +822,7 @@ export default function ViewStats() {
           <div className="score-card main-score">
             <div className="score-header">
               <h3>Overall Performance</h3>
+
               <button
                 type="button"
                 className="score-info-btn"
@@ -633,6 +1011,7 @@ export default function ViewStats() {
             <div className="timeline-chart">
               {timeline.map((day, i) => {
                 const value = safeNum(day?.[selectedMetric]);
+
                 const height = metricMax > 0 ? Math.max((value / metricMax) * 100, value > 0 ? 6 : 2) : 2;
 
                 return (
@@ -1006,7 +1385,15 @@ export default function ViewStats() {
                       <span className="perf-pill">{stats.performance_score?.visibility ?? 0}/100</span>
                     </div>
                     <p>
-                      Measures <strong>views per day</strong> vs a target baseline.
+                      Measures <strong>views per day</strong> vs a target baseline:
+                      <br />
+                      <span className="mono">targetViewsPerDay = 7D: 8, 30D: 6, 90D: 4, 1Y: 3</span>
+                      <br />
+                      <span className="mono">viewsPerDay = views / days</span>
+                      <br />
+                      <span className="mono">
+                        smoothScore(x) = round( clamp((1 - exp(-k·x)) · 100, 0, 100) ), k=4
+                      </span>
                     </p>
                   </div>
 
@@ -1016,7 +1403,15 @@ export default function ViewStats() {
                       <span className="perf-pill">{stats.performance_score?.engagement ?? 0}/100</span>
                     </div>
                     <p>
-                      Measures how often viewers take meaningful actions like saves, inquiries, and free visit claims.
+                      Measures meaningful actions:
+                      <br />
+                      <span className="mono">engagementActions = saves + inquiries + free_visits_claimed</span>
+                      <br />
+                      <span className="mono">engRate = engagementActions / views</span>
+                      <br />
+                      <span className="mono">targetEngRate = 0.06</span>
+                      <br />
+                      <span className="mono">Score = smoothScore(engRate / targetEngRate)</span>
                     </p>
                   </div>
 
@@ -1026,7 +1421,15 @@ export default function ViewStats() {
                       <span className="perf-pill">{stats.performance_score?.satisfaction ?? 0}/100</span>
                     </div>
                     <p>
-                      Uses verified average rating and confidence based on review volume.
+                      Uses verified average rating scaled by review confidence:
+                      <br />
+                      <span className="mono">satisfactionRaw = (rating / 5) · 100</span>
+                      <br />
+                      <span className="mono">
+                        confidence = clamp(0.2 + (1 - exp(-verifiedCount/10)) · 0.8, 0.2, 1)
+                      </span>
+                      <br />
+                      <span className="mono">Satisfaction = round( clamp(satisfactionRaw · confidence, 0, 100) )</span>
                     </p>
                   </div>
 
@@ -1036,7 +1439,15 @@ export default function ViewStats() {
                       <span className="perf-pill">{stats.performance_score?.growth ?? 0}/100</span>
                     </div>
                     <p>
-                      Based on changes in active members over the selected period.
+                      Based on active member change %:
+                      <br />
+                      <span className="mono">memberChange = active_members.change (or hero.members.change)</span>
+                      <br />
+                      <span className="mono">memberChangeClamped = clamp(memberChange, -30, 30)</span>
+                      <br />
+                      <span className="mono">
+                        Growth = round( clamp(50 + (memberChangeClamped/30) · 40, 0, 100) )
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -1044,197 +1455,6 @@ export default function ViewStats() {
             </div>
           </div>
         )}
-
-        <div className="presentation-export-root" aria-hidden="true">
-          <div ref={exportRef} className="presentation-export-sheet">
-            <div className="presentation-page">
-              <div className="presentation-cover">
-                <div className="presentation-kicker">Gym Analytics Presentation</div>
-                <h1>{stats.gym_name}</h1>
-                <p>{rangeLabel(timeRange)}</p>
-                <div className="presentation-meta-row">
-                  <span>Updated {stats.last_updated}</span>
-                  <span>Gym ID: {gymId}</span>
-                </div>
-              </div>
-
-              <div className="presentation-section">
-                <h2>Executive Summary</h2>
-                <div className="presentation-summary-grid">
-                  {executiveSummary.length ? executiveSummary.slice(0, 4).map((item, i) => (
-                    <div key={i} className="presentation-summary-card">
-                      <strong>{item.title}</strong>
-                      <p>{item.message}</p>
-                    </div>
-                  )) : (
-                    <div className="presentation-summary-card">
-                      <strong>No summary yet</strong>
-                      <p>Insights will appear here as more user interactions are recorded.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="presentation-section">
-                <h2>Overall Performance</h2>
-                <div className="presentation-score-big">{stats.performance_score?.overall ?? 0}</div>
-                <div className="presentation-mini-scores">
-                  <div><span>Visibility</span><strong>{stats.performance_score?.visibility ?? 0}</strong></div>
-                  <div><span>Engagement</span><strong>{stats.performance_score?.engagement ?? 0}</strong></div>
-                  <div><span>Satisfaction</span><strong>{stats.performance_score?.satisfaction ?? 0}</strong></div>
-                  <div><span>Growth</span><strong>{stats.performance_score?.growth ?? 0}</strong></div>
-                </div>
-              </div>
-
-              <div className="presentation-section">
-                <h2>Key Metrics</h2>
-                <div className="presentation-hero-grid">
-                  {Object.entries(stats.hero_metrics || {}).map(([key, data]) => (
-                    <div key={key} className="presentation-hero-card">
-                      <div className="presentation-hero-title">
-                        {key === "views" && "Profile Views"}
-                        {key === "members" && "Active Members"}
-                        {key === "engagement" && "Engagement"}
-                        {key === "rating" && "Average Rating"}
-                      </div>
-                      <div className="presentation-hero-value">
-                        {key === "rating"
-                          ? `${Number(data.current || 0).toFixed(1)}/5.0`
-                          : Number(data.current || 0).toLocaleString()}
-                      </div>
-                      <div className="presentation-hero-sub">
-                        Change: {Number(data.change || 0) > 0 ? "+" : ""}{Number(data.change || 0)}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="presentation-page">
-              <div className="presentation-section">
-                <h2>Performance Timeline</h2>
-                <div className="presentation-timeline-bars">
-                  {timeline.length ? timeline.slice(0, 16).map((day, i) => {
-                    const value = safeNum(day?.[selectedMetric]);
-                    const height = metricMax > 0 ? Math.max((value / metricMax) * 100, value > 0 ? 8 : 4) : 4;
-                    return (
-                      <div key={i} className="presentation-bar-col">
-                        <div className="presentation-bar-wrap">
-                          <div className="presentation-bar" style={{ height: `${height}%` }} />
-                        </div>
-                        <span>{fmtTimelineLabel(day?.date)}</span>
-                      </div>
-                    );
-                  }) : <p>No timeline data available.</p>}
-                </div>
-              </div>
-
-              <div className="presentation-section">
-                <h2>Conversion Funnel</h2>
-                <div className="presentation-funnel-list">
-                  {funnel.map((stage, i) => (
-                    <div key={i} className="presentation-funnel-row">
-                      <div className="presentation-funnel-top">
-                        <strong>{stage.stage}</strong>
-                        <span>{stage.count} • {stage.percentage}%</span>
-                      </div>
-                      <div className="presentation-funnel-track">
-                        <div className="presentation-funnel-fill" style={{ width: `${stage.percentage}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="presentation-section">
-                <h2>Engagement Analysis</h2>
-                <div className="presentation-table">
-                  <div className="presentation-table-head">
-                    <span>Action</span>
-                    <span>Total</span>
-                    <span>Records</span>
-                    <span>Growth</span>
-                  </div>
-                  {engagementByAction.length ? engagementByAction.map((row, i) => (
-                    <div key={i} className="presentation-table-row">
-                      <span>{row.name}</span>
-                      <span>{Number(row.value || 0).toLocaleString()}</span>
-                      <span>{row.members}</span>
-                      <span>{row.growth}%</span>
-                    </div>
-                  )) : (
-                    <div className="presentation-table-row">
-                      <span>No data</span><span>—</span><span>—</span><span>—</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="presentation-page">
-              <div className="presentation-section">
-                <h2>Demographics</h2>
-                <div className="presentation-demo-grid">
-                  <div className="presentation-demo-card">
-                    <h3>Age Distribution</h3>
-                    {ageGroups.length ? ageGroups.map((group, i) => (
-                      <div key={i} className="presentation-demo-row">
-                        <span>{group.range}</span>
-                        <strong>{safeNum(group.percentage)}%</strong>
-                      </div>
-                    )) : <p>No age data available.</p>}
-                  </div>
-
-                  <div className="presentation-demo-card">
-                    <h3>Gender Split</h3>
-                    <div className="presentation-demo-row"><span>Male</span><strong>{stats.demographics?.gender?.male ?? 0}</strong></div>
-                    <div className="presentation-demo-row"><span>Female</span><strong>{stats.demographics?.gender?.female ?? 0}</strong></div>
-                    <div className="presentation-demo-row"><span>Other</span><strong>{stats.demographics?.gender?.other ?? 0}</strong></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="presentation-section">
-                <h2>Market Position</h2>
-                {!stats.competitor_comparison ? (
-                  <div className="presentation-summary-card">
-                    <strong>Comparison not available yet</strong>
-                    <p>Market position data will appear once competitor analytics are available.</p>
-                  </div>
-                ) : (
-                  <div className="presentation-market-grid">
-                    <div className="presentation-market-card">
-                      <h3>Your Gym</h3>
-                      <p>Rating: {Number(stats.competitor_comparison?.your_gym?.rating || 0).toFixed(1)}</p>
-                      <p>Members: {stats.competitor_comparison?.your_gym?.members ?? 0}</p>
-                      <p>Monthly Price: ₱{stats.competitor_comparison?.your_gym?.price ?? 0}</p>
-                    </div>
-                    <div className="presentation-market-card">
-                      <h3>Area Average</h3>
-                      <p>Rating: {Number(stats.competitor_comparison?.area_average?.rating || 0).toFixed(1)}</p>
-                      <p>Members: {stats.competitor_comparison?.area_average?.members ?? 0}</p>
-                      <p>Monthly Price: ₱{stats.competitor_comparison?.area_average?.price ?? 0}</p>
-                    </div>
-                    <div className="presentation-market-card">
-                      <h3>Top Competitor</h3>
-                      <p>Rating: {Number(stats.competitor_comparison?.top_competitor?.rating || 0).toFixed(1)}</p>
-                      <p>Members: {stats.competitor_comparison?.top_competitor?.members ?? 0}</p>
-                      <p>Monthly Price: ₱{stats.competitor_comparison?.top_competitor?.price ?? 0}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="presentation-section">
-                <h2>Prepared For Presentation Use</h2>
-                <p className="presentation-footer-note">
-                  This export includes only the most relevant analytics sections for reporting and presentation.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
