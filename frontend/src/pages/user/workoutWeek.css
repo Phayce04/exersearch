@@ -802,14 +802,14 @@
   font-size: 20px;
   font-weight: 900;
   letter-spacing: -0.3px;
-  color: var(--text);
+  color: var(--lnd-text-primary);
 }
 
 .ww-modal-sub {
   font-size: 14px;
   margin-top: 6px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--lnd-text-secondary, rgba(255,255,255,0.75));
 }
 
 .ww-modal-loading {
@@ -849,7 +849,7 @@
 
 .ww-field span {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-soft);
   font-weight: 800;
 }
 
@@ -858,13 +858,13 @@
 .ww-tag-row input,
 .ww-tag-row select {
   width: 100%;
-  color: var(--text);
+  color: var(--lnd-text-primary);
   font-weight: 800;
   font-family: "Montserrat", sans-serif;
   outline: none;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: var(--surface-2);
+  background: var(--lnd-bg-secondary);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
@@ -895,7 +895,7 @@
 .ww-tag-row select:focus {
   border-color: var(--brand);
   box-shadow: 0 0 0 3px var(--brand-soft);
-  background: var(--surface-1);
+  background: var(--lnd-bg-secondary);
 }
 
 .ww-field select option,
@@ -1074,6 +1074,8 @@
   }
 }
 
+
+
 /* =========================================================
    RESPONSIVE HEADER
 ========================================================= */
@@ -1137,16 +1139,38 @@
   }
 }
 
+/* =========================================================
+   SELECT OPTIONS - MATCHES SELECT FIELD BACKGROUND
+========================================================= */
+
 .ww-field select option,
 .ww-tag-row select option {
-  background: var(--lnd-bg-primary, #1a1a1a);
-  color: var(--lnd-text-primary, #ffffff);
+  background: var(--lnd-bg-secondary);
+  color: var(--lnd-text-primary);
   font-weight: 700;
   padding: 8px 12px;
 }
 
 .ww-field select:focus option:checked,
 .ww-tag-row select:focus option:checked {
-  background: var(--lnd-or, #ff6a2a);
+  background: var(--brand);
   color: #fff;
+  font-weight: 900;
+}
+
+.ww-field select option:hover,
+.ww-tag-row select option:hover {
+  background: var(--brand-soft);
+  color: var(--lnd-text-primary);
+}
+
+/* Style the select dropdown itself */
+.ww-field select,
+.ww-tag-row select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 12px 42px 12px 16px;
+  background-color: var(--lnd-bg-secondary);
+  color: var(--lnd-text-primary);
 }
