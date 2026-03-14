@@ -168,8 +168,7 @@ export default function Chatbot() {
             : <img src="/letterlogo.png" alt="ExerBot" style={{ width: "28px", height: "28px", objectFit: "contain" }} />
           }
         </span>
-        {!isOpen && hasUnread && <span className="eb-badge">!</span>}
-        {!isOpen && messageCount > 0 && !hasUnread && <span className="eb-badge">{messageCount}</span>}
+
       </button>
 
       {/* ── Panel ── */}
