@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { hasAtLeastRole } from "./roles";
 
 export default function RequireUser({ children }) {
   const token = localStorage.getItem("token");
@@ -11,7 +12,7 @@ export default function RequireUser({ children }) {
 
   const [checked, setChecked] = useState(false);
 
-  const isRealUser = !!token && role === "user";
+  const isRealUser = !!token && hasAtLeastRole(role, "user");
 
   useEffect(() => {
     if (isRealUser) {
