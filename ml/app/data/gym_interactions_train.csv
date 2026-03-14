@@ -1,0 +1,7 @@
+event,equipment_match,amenity_match,travel_time_min,price,budget_penalty
+view,0.80,0.60,15,900,1.00
+click,0.90,0.70,12,950,1.00
+save,0.85,0.75,20,850,1.00
+view,0.30,0.40,45,1500,0.50
+contact,0.95,0.85,10,1000,1.00
+subscribe,0.88,0.80,18,1100,0.90

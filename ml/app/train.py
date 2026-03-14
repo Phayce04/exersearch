@@ -1,5 +1,3 @@
-# app/train_global_weights.py
-
 import os
 import json
 import numpy as np
@@ -12,16 +10,16 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 
 # -----------------------------
-# CONFIG (edit these)
+# RAILWAY POSTGRES CONFIG
 # -----------------------------
-DB_HOST = "127.0.0.1"
-DB_PORT = "5433"          # change if your postgres is 5432
-DB_NAME = "exersearch"
-DB_USER = "postgres"
-DB_PASS = "YOUR_PASSWORD"
+DATABASE_URL = (
+    "postgresql+psycopg2://postgres:"
+    "zjEOXdMwBfskrpJtJQRKhEsxpnLAEmEv"
+    "@shortline.proxy.rlwy.net:31146/railway?sslmode=require"
+)
 
-MIN_ROWS = 100            # minimum total usable events (after dropna)
-MIN_POS  = 15             # minimum positive events
+MIN_ROWS = 25
+MIN_POS = 15
 
 OUT_PATH = os.path.join("app", "storage", "weights_global.json")
 
@@ -36,15 +34,13 @@ FEATURE_COLS = [
     "budget_penalty",
 ]
 
-# Smoothing to prevent weights from jumping around
-SMOOTHING_ALPHA = 0.35    # 0.0=no update, 1.0=overwrite fully
+SMOOTHING_ALPHA = 0.35
 
 
 # -----------------------------
 # HELPERS
 # -----------------------------
 def normalize_weights(raw: dict) -> dict:
-    """Clamp negatives to 0, normalize sum to 1."""
     out = {k: float(max(0.0, raw.get(k, 0.0))) for k in raw.keys()}
     s = sum(out.values())
     if s <= 0:
@@ -60,7 +56,6 @@ def load_previous_weights(path: str) -> dict | None:
             data = json.load(f)
         w = data.get("weights")
         if isinstance(w, dict) and len(w) > 0:
-            # ensure expected keys exist
             keys = ["equipment", "amenity", "travel", "price", "penalty"]
             if all(k in w for k in keys):
                 return {k: float(w[k]) for k in keys}
@@ -70,17 +65,14 @@ def load_previous_weights(path: str) -> dict | None:
 
 
 def smooth_weights(old_w: dict, new_w: dict, alpha: float) -> dict:
-    """Exponential smoothing: final = (1-alpha)*old + alpha*new."""
     keys = ["equipment", "amenity", "travel", "price", "penalty"]
     mixed = {k: (1 - alpha) * float(old_w[k]) + alpha * float(new_w[k]) for k in keys}
     return normalize_weights(mixed)
 
 
 def main():
-    db_url = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    engine = create_engine(db_url)
+    engine = create_engine(DATABASE_URL)
 
-    # NOTE: You MUST log these meta fields for BOTH view and click events
     query = """
     SELECT
         user_id,
@@ -97,15 +89,18 @@ def main():
     ORDER BY created_at ASC
     """
 
-    df = pd.read_sql(query, engine)
+    try:
+        df = pd.read_sql(query, engine)
+    except Exception as e:
+        print("Database connection/query failed:")
+        print(str(e))
+        return
+
     if df.empty:
         print("No rows found. Exiting.")
         return
 
-    # Keep only known events
     df = df[df["event"].isin(ALL_EVENTS)].copy()
-
-    # Label: 1 if positive event, else 0
     df["y"] = df["event"].isin(POS_EVENTS).astype(int)
 
     total_raw = len(df)
@@ -114,7 +109,6 @@ def main():
     print(f"Total rows (raw): {total_raw}")
     print(f"Positive rows (raw): {pos_raw}")
 
-    # Drop rows missing any required features
     df2 = df.dropna(subset=FEATURE_COLS).copy()
 
     total = len(df2)
@@ -131,11 +125,9 @@ def main():
         )
         return
 
-    # Prepare X, y
     X = df2[FEATURE_COLS].astype(float).to_numpy()
     y = df2["y"].to_numpy()
 
-    # Train model (scaled)
     model = Pipeline([
         ("scaler", StandardScaler()),
         ("clf", LogisticRegression(max_iter=4000, class_weight="balanced"))
@@ -144,7 +136,6 @@ def main():
 
     coefs = np.abs(model.named_steps["clf"].coef_[0])
 
-    # Map coefficients -> TOPSIS weights
     raw_weights = {
         "equipment": float(coefs[0]),
         "amenity": float(coefs[1]),
@@ -154,7 +145,6 @@ def main():
     }
     new_weights = normalize_weights(raw_weights)
 
-    # Optional smoothing using previous saved weights
     prev = load_previous_weights(OUT_PATH)
     final_weights = (
         smooth_weights(prev, new_weights, SMOOTHING_ALPHA)
@@ -178,8 +168,18 @@ def main():
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)
 
-    print("Saved:", OUT_PATH)
-    print("Final weights:", final_weights)
+    print("\n==============================")
+    print("TRAINING SUMMARY")
+    print("==============================")
+    print(f"Raw rows: {total_raw}")
+    print(f"Usable rows: {total}")
+    print(f"Raw positives: {pos_raw}")
+    print(f"Usable positives: {pos}")
+    print("\nLearned weights:")
+    for k, v in final_weights.items():
+        print(f"{k:10}: {v:.4f}")
+    print(f"\nSaved: {OUT_PATH}")
+    print("==============================")
 
 
 if __name__ == "__main__":
