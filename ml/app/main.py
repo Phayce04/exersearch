@@ -1,8 +1,8 @@
-# app/main.py
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Dict, Optional
-import os, json
+from typing import List, Dict
+import os
+import json
 
 app = FastAPI()
 
@@ -16,7 +16,7 @@ class GymRow(BaseModel):
 
 class WeightRequest(BaseModel):
     user_id: int
-    gyms: List[GymRow] = []  # optional, can be unused for now
+    gyms: List[GymRow] = []
 
 class WeightResponse(BaseModel):
     weights: Dict[str, float]
@@ -43,13 +43,17 @@ def get_weights(req: WeightRequest):
         try:
             with open(WEIGHTS_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            w = data.get("weights", None)
+            w = data.get("weights")
             if isinstance(w, dict) and len(w) > 0:
-                return WeightResponse(weights=normalize(w), source="trained_global")
+                return WeightResponse(
+                    weights=normalize(w),
+                    source="trained_global"
+                )
         except Exception:
             pass
 
     return WeightResponse(weights=DEFAULT_WEIGHTS, source="default")
+
 @app.get("/")
 def root():
     return {"status": "ok", "service": "ml-weights"}

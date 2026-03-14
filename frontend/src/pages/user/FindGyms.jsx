@@ -32,11 +32,11 @@ import {
   saveUserProfileLocation,
 } from "../../utils/findGymsApi";
 
-import { 
-  MapPin,          
-  Menu,            
-  X,                
-  MoreHorizontal    
+import {
+  MapPin,
+  Menu,
+  X,
+  MoreHorizontal,
 } from "lucide-react";
 
 const RESULTS_ROUTE = "/home/gym-results";
@@ -256,6 +256,22 @@ export default function OwnerGymsPage() {
   }, []);
 
   const grouped = useMemo(() => groupEquipmentsByTypeAndMuscle(equipments), [equipments]);
+
+  const hasMinimumSelections = useMemo(() => {
+    const budget = buildBudget(selectedItems);
+    const equipment_ids = buildEquipmentIds(selectedItems);
+    const amenity_ids = buildAmenityIds(selectedItems);
+    const locKey = getSelectedLocationKey(selectedItems);
+    const hasAddress = !!(locKey || locationMeta.address);
+    const hasCoords = locationMeta?.lat != null && locationMeta?.lng != null;
+
+    return (
+      budget !== null &&
+      (hasAddress || hasCoords) &&
+      amenity_ids.length > 0 &&
+      equipment_ids.length > 0
+    );
+  }, [selectedItems, locationMeta]);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -524,27 +540,27 @@ export default function OwnerGymsPage() {
     const xMark = xMarkRef.current;
 
     const tl = gsap.timeline();
-    tl.to(xMark, { duration: 0.5, opacity: 0, ease: "power3.inOut" }, 0);
-    tl.to(camera.rotation, { duration: 3, x: 0, ease: "power3.inOut" }, 0);
-    tl.to(camera.position, { duration: 3, z: 50, ease: "power3.inOut" }, 0);
-    tl.to(camera.position, { duration: 2.5, y: 0, ease: "power3.inOut" }, 0);
-    tl.to(plane.scale, { duration: 3, x: 1, ease: "power3.inOut" }, 0);
-    tl.to(intro, { duration: 0.5, opacity: 1, ease: "power3.in" }, ">-0.2");
+    tl.to(xMark, { duration: 0.25, opacity: 0, ease: "power2.inOut" }, 0);
+    tl.to(camera.rotation, { duration: 0.9, x: 0, ease: "power2.inOut" }, 0);
+    tl.to(camera.position, { duration: 0.9, z: 50, ease: "power2.inOut" }, 0);
+    tl.to(camera.position, { duration: 0.9, y: 0, ease: "power2.inOut" }, 0);
+    tl.to(plane.scale, { duration: 0.9, x: 1, ease: "power2.inOut" }, 0);
+    tl.to(intro, { duration: 0.25, opacity: 1, ease: "power2.out" }, 0.2);
   };
 
   const nextStep = () => {
-      if (currentStep < sections.length - 1) {
-        setCurrentStep((s) => s + 1);
-        setShowMobileSelections(false);
-      }
-    };
+    if (currentStep < sections.length - 1) {
+      setCurrentStep((s) => s + 1);
+      setShowMobileSelections(false);
+    }
+  };
 
-    const prevStep = () => {
-      if (currentStep > 0) {
-        setCurrentStep((s) => s - 1);
-        setShowMobileSelections(false);
-      }
-    };
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep((s) => s - 1);
+      setShowMobileSelections(false);
+    }
+  };
 
   const addSelected = (key) => {
     if (key.startsWith("location:")) {
@@ -1006,13 +1022,13 @@ export default function OwnerGymsPage() {
             )}
           </div>
 
-         <button
-              className="fg-location-btn fg-location-btn--full"
-              onClick={getCurrentLocation}
-              disabled={savingPhase || rankingPhase}
-            >
-              <MapPin size={16} /> Use My Current Location
-            </button>
+          <button
+            className="fg-location-btn fg-location-btn--full"
+            onClick={getCurrentLocation}
+            disabled={savingPhase || rankingPhase}
+          >
+            <MapPin size={16} /> Use My Current Location
+          </button>
 
           <div className={`fg-map-wrap ${savingPhase || rankingPhase ? "is-disabled" : ""}`}>
             <MapContainer key={mapKey} center={mapCenter} zoom={16} className="fg-map-container">
@@ -1089,27 +1105,80 @@ export default function OwnerGymsPage() {
   };
 
   const handleShiftCamera = () => {
-    const camera = cameraRef.current;
-    const plane = planeRef.current;
+    return new Promise((resolve) => {
+      const camera = cameraRef.current;
+      const plane = planeRef.current;
 
-    if (!camera || !plane) return;
+      if (!camera || !plane) {
+        resolve();
+        return;
+      }
 
-    const intro = introRef.current;
-    const xMark = xMarkRef.current;
+      const intro = introRef.current;
+      const xMark = xMarkRef.current;
 
-    const tl = gsap.timeline();
+      const tl = gsap.timeline({
+        onComplete: resolve,
+      });
 
-    tl.to(intro, { duration: 0.5, opacity: 0, ease: "power3.in" }, 0);
-    tl.to(camera.rotation, { duration: 3, x: Math.PI / 2, ease: "power3.inOut" }, 0);
-    tl.to(camera.position, { duration: 2.5, z: 20, ease: "power3.inOut" }, 0);
-    tl.to(camera.position, { duration: 3, y: 120, ease: "power3.inOut" }, 0);
-    tl.to(plane.scale, { duration: 3, x: 2, ease: "power3.inOut" }, 0);
+      tl.to(intro, { duration: 0.28, opacity: 0, ease: "power2.out" }, 0);
+      tl.to(camera.rotation, { duration: 1.05, x: Math.PI / 2, ease: "power2.inOut" }, 0);
+      tl.to(camera.position, { duration: 0.95, z: 20, ease: "power2.inOut" }, 0);
+      tl.to(camera.position, { duration: 1.05, y: 120, ease: "power2.inOut" }, 0);
+      tl.to(plane.scale, { duration: 1.05, x: 2, ease: "power2.inOut" }, 0);
+      tl.to(xMark, { duration: 0.45, opacity: 1, ease: "power2.out" }, 0.35);
+    });
+  };
 
-    tl.to(xMark, { duration: 2, opacity: 1, ease: "power3.inOut" }, ">-0.2");
-    tl.call(() => {
+  const handleStartSearch = async () => {
+    if (prefsLoading || optionsLoading || savingPhase || rankingPhase) return;
+
+    await handleShiftCamera();
+
+    if (!hasMinimumSelections) {
       setIsModalOpen(true);
       setCurrentStep(0);
-    }, [], "<");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Ready to find gyms?",
+      text: "Do you want to review and edit your preferences first, or use your current saved preferences now?",
+      icon: "question",
+      showDenyButton: true,
+      showCloseButton: true,
+      confirmButtonText: "Review & Edit",
+      denyButtonText: "Use Current Preferences",
+      reverseButtons: true,
+      allowOutsideClick: false,
+      allowEscapeKey: true,
+      background: "#ffffff",
+      color: "#1a1a1a",
+      customClass: {
+        popup: "fg-swal-popup",
+        title: "fg-swal-title",
+        htmlContainer: "fg-swal-text",
+        confirmButton: "fg-swal-confirm",
+        denyButton: "fg-swal-deny",
+        closeButton: "fg-swal-close",
+        icon: "fg-swal-icon",
+        actions: "fg-swal-actions",
+      },
+      buttonsStyling: false,
+    });
+
+    if (result.isConfirmed) {
+      setIsModalOpen(true);
+      setCurrentStep(0);
+      return;
+    }
+
+    if (result.isDenied) {
+      await handleApply();
+      return;
+    }
+
+    closeModal();
   };
 
   const handleGoToPreviousResults = () => {
@@ -1147,7 +1216,7 @@ export default function OwnerGymsPage() {
           </h1>
 
           <div className="fg-hero-actions">
-            <div className="button shift-camera-button" onClick={handleShiftCamera}>
+            <div className="button shift-camera-button" onClick={handleStartSearch}>
               <div className="border">
                 <div className="left-plane" />
                 <div className="right-plane" />
@@ -1177,20 +1246,20 @@ export default function OwnerGymsPage() {
                   <h2>{sections[currentStep]}</h2>
                   <span className="fg-step-badge">{currentStep + 1} of {sections.length}</span>
                   <button
-                      className="fg-selections-toggle"
-                      onClick={() => setShowMobileSelections(v => !v)}
-                    >
-                      <Menu size={18} />
-                      {Object.keys(selectedItems).length > 0 && (
-                        <span className="fg-selections-badge">
-                          {Object.keys(selectedItems).length}
-                        </span>
-                      )}
-                    </button>
+                    className="fg-selections-toggle"
+                    onClick={() => setShowMobileSelections((v) => !v)}
+                  >
+                    <Menu size={18} />
+                    {Object.keys(selectedItems).length > 0 && (
+                      <span className="fg-selections-badge">
+                        {Object.keys(selectedItems).length}
+                      </span>
+                    )}
+                  </button>
                 </div>
                 <button className="fg-modal-close" onClick={closeModal} disabled={showOverlay}>
-                <X size={20} />
-              </button>
+                  <X size={20} />
+                </button>
               </div>
 
               <div className="fg-modal-nav">
@@ -1232,59 +1301,82 @@ export default function OwnerGymsPage() {
                 )}
               </div>
             </div>
-          <div className="fg-modal-content">
-  <div className="fg-left-panel">
-    {showMobileSelections && window.innerWidth <= 768 ? (
-      <div>
-        <h3 style={{fontSize:"10px",fontWeight:900,letterSpacing:"2px",textTransform:"uppercase",color:"var(--brand)",marginBottom:"14px"}}>Selected Preferences</h3>
-        {Object.keys(selectedItems).length === 0 ? (
-          <p className="fg-empty-message">No items selected yet</p>
-        ) : (
-          <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-            {Object.keys(selectedItems).map((key, index) => (
-              <div key={index} className="fg-selected-item">
-                <span>{prettySelectedLabel(key)}</span>
-                <button className="fg-remove-btn" onClick={() => !(savingPhase || rankingPhase) && removeSelected(key)} disabled={showOverlay}>
-  <X size={14} />
-</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    ) : renderLeftPanel()}
-  </div>
 
-  <div className="fg-right-panel">
-    <h3>Selected Preferences</h3>
-    <div className="fg-selected-list">
-      {Object.keys(selectedItems).length === 0 ? (
-        <p className="fg-empty-message">No items selected yet</p>
-      ) : (
-        Object.keys(selectedItems).map((key, index) => (
-          <div key={index} className="fg-selected-item">
-            <span>{prettySelectedLabel(key)}</span>
-           <button
-          className="fg-remove-btn"
-          onClick={() => !(savingPhase || rankingPhase) && removeSelected(key)}
-          disabled={showOverlay}
-        >
-          <X size={14} />
-        </button>
-          </div>
-        ))
-      )}
-    </div>
-  </div>
-</div>
+            <div className="fg-modal-content">
+              <div className="fg-left-panel">
+                {showMobileSelections && window.innerWidth <= 768 ? (
+                  <div>
+                    <h3
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 900,
+                        letterSpacing: "2px",
+                        textTransform: "uppercase",
+                        color: "var(--brand)",
+                        marginBottom: "14px",
+                      }}
+                    >
+                      Selected Preferences
+                    </h3>
+                    {Object.keys(selectedItems).length === 0 ? (
+                      <p className="fg-empty-message">No items selected yet</p>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {Object.keys(selectedItems).map((key, index) => (
+                          <div key={index} className="fg-selected-item">
+                            <span>{prettySelectedLabel(key)}</span>
+                            <button
+                              className="fg-remove-btn"
+                              onClick={() =>
+                                !(savingPhase || rankingPhase) && removeSelected(key)
+                              }
+                              disabled={showOverlay}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  renderLeftPanel()
+                )}
+              </div>
+
+              <div className="fg-right-panel">
+                <h3>Selected Preferences</h3>
+                <div className="fg-selected-list">
+                  {Object.keys(selectedItems).length === 0 ? (
+                    <p className="fg-empty-message">No items selected yet</p>
+                  ) : (
+                    Object.keys(selectedItems).map((key, index) => (
+                      <div key={index} className="fg-selected-item">
+                        <span>{prettySelectedLabel(key)}</span>
+                        <button
+                          className="fg-remove-btn"
+                          onClick={() =>
+                            !(savingPhase || rankingPhase) && removeSelected(key)
+                          }
+                          disabled={showOverlay}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
             {previewEquip && !showOverlay && (
               <div className="fg-equip-preview-bg" onClick={closeEquipPreview}>
                 <div className="fg-equip-preview" onClick={(e) => e.stopPropagation()}>
                   <div className="fg-equip-preview-head">
                     <div className="fg-equip-preview-title">{previewEquip.name}</div>
-                   <button className="fg-equip-preview-close" onClick={closeEquipPreview}>
-              <X size={20} />
-            </button>
+                    <button className="fg-equip-preview-close" onClick={closeEquipPreview}>
+                      <X size={20} />
+                    </button>
                   </div>
 
                   {previewEquip.image_url ? (
@@ -1301,7 +1393,8 @@ export default function OwnerGymsPage() {
                       <strong>Difficulty:</strong> {previewEquip.difficulty || "-"}
                     </div>
                     <div>
-                      <strong>Target:</strong> {parseTargets(previewEquip.target_muscle_group).join(", ") || "-"}
+                      <strong>Target:</strong>{" "}
+                      {parseTargets(previewEquip.target_muscle_group).join(", ") || "-"}
                     </div>
                   </div>
 
